@@ -4950,7 +4950,7 @@ export default {  // Home Page
         siteSubtitleHint: '显示在登录和账号创建页面',        siteSubtitlePlaceholder: '内部网关',
 
         apiBaseUrl: 'API 端点地址',
-        apiBaseUrlHint: '用于"使用密钥"和"导入到 CC Switch"功能，留空则使用当前站点地址',
+        apiBaseUrlHint: '用于"使用密钥"、"导入到 CC Switch"和回调地址建议，留空则使用当前站点地址',
         apiBaseUrlPlaceholder: 'https://api.example.com',
         tablePreferencesTitle: '通用表格设置',
         tablePreferencesDescription: '设置后台与用户侧表格组件的默认分页行为',
