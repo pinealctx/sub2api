@@ -742,7 +742,7 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     request_path VARCHAR(256),
     inbound_endpoint TEXT,
     upstream_endpoint TEXT,
-    request_type SMALLINT NOT NULL DEFAULT 0,
+    request_type SMALLINT,
     stream BOOLEAN NOT NULL DEFAULT FALSE,
     openai_ws_mode BOOLEAN NOT NULL DEFAULT FALSE,
     user_agent TEXT,
