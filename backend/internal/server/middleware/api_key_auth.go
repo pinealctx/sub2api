@@ -122,8 +122,8 @@ func apiKeyAuth(apiKeyService *service.APIKeyService, cfg *config.Config) gin.Ha
 
 		// ── 4. 内部版：只做鉴权、分组校验、IP ACL 和用量归属上下文 ───────
 		//
-		// 余额、订阅、购买状态、API Key 过期/额度耗尽等商业限制不再拦截
-		// 网关调用；停用的 Key、停用用户、不可用分组和 IP ACL 仍然拦截。
+		// 网关调用只依赖内部访问控制；停用的 Key、停用用户、不可用分组和 IP ACL
+		// 仍然拦截。用量归属在下游统计链路中处理。
 		c.Set(string(ContextKeyAPIKey), apiKey)
 		c.Set(string(ContextKeyUser), AuthSubject{
 			UserID:      apiKey.User.ID,

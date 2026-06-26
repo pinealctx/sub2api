@@ -50,7 +50,7 @@ func TestListUserErrorRequests_ForcesScopeAndRedacts(t *testing.T) {
 	if stub.gotFilter.UserID == nil || *stub.gotFilter.UserID != uid {
 		t.Fatalf("UserID not forced: %+v", stub.gotFilter.UserID)
 	}
-	// 强制 View=all（含业务限流/余额）
+	// 强制 View=all（含业务限流与上游额度类错误）
 	if stub.gotFilter.View != "all" {
 		t.Fatalf("View not forced to all: %q", stub.gotFilter.View)
 	}

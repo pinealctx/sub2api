@@ -200,7 +200,7 @@ func TestAPIKeyLifecycle(t *testing.T) {
 
 		respBody, _ := io.ReadAll(resp.Body)
 
-		// 可能返回 200（成功）或 403（无可用账户）；内部版不因余额/订阅状态拦截。
+		// 可能返回 200（成功）或 403（无可用账户）；内部版只验证鉴权后可进入网关路径。
 		switch {
 		case resp.StatusCode == 200:
 			t.Logf("✅ API Key 网关调用成功")
