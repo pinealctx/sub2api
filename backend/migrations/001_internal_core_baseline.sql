@@ -424,7 +424,7 @@ CREATE INDEX IF NOT EXISTS usage_logs_request_id ON usage_logs (request_id);
 CREATE INDEX IF NOT EXISTS usage_logs_user_created_at ON usage_logs (user_id, created_at);
 CREATE INDEX IF NOT EXISTS usage_logs_api_key_created_at ON usage_logs (api_key_id, created_at);
 CREATE INDEX IF NOT EXISTS usage_logs_group_created_at ON usage_logs (group_id, created_at) WHERE group_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_usage_logs_request_api_key ON usage_logs (request_id, api_key_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_logs_request_api_key ON usage_logs (request_id, api_key_id);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_upstream_model ON usage_logs (upstream_model);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_requested_model ON usage_logs (requested_model);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_inbound_endpoint ON usage_logs (inbound_endpoint);
@@ -462,7 +462,7 @@ CREATE TABLE IF NOT EXISTS scheduler_outbox (
 CREATE INDEX IF NOT EXISTS idx_scheduler_outbox_created_at ON scheduler_outbox (created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduler_outbox_pending_dedup_key
     ON scheduler_outbox (dedup_key)
-    WHERE dedup_key IS NOT NULL AND delivered_at IS NULL;
+    WHERE dedup_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS channels (
     id BIGSERIAL PRIMARY KEY,
