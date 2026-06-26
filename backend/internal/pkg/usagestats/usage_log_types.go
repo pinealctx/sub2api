@@ -157,9 +157,9 @@ type UserCostRankingItem struct {
 // UserCostRankingResponse represents ranking rows plus total attributed cost for the time range.
 type UserCostRankingResponse struct {
 	Ranking         []UserCostRankingItem `json:"ranking"`
-	TotalActualCost float64                   `json:"total_actual_cost"`
-	TotalRequests   int64                     `json:"total_requests"`
-	TotalTokens     int64                     `json:"total_tokens"`
+	TotalActualCost float64               `json:"total_actual_cost"`
+	TotalRequests   int64                 `json:"total_requests"`
+	TotalTokens     int64                 `json:"total_tokens"`
 }
 
 // UserBreakdownItem represents per-user usage breakdown within a dimension (group, model, endpoint).
