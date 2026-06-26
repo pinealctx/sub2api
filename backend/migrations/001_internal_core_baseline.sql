@@ -170,8 +170,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     group_id BIGINT REFERENCES groups(id) ON DELETE SET NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     last_used_at TIMESTAMPTZ,
-    ip_whitelist JSONB NOT NULL DEFAULT '[]'::jsonb,
-    ip_blacklist JSONB NOT NULL DEFAULT '[]'::jsonb,
+    ip_whitelist JSONB DEFAULT '[]'::jsonb,
+    ip_blacklist JSONB DEFAULT '[]'::jsonb,
     quota NUMERIC(20,8) NOT NULL DEFAULT 0,
     quota_used NUMERIC(20,8) NOT NULL DEFAULT 0,
     expires_at TIMESTAMPTZ,
@@ -367,7 +367,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     api_key_id BIGINT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
     account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    request_id VARCHAR(255) NOT NULL,
+    request_id VARCHAR(255),
     model VARCHAR(100) NOT NULL,
     requested_model VARCHAR(100),
     upstream_model VARCHAR(100),
@@ -405,7 +405,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     image_input_size VARCHAR(32),
     image_output_size VARCHAR(32),
     image_size_source VARCHAR(16),
-    image_size_breakdown JSONB NOT NULL DEFAULT '{}'::jsonb,
+    image_size_breakdown JSONB DEFAULT '{}'::jsonb,
     service_tier TEXT,
     reasoning_effort TEXT,
     inbound_endpoint TEXT,
@@ -1050,18 +1050,29 @@ CREATE INDEX IF NOT EXISTS usage_cleanup_tasks_created_at ON usage_cleanup_tasks
 
 CREATE TABLE IF NOT EXISTS scheduled_test_plans (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    model_id VARCHAR(200) NOT NULL,
+    cron_expression VARCHAR(100) NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    max_results INT NOT NULL DEFAULT 50,
+    auto_recover BOOLEAN NOT NULL DEFAULT FALSE,
+    last_run_at TIMESTAMPTZ,
+    next_run_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS scheduled_test_plans_account_id ON scheduled_test_plans (account_id);
+CREATE INDEX IF NOT EXISTS scheduled_test_plans_due ON scheduled_test_plans (enabled, next_run_at);
 
 CREATE TABLE IF NOT EXISTS scheduled_test_results (
     id BIGSERIAL PRIMARY KEY,
     plan_id BIGINT REFERENCES scheduled_test_plans(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL,
-    result JSONB NOT NULL DEFAULT '{}'::jsonb,
+    response_text TEXT NOT NULL DEFAULT '',
+    error_message TEXT NOT NULL DEFAULT '',
+    latency_ms BIGINT NOT NULL DEFAULT 0,
+    started_at TIMESTAMPTZ NOT NULL,
+    finished_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS scheduled_test_results_plan_created ON scheduled_test_results (plan_id, created_at DESC);
