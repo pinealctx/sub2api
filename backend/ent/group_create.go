@@ -14,10 +14,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
@@ -147,20 +145,6 @@ func (_c *GroupCreate) SetNillablePlatform(v *string) *GroupCreate {
 	return _c
 }
 
-// SetSubscriptionType sets the "subscription_type" field.
-func (_c *GroupCreate) SetSubscriptionType(v string) *GroupCreate {
-	_c.mutation.SetSubscriptionType(v)
-	return _c
-}
-
-// SetNillableSubscriptionType sets the "subscription_type" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableSubscriptionType(v *string) *GroupCreate {
-	if v != nil {
-		_c.SetSubscriptionType(*v)
-	}
-	return _c
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_c *GroupCreate) SetDailyLimitUsd(v float64) *GroupCreate {
 	_c.mutation.SetDailyLimitUsd(v)
@@ -199,20 +183,6 @@ func (_c *GroupCreate) SetMonthlyLimitUsd(v float64) *GroupCreate {
 func (_c *GroupCreate) SetNillableMonthlyLimitUsd(v *float64) *GroupCreate {
 	if v != nil {
 		_c.SetMonthlyLimitUsd(*v)
-	}
-	return _c
-}
-
-// SetDefaultValidityDays sets the "default_validity_days" field.
-func (_c *GroupCreate) SetDefaultValidityDays(v int) *GroupCreate {
-	_c.mutation.SetDefaultValidityDays(v)
-	return _c
-}
-
-// SetNillableDefaultValidityDays sets the "default_validity_days" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableDefaultValidityDays(v *int) *GroupCreate {
-	if v != nil {
-		_c.SetDefaultValidityDays(*v)
 	}
 	return _c
 }
@@ -510,36 +480,6 @@ func (_c *GroupCreate) AddAPIKeys(v ...*APIKey) *GroupCreate {
 	return _c.AddAPIKeyIDs(ids...)
 }
 
-// AddRedeemCodeIDs adds the "redeem_codes" edge to the RedeemCode entity by IDs.
-func (_c *GroupCreate) AddRedeemCodeIDs(ids ...int64) *GroupCreate {
-	_c.mutation.AddRedeemCodeIDs(ids...)
-	return _c
-}
-
-// AddRedeemCodes adds the "redeem_codes" edges to the RedeemCode entity.
-func (_c *GroupCreate) AddRedeemCodes(v ...*RedeemCode) *GroupCreate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddRedeemCodeIDs(ids...)
-}
-
-// AddSubscriptionIDs adds the "subscriptions" edge to the UserSubscription entity by IDs.
-func (_c *GroupCreate) AddSubscriptionIDs(ids ...int64) *GroupCreate {
-	_c.mutation.AddSubscriptionIDs(ids...)
-	return _c
-}
-
-// AddSubscriptions adds the "subscriptions" edges to the UserSubscription entity.
-func (_c *GroupCreate) AddSubscriptions(v ...*UserSubscription) *GroupCreate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddSubscriptionIDs(ids...)
-}
-
 // AddUsageLogIDs adds the "usage_logs" edge to the UsageLog entity by IDs.
 func (_c *GroupCreate) AddUsageLogIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddUsageLogIDs(ids...)
@@ -652,14 +592,6 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultPlatform
 		_c.mutation.SetPlatform(v)
 	}
-	if _, ok := _c.mutation.SubscriptionType(); !ok {
-		v := group.DefaultSubscriptionType
-		_c.mutation.SetSubscriptionType(v)
-	}
-	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
-		v := group.DefaultDefaultValidityDays
-		_c.mutation.SetDefaultValidityDays(v)
-	}
 	if _, ok := _c.mutation.AllowImageGeneration(); !ok {
 		v := group.DefaultAllowImageGeneration
 		_c.mutation.SetAllowImageGeneration(v)
@@ -760,17 +692,6 @@ func (_c *GroupCreate) check() error {
 		if err := group.PlatformValidator(v); err != nil {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Group.platform": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.SubscriptionType(); !ok {
-		return &ValidationError{Name: "subscription_type", err: errors.New(`ent: missing required field "Group.subscription_type"`)}
-	}
-	if v, ok := _c.mutation.SubscriptionType(); ok {
-		if err := group.SubscriptionTypeValidator(v); err != nil {
-			return &ValidationError{Name: "subscription_type", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_type": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
-		return &ValidationError{Name: "default_validity_days", err: errors.New(`ent: missing required field "Group.default_validity_days"`)}
 	}
 	if _, ok := _c.mutation.AllowImageGeneration(); !ok {
 		return &ValidationError{Name: "allow_image_generation", err: errors.New(`ent: missing required field "Group.allow_image_generation"`)}
@@ -885,10 +806,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)
 		_node.Platform = value
 	}
-	if value, ok := _c.mutation.SubscriptionType(); ok {
-		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
-		_node.SubscriptionType = value
-	}
 	if value, ok := _c.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
 		_node.DailyLimitUsd = &value
@@ -900,10 +817,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MonthlyLimitUsd(); ok {
 		_spec.SetField(group.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 		_node.MonthlyLimitUsd = &value
-	}
-	if value, ok := _c.mutation.DefaultValidityDays(); ok {
-		_spec.SetField(group.FieldDefaultValidityDays, field.TypeInt, value)
-		_node.DefaultValidityDays = value
 	}
 	if value, ok := _c.mutation.AllowImageGeneration(); ok {
 		_spec.SetField(group.FieldAllowImageGeneration, field.TypeBool, value)
@@ -998,38 +911,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.RedeemCodesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   group.RedeemCodesTable,
-			Columns: []string{group.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.SubscriptionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   group.SubscriptionsTable,
-			Columns: []string{group.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1259,18 +1140,6 @@ func (u *GroupUpsert) UpdatePlatform() *GroupUpsert {
 	return u
 }
 
-// SetSubscriptionType sets the "subscription_type" field.
-func (u *GroupUpsert) SetSubscriptionType(v string) *GroupUpsert {
-	u.Set(group.FieldSubscriptionType, v)
-	return u
-}
-
-// UpdateSubscriptionType sets the "subscription_type" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateSubscriptionType() *GroupUpsert {
-	u.SetExcluded(group.FieldSubscriptionType)
-	return u
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsert) SetDailyLimitUsd(v float64) *GroupUpsert {
 	u.Set(group.FieldDailyLimitUsd, v)
@@ -1340,24 +1209,6 @@ func (u *GroupUpsert) AddMonthlyLimitUsd(v float64) *GroupUpsert {
 // ClearMonthlyLimitUsd clears the value of the "monthly_limit_usd" field.
 func (u *GroupUpsert) ClearMonthlyLimitUsd() *GroupUpsert {
 	u.SetNull(group.FieldMonthlyLimitUsd)
-	return u
-}
-
-// SetDefaultValidityDays sets the "default_validity_days" field.
-func (u *GroupUpsert) SetDefaultValidityDays(v int) *GroupUpsert {
-	u.Set(group.FieldDefaultValidityDays, v)
-	return u
-}
-
-// UpdateDefaultValidityDays sets the "default_validity_days" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateDefaultValidityDays() *GroupUpsert {
-	u.SetExcluded(group.FieldDefaultValidityDays)
-	return u
-}
-
-// AddDefaultValidityDays adds v to the "default_validity_days" field.
-func (u *GroupUpsert) AddDefaultValidityDays(v int) *GroupUpsert {
-	u.Add(group.FieldDefaultValidityDays, v)
 	return u
 }
 
@@ -1875,20 +1726,6 @@ func (u *GroupUpsertOne) UpdatePlatform() *GroupUpsertOne {
 	})
 }
 
-// SetSubscriptionType sets the "subscription_type" field.
-func (u *GroupUpsertOne) SetSubscriptionType(v string) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetSubscriptionType(v)
-	})
-}
-
-// UpdateSubscriptionType sets the "subscription_type" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateSubscriptionType() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateSubscriptionType()
-	})
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsertOne) SetDailyLimitUsd(v float64) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
@@ -1970,27 +1807,6 @@ func (u *GroupUpsertOne) UpdateMonthlyLimitUsd() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearMonthlyLimitUsd() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearMonthlyLimitUsd()
-	})
-}
-
-// SetDefaultValidityDays sets the "default_validity_days" field.
-func (u *GroupUpsertOne) SetDefaultValidityDays(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDefaultValidityDays(v)
-	})
-}
-
-// AddDefaultValidityDays adds v to the "default_validity_days" field.
-func (u *GroupUpsertOne) AddDefaultValidityDays(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddDefaultValidityDays(v)
-	})
-}
-
-// UpdateDefaultValidityDays sets the "default_validity_days" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateDefaultValidityDays() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDefaultValidityDays()
 	})
 }
 
@@ -2730,20 +2546,6 @@ func (u *GroupUpsertBulk) UpdatePlatform() *GroupUpsertBulk {
 	})
 }
 
-// SetSubscriptionType sets the "subscription_type" field.
-func (u *GroupUpsertBulk) SetSubscriptionType(v string) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetSubscriptionType(v)
-	})
-}
-
-// UpdateSubscriptionType sets the "subscription_type" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateSubscriptionType() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateSubscriptionType()
-	})
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsertBulk) SetDailyLimitUsd(v float64) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
@@ -2825,27 +2627,6 @@ func (u *GroupUpsertBulk) UpdateMonthlyLimitUsd() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearMonthlyLimitUsd() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearMonthlyLimitUsd()
-	})
-}
-
-// SetDefaultValidityDays sets the "default_validity_days" field.
-func (u *GroupUpsertBulk) SetDefaultValidityDays(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDefaultValidityDays(v)
-	})
-}
-
-// AddDefaultValidityDays adds v to the "default_validity_days" field.
-func (u *GroupUpsertBulk) AddDefaultValidityDays(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddDefaultValidityDays(v)
-	})
-}
-
-// UpdateDefaultValidityDays sets the "default_validity_days" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateDefaultValidityDays() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDefaultValidityDays()
 	})
 }
 

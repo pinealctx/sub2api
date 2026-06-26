@@ -136,7 +136,7 @@ func TestGetAuthSourcePlatformQuotas_OnlyConfiguredReturned(t *testing.T) {
 }
 
 func TestGetAuthSourcePlatformQuotas_AllNegativeOrEmpty_NoEntry(t *testing.T) {
-	source := "linuxdo"
+	source := "oidc"
 	// 新 JSON 格式：未配置任何平台（空 JSON key）→ 返回空 map
 	svc := newSettingServiceForPlatformQuotaTest(map[string]string{
 		SettingKeyAuthSourcePlatformQuotas(source): `{}`,
@@ -272,8 +272,8 @@ func TestUpdateSettingsWithAuthSourceDefaults_PlatformQuotaRoundTrip(t *testing.
 		t.Errorf("openai daily=0 (禁用) round-trip failed: %+v", oai)
 	}
 	// 其他 source 不应有 quota（authDefaults 只填了 Email）
-	if linux := svc.GetAuthSourcePlatformQuotas(context.Background(), "linuxdo"); len(linux) != 0 {
-		t.Errorf("linuxdo should be empty, got %+v", linux)
+	if oidc := svc.GetAuthSourcePlatformQuotas(context.Background(), "oidc"); len(oidc) != 0 {
+		t.Errorf("oidc should be empty, got %+v", oidc)
 	}
 }
 

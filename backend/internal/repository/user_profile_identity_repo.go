@@ -16,7 +16,6 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	dbpredicate "github.com/Wei-Shaw/sub2api/ent/predicate"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -27,14 +26,6 @@ var (
 	ErrAuthIdentityOwnershipConflict = infraerrors.Conflict(
 		"AUTH_IDENTITY_OWNERSHIP_CONFLICT",
 		"auth identity already belongs to another user",
-	)
-	ErrAuthIdentityChannelOwnershipConflict = infraerrors.Conflict(
-		"AUTH_IDENTITY_CHANNEL_OWNERSHIP_CONFLICT",
-		"auth identity channel already belongs to another user",
-	)
-	ErrAuthIdentityChannelProviderMismatch = infraerrors.BadRequest(
-		"AUTH_IDENTITY_CHANNEL_PROVIDER_MISMATCH",
-		"auth identity channel provider must match canonical identity",
 	)
 )
 
@@ -51,29 +42,18 @@ type AuthIdentityKey struct {
 	ProviderSubject string
 }
 
-type AuthIdentityChannelKey struct {
-	ProviderType   string
-	ProviderKey    string
-	Channel        string
-	ChannelAppID   string
-	ChannelSubject string
-}
-
 type CreateAuthIdentityInput struct {
-	UserID          int64
-	Canonical       AuthIdentityKey
-	Channel         *AuthIdentityChannelKey
-	Issuer          *string
-	VerifiedAt      *time.Time
-	Metadata        map[string]any
-	ChannelMetadata map[string]any
+	UserID     int64
+	Canonical  AuthIdentityKey
+	Issuer     *string
+	VerifiedAt *time.Time
+	Metadata   map[string]any
 }
 
 type BindAuthIdentityInput = CreateAuthIdentityInput
 
 type CreateAuthIdentityResult struct {
 	Identity *dbent.AuthIdentity
-	Channel  *dbent.AuthIdentityChannel
 }
 
 func (r *CreateAuthIdentityResult) IdentityRef() AuthIdentityKey {
@@ -87,23 +67,9 @@ func (r *CreateAuthIdentityResult) IdentityRef() AuthIdentityKey {
 	}
 }
 
-func (r *CreateAuthIdentityResult) ChannelRef() *AuthIdentityChannelKey {
-	if r == nil || r.Channel == nil {
-		return nil
-	}
-	return &AuthIdentityChannelKey{
-		ProviderType:   r.Channel.ProviderType,
-		ProviderKey:    r.Channel.ProviderKey,
-		Channel:        r.Channel.Channel,
-		ChannelAppID:   r.Channel.ChannelAppID,
-		ChannelSubject: r.Channel.ChannelSubject,
-	}
-}
-
 type UserAuthIdentityLookup struct {
 	User     *dbent.User
 	Identity *dbent.AuthIdentity
-	Channel  *dbent.AuthIdentityChannel
 }
 
 type ProviderGrantRecordInput struct {
@@ -250,10 +216,6 @@ func (r *userRepository) WithUserProfileIdentityTx(ctx context.Context, fn func(
 }
 
 func (r *userRepository) CreateAuthIdentity(ctx context.Context, input CreateAuthIdentityInput) (*CreateAuthIdentityResult, error) {
-	if err := validateAuthIdentityChannelProviderMatch(input.Canonical, input.Channel); err != nil {
-		return nil, err
-	}
-
 	client := clientFromContext(ctx, r.client)
 
 	create := client.AuthIdentity.Create().
@@ -270,23 +232,7 @@ func (r *userRepository) CreateAuthIdentity(ctx context.Context, input CreateAut
 		return nil, err
 	}
 
-	var channel *dbent.AuthIdentityChannel
-	if input.Channel != nil {
-		channel, err = client.AuthIdentityChannel.Create().
-			SetIdentityID(identity.ID).
-			SetProviderType(strings.TrimSpace(input.Channel.ProviderType)).
-			SetProviderKey(strings.TrimSpace(input.Channel.ProviderKey)).
-			SetChannel(strings.TrimSpace(input.Channel.Channel)).
-			SetChannelAppID(strings.TrimSpace(input.Channel.ChannelAppID)).
-			SetChannelSubject(strings.TrimSpace(input.Channel.ChannelSubject)).
-			SetMetadata(copyMetadata(input.ChannelMetadata)).
-			Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &CreateAuthIdentityResult{Identity: identity, Channel: channel}, nil
+	return &CreateAuthIdentityResult{Identity: identity}, nil
 }
 
 func (r *userRepository) GetUserByCanonicalIdentity(ctx context.Context, key AuthIdentityKey) (*UserAuthIdentityLookup, error) {
@@ -305,30 +251,6 @@ func (r *userRepository) GetUserByCanonicalIdentity(ctx context.Context, key Aut
 	return &UserAuthIdentityLookup{
 		User:     identity.Edges.User,
 		Identity: identity,
-	}, nil
-}
-
-func (r *userRepository) GetUserByChannelIdentity(ctx context.Context, key AuthIdentityChannelKey) (*UserAuthIdentityLookup, error) {
-	channel, err := clientFromContext(ctx, r.client).AuthIdentityChannel.Query().
-		Where(
-			authidentitychannel.ProviderTypeEQ(strings.TrimSpace(key.ProviderType)),
-			authidentitychannel.ProviderKeyEQ(strings.TrimSpace(key.ProviderKey)),
-			authidentitychannel.ChannelEQ(strings.TrimSpace(key.Channel)),
-			authidentitychannel.ChannelAppIDEQ(strings.TrimSpace(key.ChannelAppID)),
-			authidentitychannel.ChannelSubjectEQ(strings.TrimSpace(key.ChannelSubject)),
-		).
-		WithIdentity(func(q *dbent.AuthIdentityQuery) {
-			q.WithUser()
-		}).
-		Only(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserAuthIdentityLookup{
-		User:     channel.Edges.Identity.Edges.User,
-		Identity: channel.Edges.Identity,
-		Channel:  channel,
 	}, nil
 }
 
@@ -387,11 +309,6 @@ func (r *userRepository) UnbindUserAuthProvider(ctx context.Context, userID int6
 			Save(txCtx); err != nil {
 			return err
 		}
-		if _, err := client.AuthIdentityChannel.Delete().
-			Where(authidentitychannel.IdentityIDIn(identityIDs...)).
-			Exec(txCtx); err != nil {
-			return err
-		}
 		_, err = client.AuthIdentity.Delete().
 			Where(
 				authidentity.UserIDEQ(userID),
@@ -403,10 +320,6 @@ func (r *userRepository) UnbindUserAuthProvider(ctx context.Context, userID int6
 }
 
 func (r *userRepository) BindAuthIdentityToUser(ctx context.Context, input BindAuthIdentityInput) (*CreateAuthIdentityResult, error) {
-	if err := validateAuthIdentityChannelProviderMatch(input.Canonical, input.Channel); err != nil {
-		return nil, err
-	}
-
 	var result *CreateAuthIdentityResult
 	err := r.WithUserProfileIdentityTx(ctx, func(txCtx context.Context) error {
 		client := clientFromContext(txCtx, r.client)
@@ -460,56 +373,7 @@ func (r *userRepository) BindAuthIdentityToUser(ctx context.Context, input BindA
 			}
 		}
 
-		var channel *dbent.AuthIdentityChannel
-		if input.Channel != nil {
-			channelRecords, err := client.AuthIdentityChannel.Query().
-				Where(
-					authidentitychannel.ProviderTypeEQ(strings.TrimSpace(input.Channel.ProviderType)),
-					authidentitychannel.ProviderKeyIn(compatibleIdentityProviderKeys(input.Channel.ProviderType, input.Channel.ProviderKey)...),
-					authidentitychannel.ChannelEQ(strings.TrimSpace(input.Channel.Channel)),
-					authidentitychannel.ChannelAppIDEQ(strings.TrimSpace(input.Channel.ChannelAppID)),
-					authidentitychannel.ChannelSubjectEQ(strings.TrimSpace(input.Channel.ChannelSubject)),
-				).
-				WithIdentity().
-				All(txCtx)
-			if err != nil {
-				return err
-			}
-			channel = selectOwnedCompatibleChannel(channelRecords, input.UserID)
-			if channel == nil && hasCompatibleChannelConflict(channelRecords, input.UserID) {
-				return ErrAuthIdentityChannelOwnershipConflict
-			}
-			if channel == nil {
-				channel, err = client.AuthIdentityChannel.Create().
-					SetIdentityID(identity.ID).
-					SetProviderType(strings.TrimSpace(input.Channel.ProviderType)).
-					SetProviderKey(strings.TrimSpace(input.Channel.ProviderKey)).
-					SetChannel(strings.TrimSpace(input.Channel.Channel)).
-					SetChannelAppID(strings.TrimSpace(input.Channel.ChannelAppID)).
-					SetChannelSubject(strings.TrimSpace(input.Channel.ChannelSubject)).
-					SetMetadata(copyMetadata(input.ChannelMetadata)).
-					Save(txCtx)
-				if err != nil {
-					return err
-				}
-			} else {
-				targetProviderKey := canonicalizeCompatibleIdentityProviderKey(input.Channel.ProviderType, channel.ProviderKey, input.Channel.ProviderKey)
-				update := client.AuthIdentityChannel.UpdateOneID(channel.ID).
-					SetIdentityID(identity.ID)
-				if targetProviderKey != "" && !strings.EqualFold(targetProviderKey, channel.ProviderKey) {
-					update = update.SetProviderKey(targetProviderKey)
-				}
-				if input.ChannelMetadata != nil {
-					update = update.SetMetadata(copyMetadata(input.ChannelMetadata))
-				}
-				channel, err = update.Save(txCtx)
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		result = &CreateAuthIdentityResult{Identity: identity, Channel: channel}
+		result = &CreateAuthIdentityResult{Identity: identity}
 		return nil
 	})
 	if err != nil {
@@ -519,37 +383,13 @@ func (r *userRepository) BindAuthIdentityToUser(ctx context.Context, input BindA
 }
 
 func compatibleIdentityProviderKeys(providerType, providerKey string) []string {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
 	providerKey = strings.TrimSpace(providerKey)
-	if providerKey == "" {
-		return []string{providerKey}
-	}
-	if providerType != "wechat" {
-		return []string{providerKey}
-	}
-	keys := []string{providerKey}
-	if !strings.EqualFold(providerKey, "wechat-main") {
-		keys = append(keys, "wechat-main")
-	}
-	if !strings.EqualFold(providerKey, "wechat") {
-		keys = append(keys, "wechat")
-	}
-	return keys
+	return []string{providerKey}
 }
 
 func canonicalizeCompatibleIdentityProviderKey(providerType, existingKey, requestedKey string) string {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
 	existingKey = strings.TrimSpace(existingKey)
 	requestedKey = strings.TrimSpace(requestedKey)
-	if providerType != "wechat" {
-		if requestedKey != "" {
-			return requestedKey
-		}
-		return existingKey
-	}
-	if strings.EqualFold(existingKey, "wechat") || strings.EqualFold(existingKey, "wechat-main") || strings.EqualFold(requestedKey, "wechat-main") {
-		return "wechat-main"
-	}
 	if requestedKey != "" {
 		return requestedKey
 	}
@@ -557,19 +397,7 @@ func canonicalizeCompatibleIdentityProviderKey(providerType, existingKey, reques
 }
 
 func compatibleIdentityProviderKeyRank(providerType, providerKey string) int {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
-	providerKey = strings.TrimSpace(providerKey)
-	if providerType != "wechat" {
-		return 0
-	}
-	switch {
-	case strings.EqualFold(providerKey, "wechat-main"):
-		return 0
-	case strings.EqualFold(providerKey, "wechat"):
-		return 2
-	default:
-		return 1
-	}
+	return 0
 }
 
 func selectOwnedCompatibleIdentity(records []*dbent.AuthIdentity, userID int64) *dbent.AuthIdentity {
@@ -588,28 +416,6 @@ func selectOwnedCompatibleIdentity(records []*dbent.AuthIdentity, userID int64) 
 func hasCompatibleIdentityConflict(records []*dbent.AuthIdentity, userID int64) bool {
 	for _, record := range records {
 		if record.UserID != userID {
-			return true
-		}
-	}
-	return false
-}
-
-func selectOwnedCompatibleChannel(records []*dbent.AuthIdentityChannel, userID int64) *dbent.AuthIdentityChannel {
-	var selected *dbent.AuthIdentityChannel
-	for _, record := range records {
-		if record.Edges.Identity == nil || record.Edges.Identity.UserID != userID {
-			continue
-		}
-		if selected == nil || compatibleIdentityProviderKeyRank(record.ProviderType, record.ProviderKey) < compatibleIdentityProviderKeyRank(selected.ProviderType, selected.ProviderKey) {
-			selected = record
-		}
-	}
-	return selected
-}
-
-func hasCompatibleChannelConflict(records []*dbent.AuthIdentityChannel, userID int64) bool {
-	for _, record := range records {
-		if record.Edges.Identity != nil && record.Edges.Identity.UserID != userID {
 			return true
 		}
 	}
@@ -820,23 +626,6 @@ func copyMetadata(in map[string]any) map[string]any {
 		out[k] = v
 	}
 	return out
-}
-
-func validateAuthIdentityChannelProviderMatch(canonical AuthIdentityKey, channel *AuthIdentityChannelKey) error {
-	if channel == nil {
-		return nil
-	}
-
-	canonicalProviderType := strings.TrimSpace(canonical.ProviderType)
-	canonicalProviderKey := strings.TrimSpace(canonical.ProviderKey)
-	channelProviderType := strings.TrimSpace(channel.ProviderType)
-	channelProviderKey := strings.TrimSpace(channel.ProviderKey)
-
-	if canonicalProviderType != channelProviderType || canonicalProviderKey != channelProviderKey {
-		return ErrAuthIdentityChannelProviderMismatch
-	}
-
-	return nil
 }
 
 func txAwareSQLExecutor(ctx context.Context, fallback sqlExecutor, client *dbent.Client) sqlQueryExecutor {

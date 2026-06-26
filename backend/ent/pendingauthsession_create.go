@@ -124,16 +124,16 @@ func (_c *PendingAuthSessionCreate) SetNillableResolvedEmail(v *string) *Pending
 	return _c
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (_c *PendingAuthSessionCreate) SetRegistrationPasswordHash(v string) *PendingAuthSessionCreate {
-	_c.mutation.SetRegistrationPasswordHash(v)
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (_c *PendingAuthSessionCreate) SetAccountCreationPasswordHash(v string) *PendingAuthSessionCreate {
+	_c.mutation.SetAccountCreationPasswordHash(v)
 	return _c
 }
 
-// SetNillableRegistrationPasswordHash sets the "registration_password_hash" field if the given value is not nil.
-func (_c *PendingAuthSessionCreate) SetNillableRegistrationPasswordHash(v *string) *PendingAuthSessionCreate {
+// SetNillableAccountCreationPasswordHash sets the "account_creation_password_hash" field if the given value is not nil.
+func (_c *PendingAuthSessionCreate) SetNillableAccountCreationPasswordHash(v *string) *PendingAuthSessionCreate {
 	if v != nil {
-		_c.SetRegistrationPasswordHash(*v)
+		_c.SetAccountCreationPasswordHash(*v)
 	}
 	return _c
 }
@@ -329,9 +329,9 @@ func (_c *PendingAuthSessionCreate) defaults() {
 		v := pendingauthsession.DefaultResolvedEmail
 		_c.mutation.SetResolvedEmail(v)
 	}
-	if _, ok := _c.mutation.RegistrationPasswordHash(); !ok {
-		v := pendingauthsession.DefaultRegistrationPasswordHash
-		_c.mutation.SetRegistrationPasswordHash(v)
+	if _, ok := _c.mutation.AccountCreationPasswordHash(); !ok {
+		v := pendingauthsession.DefaultAccountCreationPasswordHash
+		_c.mutation.SetAccountCreationPasswordHash(v)
 	}
 	if _, ok := _c.mutation.UpstreamIdentityClaims(); !ok {
 		v := pendingauthsession.DefaultUpstreamIdentityClaims()
@@ -405,8 +405,8 @@ func (_c *PendingAuthSessionCreate) check() error {
 	if _, ok := _c.mutation.ResolvedEmail(); !ok {
 		return &ValidationError{Name: "resolved_email", err: errors.New(`ent: missing required field "PendingAuthSession.resolved_email"`)}
 	}
-	if _, ok := _c.mutation.RegistrationPasswordHash(); !ok {
-		return &ValidationError{Name: "registration_password_hash", err: errors.New(`ent: missing required field "PendingAuthSession.registration_password_hash"`)}
+	if _, ok := _c.mutation.AccountCreationPasswordHash(); !ok {
+		return &ValidationError{Name: "account_creation_password_hash", err: errors.New(`ent: missing required field "PendingAuthSession.account_creation_password_hash"`)}
 	}
 	if _, ok := _c.mutation.UpstreamIdentityClaims(); !ok {
 		return &ValidationError{Name: "upstream_identity_claims", err: errors.New(`ent: missing required field "PendingAuthSession.upstream_identity_claims"`)}
@@ -486,9 +486,9 @@ func (_c *PendingAuthSessionCreate) createSpec() (*PendingAuthSession, *sqlgraph
 		_spec.SetField(pendingauthsession.FieldResolvedEmail, field.TypeString, value)
 		_node.ResolvedEmail = value
 	}
-	if value, ok := _c.mutation.RegistrationPasswordHash(); ok {
-		_spec.SetField(pendingauthsession.FieldRegistrationPasswordHash, field.TypeString, value)
-		_node.RegistrationPasswordHash = value
+	if value, ok := _c.mutation.AccountCreationPasswordHash(); ok {
+		_spec.SetField(pendingauthsession.FieldAccountCreationPasswordHash, field.TypeString, value)
+		_node.AccountCreationPasswordHash = value
 	}
 	if value, ok := _c.mutation.UpstreamIdentityClaims(); ok {
 		_spec.SetField(pendingauthsession.FieldUpstreamIdentityClaims, field.TypeJSON, value)
@@ -729,15 +729,15 @@ func (u *PendingAuthSessionUpsert) UpdateResolvedEmail() *PendingAuthSessionUpse
 	return u
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (u *PendingAuthSessionUpsert) SetRegistrationPasswordHash(v string) *PendingAuthSessionUpsert {
-	u.Set(pendingauthsession.FieldRegistrationPasswordHash, v)
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (u *PendingAuthSessionUpsert) SetAccountCreationPasswordHash(v string) *PendingAuthSessionUpsert {
+	u.Set(pendingauthsession.FieldAccountCreationPasswordHash, v)
 	return u
 }
 
-// UpdateRegistrationPasswordHash sets the "registration_password_hash" field to the value that was provided on create.
-func (u *PendingAuthSessionUpsert) UpdateRegistrationPasswordHash() *PendingAuthSessionUpsert {
-	u.SetExcluded(pendingauthsession.FieldRegistrationPasswordHash)
+// UpdateAccountCreationPasswordHash sets the "account_creation_password_hash" field to the value that was provided on create.
+func (u *PendingAuthSessionUpsert) UpdateAccountCreationPasswordHash() *PendingAuthSessionUpsert {
+	u.SetExcluded(pendingauthsession.FieldAccountCreationPasswordHash)
 	return u
 }
 
@@ -1069,17 +1069,17 @@ func (u *PendingAuthSessionUpsertOne) UpdateResolvedEmail() *PendingAuthSessionU
 	})
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (u *PendingAuthSessionUpsertOne) SetRegistrationPasswordHash(v string) *PendingAuthSessionUpsertOne {
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (u *PendingAuthSessionUpsertOne) SetAccountCreationPasswordHash(v string) *PendingAuthSessionUpsertOne {
 	return u.Update(func(s *PendingAuthSessionUpsert) {
-		s.SetRegistrationPasswordHash(v)
+		s.SetAccountCreationPasswordHash(v)
 	})
 }
 
-// UpdateRegistrationPasswordHash sets the "registration_password_hash" field to the value that was provided on create.
-func (u *PendingAuthSessionUpsertOne) UpdateRegistrationPasswordHash() *PendingAuthSessionUpsertOne {
+// UpdateAccountCreationPasswordHash sets the "account_creation_password_hash" field to the value that was provided on create.
+func (u *PendingAuthSessionUpsertOne) UpdateAccountCreationPasswordHash() *PendingAuthSessionUpsertOne {
 	return u.Update(func(s *PendingAuthSessionUpsert) {
-		s.UpdateRegistrationPasswordHash()
+		s.UpdateAccountCreationPasswordHash()
 	})
 }
 
@@ -1602,17 +1602,17 @@ func (u *PendingAuthSessionUpsertBulk) UpdateResolvedEmail() *PendingAuthSession
 	})
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (u *PendingAuthSessionUpsertBulk) SetRegistrationPasswordHash(v string) *PendingAuthSessionUpsertBulk {
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (u *PendingAuthSessionUpsertBulk) SetAccountCreationPasswordHash(v string) *PendingAuthSessionUpsertBulk {
 	return u.Update(func(s *PendingAuthSessionUpsert) {
-		s.SetRegistrationPasswordHash(v)
+		s.SetAccountCreationPasswordHash(v)
 	})
 }
 
-// UpdateRegistrationPasswordHash sets the "registration_password_hash" field to the value that was provided on create.
-func (u *PendingAuthSessionUpsertBulk) UpdateRegistrationPasswordHash() *PendingAuthSessionUpsertBulk {
+// UpdateAccountCreationPasswordHash sets the "account_creation_password_hash" field to the value that was provided on create.
+func (u *PendingAuthSessionUpsertBulk) UpdateAccountCreationPasswordHash() *PendingAuthSessionUpsertBulk {
 	return u.Update(func(s *PendingAuthSessionUpsert) {
-		s.UpdateRegistrationPasswordHash()
+		s.UpdateAccountCreationPasswordHash()
 	})
 }
 

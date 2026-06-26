@@ -117,7 +117,6 @@
           :default-sort-key="'created_at'"
           :default-sort-order="'desc'"
           @sort="handleSort"
-          @userClick="handleUserClick"
         />
         <Pagination v-if="pagination.total > 0" :page="pagination.page" :total="pagination.total" :page-size="pagination.page_size" @update:page="handlePageChange" @update:pageSize="handlePageSizeChange" />
       </div>
@@ -140,13 +139,6 @@
     :end-date="endDate"
     @close="cleanupDialogVisible = false"
   />
-  <!-- Balance history modal triggered from usage table user click -->
-  <UserBalanceHistoryModal
-    :show="showBalanceHistoryModal"
-    :user="balanceHistoryUser"
-    :hide-actions="true"
-    @close="showBalanceHistoryModal = false; balanceHistoryUser = null"
-  />
 </template>
 
 <script setup lang="ts">
@@ -162,7 +154,6 @@ import AppLayout from '@/components/layout/AppLayout.vue'; import Pagination fro
 import UsageStatsCards from '@/components/admin/usage/UsageStatsCards.vue'; import UsageFilters from '@/components/admin/usage/UsageFilters.vue'
 import UsageTable from '@/components/admin/usage/UsageTable.vue'; import UsageExportProgress from '@/components/admin/usage/UsageExportProgress.vue'
 import UsageCleanupDialog from '@/components/admin/usage/UsageCleanupDialog.vue'
-import UserBalanceHistoryModal from '@/components/admin/user/UserBalanceHistoryModal.vue'
 import OpsErrorLogTable from '@/views/admin/ops/components/OpsErrorLogTable.vue'
 import OpsErrorDetailModal from '@/views/admin/ops/components/OpsErrorDetailModal.vue'
 import { listErrorLogs } from '@/api/admin/ops'
@@ -170,7 +161,7 @@ import type { OpsErrorLog } from '@/api/admin/ops'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'; import GroupDistributionChart from '@/components/charts/GroupDistributionChart.vue'; import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
 import EndpointDistributionChart from '@/components/charts/EndpointDistributionChart.vue'
 import Icon from '@/components/icons/Icon.vue'
-import type { AdminUsageLog, TrendDataPoint, ModelStat, GroupStat, EndpointStat, AdminUser } from '@/types'; import type { AdminUsageStatsResponse, AdminUsageQueryParams } from '@/api/admin/usage'
+import type { AdminUsageLog, TrendDataPoint, ModelStat, GroupStat, EndpointStat } from '@/types'; import type { AdminUsageStatsResponse, AdminUsageQueryParams } from '@/api/admin/usage'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -200,9 +191,6 @@ let statsReqSeq = 0
 let modelStatsReqSeq = 0
 const exportProgress = reactive({ show: false, progress: 0, current: 0, total: 0, estimatedTime: '' })
 const cleanupDialogVisible = ref(false)
-// Balance history modal state
-const showBalanceHistoryModal = ref(false)
-const balanceHistoryUser = ref<AdminUser | null>(null)
 
 const breakdownFilters = computed(() => {
   const f: Record<string, any> = {}
@@ -211,23 +199,12 @@ const breakdownFilters = computed(() => {
   if (filters.value.account_id) f.account_id = filters.value.account_id
   if (filters.value.group_id) f.group_id = filters.value.group_id
   if (filters.value.request_type != null) f.request_type = filters.value.request_type
-  if (filters.value.billing_type != null) f.billing_type = filters.value.billing_type
   return f
 })
 
 const modelNameOptions = computed(() =>
   Array.from(new Set(requestedModelStats.value.map((m) => m.model).filter(Boolean))).sort()
 )
-
-const handleUserClick = async (userId: number) => {
-  try {
-    const user = await adminAPI.users.getById(userId, true)
-    balanceHistoryUser.value = user
-    showBalanceHistoryModal.value = true
-  } catch {
-    appStore.showError(t('admin.usage.failedToLoadUser'))
-  }
-}
 
 const granularityOptions = computed(() => [{ value: 'day', label: t('admin.dashboard.day') }, { value: 'hour', label: t('admin.dashboard.hour') }])
 // Use local timezone to avoid UTC timezone issues
@@ -253,7 +230,7 @@ const getGranularityForRange = (start: string, end: string): 'day' | 'hour' => {
 }
 const defaultRange = getLast24HoursRangeDates()
 const startDate = ref(defaultRange.start); const endDate = ref(defaultRange.end)
-const filters = ref<AdminUsageQueryParams>({ user_id: undefined, model: undefined, group_id: undefined, request_type: undefined, billing_type: null, start_date: startDate.value, end_date: endDate.value })
+const filters = ref<AdminUsageQueryParams>({ user_id: undefined, model: undefined, group_id: undefined, request_type: undefined, start_date: startDate.value, end_date: endDate.value })
 const pagination = reactive({ page: 1, page_size: getPersistedPageSize(), total: 0 })
 const sortState = reactive({
   sort_by: 'created_at',
@@ -387,7 +364,6 @@ const loadModelStats = async (source: ModelDistributionSource, force = false) =>
       group_id: filters.value.group_id,
       request_type: requestType,
       stream: legacyStream === null ? undefined : legacyStream,
-      billing_type: filters.value.billing_type,
     }
 
     const response = await adminAPI.dashboard.getModelStats({ ...baseParams, model_source: source })
@@ -436,7 +412,6 @@ const loadChartData = async () => {
       group_id: filters.value.group_id,
       request_type: requestType,
       stream: legacyStream === null ? undefined : legacyStream,
-      billing_type: filters.value.billing_type,
       include_stats: false,
       include_trend: true,
       include_model_stats: false,
@@ -474,7 +449,7 @@ const resetFilters = () => {
   const range = getLast24HoursRangeDates()
   startDate.value = range.start
   endDate.value = range.end
-  filters.value = { start_date: startDate.value, end_date: endDate.value, request_type: undefined, billing_type: null, billing_mode: undefined }
+  filters.value = { start_date: startDate.value, end_date: endDate.value, request_type: undefined, billing_mode: undefined }
   granularity.value = getGranularityForRange(startDate.value, endDate.value)
   applyFilters()
 }

@@ -72,7 +72,7 @@ func (PendingAuthSession) Fields() []ent.Field {
 		field.String("resolved_email").
 			Default("").
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
-		field.String("registration_password_hash").
+		field.String("account_creation_password_hash").
 			Default("").
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
 		field.JSON("upstream_identity_claims", map[string]any{}).

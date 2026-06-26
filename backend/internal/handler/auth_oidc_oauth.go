@@ -143,7 +143,6 @@ func (h *AuthHandler) OIDCOAuthStart(c *gin.Context) {
 	oidcSetCookie(c, oidcOAuthRedirectCookie, encodeCookieValue(redirectTo), oidcOAuthCookieMaxAgeSec, secureCookie)
 	intent := normalizeOAuthIntent(c.Query("intent"))
 	oidcSetCookie(c, oidcOAuthIntentCookieName, encodeCookieValue(intent), oidcOAuthCookieMaxAgeSec, secureCookie)
-	captureOAuthPromoCode(c, secureCookie)
 	setOAuthPendingBrowserCookie(c, browserSessionKey, secureCookie)
 	clearOAuthPendingSessionCookie(c, secureCookie)
 	if intent == oauthIntentBindCurrentUser {
@@ -227,7 +226,6 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 		oidcClearCookie(c, oidcOAuthNonceCookie, secureCookie)
 		oidcClearCookie(c, oidcOAuthIntentCookieName, secureCookie)
 		oidcClearCookie(c, oidcOAuthBindUserCookieName, secureCookie)
-		clearOAuthPromoCodeCookie(c, secureCookie)
 	}()
 
 	expectedState, err := readCookieDecoded(c, oidcOAuthStateCookieName)
@@ -474,7 +472,7 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 		}
 	}
 
-	if h.isForceEmailOnThirdPartySignup(c.Request.Context()) {
+	if h.isForceEmailOnOIDCAccountCreation(c.Request.Context()) {
 		if err := h.createOIDCOAuthChoicePendingSession(
 			c,
 			identityRef,
@@ -504,7 +502,7 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 		upstreamClaims,
 		compatEmail,
 		compatEmailUser,
-		h.isForceEmailOnThirdPartySignup(c.Request.Context()),
+		h.isForceEmailOnOIDCAccountCreation(c.Request.Context()),
 	); err != nil {
 		redirectOAuthError(c, frontendCallback, "session_error", "failed to continue oauth login", "")
 		return
@@ -520,10 +518,7 @@ func (h *AuthHandler) findOIDCCompatEmailUser(ctx context.Context, email string)
 
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" ||
-		strings.HasSuffix(email, service.LinuxDoConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(email, service.OIDCConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(email, service.WeChatConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(email, service.DingTalkConnectSyntheticEmailDomain) {
+		strings.HasSuffix(email, service.OIDCConnectSyntheticEmailDomain) {
 		return nil, nil
 	}
 
@@ -547,7 +542,7 @@ func (h *AuthHandler) createOIDCOAuthChoicePendingSession(
 	upstreamClaims map[string]any,
 	compatEmail string,
 	compatEmailUser *dbent.User,
-	forceEmailOnSignup bool,
+	forceEmailOnAccountCreation bool,
 ) error {
 	suggestionEmail := strings.TrimSpace(suggestedEmail)
 	canonicalEmail := strings.TrimSpace(resolvedEmail)
@@ -556,16 +551,16 @@ func (h *AuthHandler) createOIDCOAuthChoicePendingSession(
 	}
 
 	completionResponse := map[string]any{
-		"step":                      oauthPendingChoiceStep,
-		"adoption_required":         true,
-		"redirect":                  strings.TrimSpace(redirectTo),
-		"email":                     suggestionEmail,
-		"resolved_email":            canonicalEmail,
-		"existing_account_email":    "",
-		"existing_account_bindable": false,
-		"create_account_allowed":    true,
-		"force_email_on_signup":     forceEmailOnSignup,
-		"choice_reason":             "third_party_signup",
+		"step":                            oauthPendingChoiceStep,
+		"adoption_required":               true,
+		"redirect":                        strings.TrimSpace(redirectTo),
+		"email":                           suggestionEmail,
+		"resolved_email":                  canonicalEmail,
+		"existing_account_email":          "",
+		"existing_account_bindable":       false,
+		"create_account_allowed":          true,
+		"force_email_on_account_creation": forceEmailOnAccountCreation,
+		"choice_reason":                   "oidc_account_creation",
 	}
 	if strings.TrimSpace(compatEmail) != "" {
 		completionResponse["compat_email"] = strings.TrimSpace(compatEmail)
@@ -576,8 +571,8 @@ func (h *AuthHandler) createOIDCOAuthChoicePendingSession(
 		completionResponse["existing_account_bindable"] = true
 		completionResponse["choice_reason"] = "compat_email_match"
 	}
-	if forceEmailOnSignup && compatEmailUser == nil {
-		completionResponse["choice_reason"] = "force_email_on_signup"
+	if forceEmailOnAccountCreation && compatEmailUser == nil {
+		completionResponse["choice_reason"] = "force_email_on_account_creation"
 	}
 
 	resolvedChoiceEmail := suggestionEmail
@@ -602,16 +597,14 @@ func (h *AuthHandler) createOIDCOAuthChoicePendingSession(
 }
 
 type completeOIDCOAuthRequest struct {
-	InvitationCode   string `json:"invitation_code" binding:"required"`
-	AffCode          string `json:"aff_code,omitempty"`
-	AdoptDisplayName *bool  `json:"adopt_display_name,omitempty"`
-	AdoptAvatar      *bool  `json:"adopt_avatar,omitempty"`
+	AdoptDisplayName *bool `json:"adopt_display_name,omitempty"`
+	AdoptAvatar      *bool `json:"adopt_avatar,omitempty"`
 }
 
-// CompleteOIDCOAuthRegistration completes a pending OAuth registration by validating
+// CompleteOIDCOAuthAccountCreation completes a pending OAuth account creation by validating
 // the invitation code and creating the user account.
 // POST /api/v1/auth/oauth/oidc/complete-registration
-func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
+func (h *AuthHandler) CompleteOIDCOAuthAccountCreation(c *gin.Context) {
 	var req completeOIDCOAuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "INVALID_REQUEST", "message": err.Error()})
@@ -645,11 +638,11 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	if err := ensurePendingOAuthCompleteRegistrationSession(session); err != nil {
+	if err := ensurePendingOAuthAccountCreationSession(session); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
-	if updatedSession, handled, err := h.legacyCompleteRegistrationSessionStatus(c, session); err != nil {
+	if updatedSession, handled, err := h.legacyAccountCreationSessionStatus(c, session); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	} else if handled {
@@ -666,7 +659,7 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 	email := strings.TrimSpace(session.ResolvedEmail)
 	username := pendingSessionStringValue(session.UpstreamIdentityClaims, "username")
 	if email == "" || username == "" {
-		response.ErrorFrom(c, infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid"))
+		response.ErrorFrom(c, infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid"))
 		return
 	}
 
@@ -675,7 +668,7 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, infraerrors.ServiceUnavailable("PENDING_AUTH_NOT_READY", "pending auth service is not ready"))
 		return
 	}
-	if err := ensurePendingOAuthRegistrationIdentityAvailable(c.Request.Context(), client, session); err != nil {
+	if err := ensurePendingOAuthAccountCreationIdentityAvailable(c.Request.Context(), client, session); err != nil {
 		respondPendingOAuthBindingApplyError(c, err)
 		return
 	}
@@ -687,13 +680,10 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	tokenPair, user, err := h.authService.LoginOrRegisterOAuthWithTokenPairAndPromoCode(
+	tokenPair, user, err := h.authService.LoginOrCreateOAuthWithTokenPair(
 		c.Request.Context(),
 		email,
 		username,
-		req.InvitationCode,
-		req.AffCode,
-		pendingOAuthPromoCode(session),
 		"oidc",
 	)
 	if err != nil {
@@ -1234,10 +1224,7 @@ func (h *AuthHandler) tryOIDCVerifiedEmailFastPath(
 		return false
 	}
 	ctx := c.Request.Context()
-	if h.isForceEmailOnThirdPartySignup(ctx) {
-		return false
-	}
-	if h.settingSvc.IsInvitationCodeEnabled(ctx) {
+	if h.isForceEmailOnOIDCAccountCreation(ctx) {
 		return false
 	}
 	if err := h.ensureBackendModeAllowsNewUserLogin(ctx); err != nil {
@@ -1268,13 +1255,7 @@ func (h *AuthHandler) tryOIDCVerifiedEmailFastPath(
 		AvatarURL:        pendingSessionStringValue(upstreamClaims, "suggested_avatar_url"),
 		UpstreamMetadata: upstreamMetadata,
 	}
-	tokenPair, _, err := h.authService.LoginOrRegisterVerifiedEmailOAuthWithSignupCodes(
-		ctx,
-		input,
-		"",
-		"",
-		readOAuthPromoCode(c),
-	)
+	tokenPair, _, err := h.authService.LoginOrCreateVerifiedEmailOAuth(ctx, input)
 	if err != nil {
 		log.Printf("[OIDC OAuth] verified-email fast path skipped: reason=%s", infraerrors.Reason(err))
 		return false

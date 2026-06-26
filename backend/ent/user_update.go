@@ -11,20 +11,15 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
-	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -105,27 +100,6 @@ func (_u *UserUpdate) SetNillableRole(v *string) *UserUpdate {
 	if v != nil {
 		_u.SetRole(*v)
 	}
-	return _u
-}
-
-// SetBalance sets the "balance" field.
-func (_u *UserUpdate) SetBalance(v float64) *UserUpdate {
-	_u.mutation.ResetBalance()
-	_u.mutation.SetBalance(v)
-	return _u
-}
-
-// SetNillableBalance sets the "balance" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableBalance(v *float64) *UserUpdate {
-	if v != nil {
-		_u.SetBalance(*v)
-	}
-	return _u
-}
-
-// AddBalance adds value to the "balance" field.
-func (_u *UserUpdate) AddBalance(v float64) *UserUpdate {
-	_u.mutation.AddBalance(v)
 	return _u
 }
 
@@ -300,96 +274,6 @@ func (_u *UserUpdate) ClearLastActiveAt() *UserUpdate {
 	return _u
 }
 
-// SetBalanceNotifyEnabled sets the "balance_notify_enabled" field.
-func (_u *UserUpdate) SetBalanceNotifyEnabled(v bool) *UserUpdate {
-	_u.mutation.SetBalanceNotifyEnabled(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyEnabled sets the "balance_notify_enabled" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableBalanceNotifyEnabled(v *bool) *UserUpdate {
-	if v != nil {
-		_u.SetBalanceNotifyEnabled(*v)
-	}
-	return _u
-}
-
-// SetBalanceNotifyThresholdType sets the "balance_notify_threshold_type" field.
-func (_u *UserUpdate) SetBalanceNotifyThresholdType(v string) *UserUpdate {
-	_u.mutation.SetBalanceNotifyThresholdType(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyThresholdType sets the "balance_notify_threshold_type" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableBalanceNotifyThresholdType(v *string) *UserUpdate {
-	if v != nil {
-		_u.SetBalanceNotifyThresholdType(*v)
-	}
-	return _u
-}
-
-// SetBalanceNotifyThreshold sets the "balance_notify_threshold" field.
-func (_u *UserUpdate) SetBalanceNotifyThreshold(v float64) *UserUpdate {
-	_u.mutation.ResetBalanceNotifyThreshold()
-	_u.mutation.SetBalanceNotifyThreshold(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyThreshold sets the "balance_notify_threshold" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableBalanceNotifyThreshold(v *float64) *UserUpdate {
-	if v != nil {
-		_u.SetBalanceNotifyThreshold(*v)
-	}
-	return _u
-}
-
-// AddBalanceNotifyThreshold adds value to the "balance_notify_threshold" field.
-func (_u *UserUpdate) AddBalanceNotifyThreshold(v float64) *UserUpdate {
-	_u.mutation.AddBalanceNotifyThreshold(v)
-	return _u
-}
-
-// ClearBalanceNotifyThreshold clears the value of the "balance_notify_threshold" field.
-func (_u *UserUpdate) ClearBalanceNotifyThreshold() *UserUpdate {
-	_u.mutation.ClearBalanceNotifyThreshold()
-	return _u
-}
-
-// SetBalanceNotifyExtraEmails sets the "balance_notify_extra_emails" field.
-func (_u *UserUpdate) SetBalanceNotifyExtraEmails(v string) *UserUpdate {
-	_u.mutation.SetBalanceNotifyExtraEmails(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyExtraEmails sets the "balance_notify_extra_emails" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableBalanceNotifyExtraEmails(v *string) *UserUpdate {
-	if v != nil {
-		_u.SetBalanceNotifyExtraEmails(*v)
-	}
-	return _u
-}
-
-// SetTotalRecharged sets the "total_recharged" field.
-func (_u *UserUpdate) SetTotalRecharged(v float64) *UserUpdate {
-	_u.mutation.ResetTotalRecharged()
-	_u.mutation.SetTotalRecharged(v)
-	return _u
-}
-
-// SetNillableTotalRecharged sets the "total_recharged" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableTotalRecharged(v *float64) *UserUpdate {
-	if v != nil {
-		_u.SetTotalRecharged(*v)
-	}
-	return _u
-}
-
-// AddTotalRecharged adds value to the "total_recharged" field.
-func (_u *UserUpdate) AddTotalRecharged(v float64) *UserUpdate {
-	_u.mutation.AddTotalRecharged(v)
-	return _u
-}
-
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *UserUpdate) SetRpmLimit(v int) *UserUpdate {
 	_u.mutation.ResetRpmLimit()
@@ -424,66 +308,6 @@ func (_u *UserUpdate) AddAPIKeys(v ...*APIKey) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddAPIKeyIDs(ids...)
-}
-
-// AddRedeemCodeIDs adds the "redeem_codes" edge to the RedeemCode entity by IDs.
-func (_u *UserUpdate) AddRedeemCodeIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddRedeemCodeIDs(ids...)
-	return _u
-}
-
-// AddRedeemCodes adds the "redeem_codes" edges to the RedeemCode entity.
-func (_u *UserUpdate) AddRedeemCodes(v ...*RedeemCode) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddRedeemCodeIDs(ids...)
-}
-
-// AddSubscriptionIDs adds the "subscriptions" edge to the UserSubscription entity by IDs.
-func (_u *UserUpdate) AddSubscriptionIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddSubscriptionIDs(ids...)
-	return _u
-}
-
-// AddSubscriptions adds the "subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdate) AddSubscriptions(v ...*UserSubscription) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddSubscriptionIDs(ids...)
-}
-
-// AddAssignedSubscriptionIDs adds the "assigned_subscriptions" edge to the UserSubscription entity by IDs.
-func (_u *UserUpdate) AddAssignedSubscriptionIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddAssignedSubscriptionIDs(ids...)
-	return _u
-}
-
-// AddAssignedSubscriptions adds the "assigned_subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdate) AddAssignedSubscriptions(v ...*UserSubscription) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAssignedSubscriptionIDs(ids...)
-}
-
-// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by IDs.
-func (_u *UserUpdate) AddAnnouncementReadIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// AddAnnouncementReads adds the "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdate) AddAnnouncementReads(v ...*AnnouncementRead) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAnnouncementReadIDs(ids...)
 }
 
 // AddAllowedGroupIDs adds the "allowed_groups" edge to the Group entity by IDs.
@@ -529,36 +353,6 @@ func (_u *UserUpdate) AddAttributeValues(v ...*UserAttributeValue) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddAttributeValueIDs(ids...)
-}
-
-// AddPromoCodeUsageIDs adds the "promo_code_usages" edge to the PromoCodeUsage entity by IDs.
-func (_u *UserUpdate) AddPromoCodeUsageIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddPromoCodeUsageIDs(ids...)
-	return _u
-}
-
-// AddPromoCodeUsages adds the "promo_code_usages" edges to the PromoCodeUsage entity.
-func (_u *UserUpdate) AddPromoCodeUsages(v ...*PromoCodeUsage) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPromoCodeUsageIDs(ids...)
-}
-
-// AddPaymentOrderIDs adds the "payment_orders" edge to the PaymentOrder entity by IDs.
-func (_u *UserUpdate) AddPaymentOrderIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddPaymentOrderIDs(ids...)
-	return _u
-}
-
-// AddPaymentOrders adds the "payment_orders" edges to the PaymentOrder entity.
-func (_u *UserUpdate) AddPaymentOrders(v ...*PaymentOrder) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPaymentOrderIDs(ids...)
 }
 
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
@@ -632,90 +426,6 @@ func (_u *UserUpdate) RemoveAPIKeys(v ...*APIKey) *UserUpdate {
 	return _u.RemoveAPIKeyIDs(ids...)
 }
 
-// ClearRedeemCodes clears all "redeem_codes" edges to the RedeemCode entity.
-func (_u *UserUpdate) ClearRedeemCodes() *UserUpdate {
-	_u.mutation.ClearRedeemCodes()
-	return _u
-}
-
-// RemoveRedeemCodeIDs removes the "redeem_codes" edge to RedeemCode entities by IDs.
-func (_u *UserUpdate) RemoveRedeemCodeIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemoveRedeemCodeIDs(ids...)
-	return _u
-}
-
-// RemoveRedeemCodes removes "redeem_codes" edges to RedeemCode entities.
-func (_u *UserUpdate) RemoveRedeemCodes(v ...*RedeemCode) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveRedeemCodeIDs(ids...)
-}
-
-// ClearSubscriptions clears all "subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdate) ClearSubscriptions() *UserUpdate {
-	_u.mutation.ClearSubscriptions()
-	return _u
-}
-
-// RemoveSubscriptionIDs removes the "subscriptions" edge to UserSubscription entities by IDs.
-func (_u *UserUpdate) RemoveSubscriptionIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemoveSubscriptionIDs(ids...)
-	return _u
-}
-
-// RemoveSubscriptions removes "subscriptions" edges to UserSubscription entities.
-func (_u *UserUpdate) RemoveSubscriptions(v ...*UserSubscription) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveSubscriptionIDs(ids...)
-}
-
-// ClearAssignedSubscriptions clears all "assigned_subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdate) ClearAssignedSubscriptions() *UserUpdate {
-	_u.mutation.ClearAssignedSubscriptions()
-	return _u
-}
-
-// RemoveAssignedSubscriptionIDs removes the "assigned_subscriptions" edge to UserSubscription entities by IDs.
-func (_u *UserUpdate) RemoveAssignedSubscriptionIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemoveAssignedSubscriptionIDs(ids...)
-	return _u
-}
-
-// RemoveAssignedSubscriptions removes "assigned_subscriptions" edges to UserSubscription entities.
-func (_u *UserUpdate) RemoveAssignedSubscriptions(v ...*UserSubscription) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAssignedSubscriptionIDs(ids...)
-}
-
-// ClearAnnouncementReads clears all "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdate) ClearAnnouncementReads() *UserUpdate {
-	_u.mutation.ClearAnnouncementReads()
-	return _u
-}
-
-// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to AnnouncementRead entities by IDs.
-func (_u *UserUpdate) RemoveAnnouncementReadIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemoveAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// RemoveAnnouncementReads removes "announcement_reads" edges to AnnouncementRead entities.
-func (_u *UserUpdate) RemoveAnnouncementReads(v ...*AnnouncementRead) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAnnouncementReadIDs(ids...)
-}
-
 // ClearAllowedGroups clears all "allowed_groups" edges to the Group entity.
 func (_u *UserUpdate) ClearAllowedGroups() *UserUpdate {
 	_u.mutation.ClearAllowedGroups()
@@ -777,48 +487,6 @@ func (_u *UserUpdate) RemoveAttributeValues(v ...*UserAttributeValue) *UserUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAttributeValueIDs(ids...)
-}
-
-// ClearPromoCodeUsages clears all "promo_code_usages" edges to the PromoCodeUsage entity.
-func (_u *UserUpdate) ClearPromoCodeUsages() *UserUpdate {
-	_u.mutation.ClearPromoCodeUsages()
-	return _u
-}
-
-// RemovePromoCodeUsageIDs removes the "promo_code_usages" edge to PromoCodeUsage entities by IDs.
-func (_u *UserUpdate) RemovePromoCodeUsageIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemovePromoCodeUsageIDs(ids...)
-	return _u
-}
-
-// RemovePromoCodeUsages removes "promo_code_usages" edges to PromoCodeUsage entities.
-func (_u *UserUpdate) RemovePromoCodeUsages(v ...*PromoCodeUsage) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePromoCodeUsageIDs(ids...)
-}
-
-// ClearPaymentOrders clears all "payment_orders" edges to the PaymentOrder entity.
-func (_u *UserUpdate) ClearPaymentOrders() *UserUpdate {
-	_u.mutation.ClearPaymentOrders()
-	return _u
-}
-
-// RemovePaymentOrderIDs removes the "payment_orders" edge to PaymentOrder entities by IDs.
-func (_u *UserUpdate) RemovePaymentOrderIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemovePaymentOrderIDs(ids...)
-	return _u
-}
-
-// RemovePaymentOrders removes "payment_orders" edges to PaymentOrder entities.
-func (_u *UserUpdate) RemovePaymentOrders(v ...*PaymentOrder) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePaymentOrderIDs(ids...)
 }
 
 // ClearAuthIdentities clears all "auth_identities" edges to the AuthIdentity entity.
@@ -991,12 +659,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Balance(); ok {
-		_spec.SetField(user.FieldBalance, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedBalance(); ok {
-		_spec.AddField(user.FieldBalance, field.TypeFloat64, value)
-	}
 	if value, ok := _u.mutation.Concurrency(); ok {
 		_spec.SetField(user.FieldConcurrency, field.TypeInt, value)
 	}
@@ -1042,30 +704,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.LastActiveAtCleared() {
 		_spec.ClearField(user.FieldLastActiveAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.BalanceNotifyEnabled(); ok {
-		_spec.SetField(user.FieldBalanceNotifyEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.BalanceNotifyThresholdType(); ok {
-		_spec.SetField(user.FieldBalanceNotifyThresholdType, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.BalanceNotifyThreshold(); ok {
-		_spec.SetField(user.FieldBalanceNotifyThreshold, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedBalanceNotifyThreshold(); ok {
-		_spec.AddField(user.FieldBalanceNotifyThreshold, field.TypeFloat64, value)
-	}
-	if _u.mutation.BalanceNotifyThresholdCleared() {
-		_spec.ClearField(user.FieldBalanceNotifyThreshold, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.BalanceNotifyExtraEmails(); ok {
-		_spec.SetField(user.FieldBalanceNotifyExtraEmails, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.TotalRecharged(); ok {
-		_spec.SetField(user.FieldTotalRecharged, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedTotalRecharged(); ok {
-		_spec.AddField(user.FieldTotalRecharged, field.TypeFloat64, value)
-	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(user.FieldRpmLimit, field.TypeInt, value)
 	}
@@ -1110,186 +748,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.RedeemCodesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedRedeemCodesIDs(); len(nodes) > 0 && !_u.mutation.RedeemCodesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RedeemCodesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.SubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.SubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.SubscriptionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AssignedSubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAssignedSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.AssignedSubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AssignedSubscriptionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAnnouncementReadsIDs(); len(nodes) > 0 && !_u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AnnouncementReadsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1437,96 +895,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userattributevalue.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.PromoCodeUsagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPromoCodeUsagesIDs(); len(nodes) > 0 && !_u.mutation.PromoCodeUsagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PromoCodeUsagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.PaymentOrdersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPaymentOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaymentOrdersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PaymentOrdersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1757,27 +1125,6 @@ func (_u *UserUpdateOne) SetNillableRole(v *string) *UserUpdateOne {
 	return _u
 }
 
-// SetBalance sets the "balance" field.
-func (_u *UserUpdateOne) SetBalance(v float64) *UserUpdateOne {
-	_u.mutation.ResetBalance()
-	_u.mutation.SetBalance(v)
-	return _u
-}
-
-// SetNillableBalance sets the "balance" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableBalance(v *float64) *UserUpdateOne {
-	if v != nil {
-		_u.SetBalance(*v)
-	}
-	return _u
-}
-
-// AddBalance adds value to the "balance" field.
-func (_u *UserUpdateOne) AddBalance(v float64) *UserUpdateOne {
-	_u.mutation.AddBalance(v)
-	return _u
-}
-
 // SetConcurrency sets the "concurrency" field.
 func (_u *UserUpdateOne) SetConcurrency(v int) *UserUpdateOne {
 	_u.mutation.ResetConcurrency()
@@ -1949,96 +1296,6 @@ func (_u *UserUpdateOne) ClearLastActiveAt() *UserUpdateOne {
 	return _u
 }
 
-// SetBalanceNotifyEnabled sets the "balance_notify_enabled" field.
-func (_u *UserUpdateOne) SetBalanceNotifyEnabled(v bool) *UserUpdateOne {
-	_u.mutation.SetBalanceNotifyEnabled(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyEnabled sets the "balance_notify_enabled" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableBalanceNotifyEnabled(v *bool) *UserUpdateOne {
-	if v != nil {
-		_u.SetBalanceNotifyEnabled(*v)
-	}
-	return _u
-}
-
-// SetBalanceNotifyThresholdType sets the "balance_notify_threshold_type" field.
-func (_u *UserUpdateOne) SetBalanceNotifyThresholdType(v string) *UserUpdateOne {
-	_u.mutation.SetBalanceNotifyThresholdType(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyThresholdType sets the "balance_notify_threshold_type" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableBalanceNotifyThresholdType(v *string) *UserUpdateOne {
-	if v != nil {
-		_u.SetBalanceNotifyThresholdType(*v)
-	}
-	return _u
-}
-
-// SetBalanceNotifyThreshold sets the "balance_notify_threshold" field.
-func (_u *UserUpdateOne) SetBalanceNotifyThreshold(v float64) *UserUpdateOne {
-	_u.mutation.ResetBalanceNotifyThreshold()
-	_u.mutation.SetBalanceNotifyThreshold(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyThreshold sets the "balance_notify_threshold" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableBalanceNotifyThreshold(v *float64) *UserUpdateOne {
-	if v != nil {
-		_u.SetBalanceNotifyThreshold(*v)
-	}
-	return _u
-}
-
-// AddBalanceNotifyThreshold adds value to the "balance_notify_threshold" field.
-func (_u *UserUpdateOne) AddBalanceNotifyThreshold(v float64) *UserUpdateOne {
-	_u.mutation.AddBalanceNotifyThreshold(v)
-	return _u
-}
-
-// ClearBalanceNotifyThreshold clears the value of the "balance_notify_threshold" field.
-func (_u *UserUpdateOne) ClearBalanceNotifyThreshold() *UserUpdateOne {
-	_u.mutation.ClearBalanceNotifyThreshold()
-	return _u
-}
-
-// SetBalanceNotifyExtraEmails sets the "balance_notify_extra_emails" field.
-func (_u *UserUpdateOne) SetBalanceNotifyExtraEmails(v string) *UserUpdateOne {
-	_u.mutation.SetBalanceNotifyExtraEmails(v)
-	return _u
-}
-
-// SetNillableBalanceNotifyExtraEmails sets the "balance_notify_extra_emails" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableBalanceNotifyExtraEmails(v *string) *UserUpdateOne {
-	if v != nil {
-		_u.SetBalanceNotifyExtraEmails(*v)
-	}
-	return _u
-}
-
-// SetTotalRecharged sets the "total_recharged" field.
-func (_u *UserUpdateOne) SetTotalRecharged(v float64) *UserUpdateOne {
-	_u.mutation.ResetTotalRecharged()
-	_u.mutation.SetTotalRecharged(v)
-	return _u
-}
-
-// SetNillableTotalRecharged sets the "total_recharged" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableTotalRecharged(v *float64) *UserUpdateOne {
-	if v != nil {
-		_u.SetTotalRecharged(*v)
-	}
-	return _u
-}
-
-// AddTotalRecharged adds value to the "total_recharged" field.
-func (_u *UserUpdateOne) AddTotalRecharged(v float64) *UserUpdateOne {
-	_u.mutation.AddTotalRecharged(v)
-	return _u
-}
-
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *UserUpdateOne) SetRpmLimit(v int) *UserUpdateOne {
 	_u.mutation.ResetRpmLimit()
@@ -2073,66 +1330,6 @@ func (_u *UserUpdateOne) AddAPIKeys(v ...*APIKey) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddAPIKeyIDs(ids...)
-}
-
-// AddRedeemCodeIDs adds the "redeem_codes" edge to the RedeemCode entity by IDs.
-func (_u *UserUpdateOne) AddRedeemCodeIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddRedeemCodeIDs(ids...)
-	return _u
-}
-
-// AddRedeemCodes adds the "redeem_codes" edges to the RedeemCode entity.
-func (_u *UserUpdateOne) AddRedeemCodes(v ...*RedeemCode) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddRedeemCodeIDs(ids...)
-}
-
-// AddSubscriptionIDs adds the "subscriptions" edge to the UserSubscription entity by IDs.
-func (_u *UserUpdateOne) AddSubscriptionIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddSubscriptionIDs(ids...)
-	return _u
-}
-
-// AddSubscriptions adds the "subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdateOne) AddSubscriptions(v ...*UserSubscription) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddSubscriptionIDs(ids...)
-}
-
-// AddAssignedSubscriptionIDs adds the "assigned_subscriptions" edge to the UserSubscription entity by IDs.
-func (_u *UserUpdateOne) AddAssignedSubscriptionIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddAssignedSubscriptionIDs(ids...)
-	return _u
-}
-
-// AddAssignedSubscriptions adds the "assigned_subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdateOne) AddAssignedSubscriptions(v ...*UserSubscription) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAssignedSubscriptionIDs(ids...)
-}
-
-// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by IDs.
-func (_u *UserUpdateOne) AddAnnouncementReadIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// AddAnnouncementReads adds the "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdateOne) AddAnnouncementReads(v ...*AnnouncementRead) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAnnouncementReadIDs(ids...)
 }
 
 // AddAllowedGroupIDs adds the "allowed_groups" edge to the Group entity by IDs.
@@ -2178,36 +1375,6 @@ func (_u *UserUpdateOne) AddAttributeValues(v ...*UserAttributeValue) *UserUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.AddAttributeValueIDs(ids...)
-}
-
-// AddPromoCodeUsageIDs adds the "promo_code_usages" edge to the PromoCodeUsage entity by IDs.
-func (_u *UserUpdateOne) AddPromoCodeUsageIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddPromoCodeUsageIDs(ids...)
-	return _u
-}
-
-// AddPromoCodeUsages adds the "promo_code_usages" edges to the PromoCodeUsage entity.
-func (_u *UserUpdateOne) AddPromoCodeUsages(v ...*PromoCodeUsage) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPromoCodeUsageIDs(ids...)
-}
-
-// AddPaymentOrderIDs adds the "payment_orders" edge to the PaymentOrder entity by IDs.
-func (_u *UserUpdateOne) AddPaymentOrderIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddPaymentOrderIDs(ids...)
-	return _u
-}
-
-// AddPaymentOrders adds the "payment_orders" edges to the PaymentOrder entity.
-func (_u *UserUpdateOne) AddPaymentOrders(v ...*PaymentOrder) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPaymentOrderIDs(ids...)
 }
 
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
@@ -2281,90 +1448,6 @@ func (_u *UserUpdateOne) RemoveAPIKeys(v ...*APIKey) *UserUpdateOne {
 	return _u.RemoveAPIKeyIDs(ids...)
 }
 
-// ClearRedeemCodes clears all "redeem_codes" edges to the RedeemCode entity.
-func (_u *UserUpdateOne) ClearRedeemCodes() *UserUpdateOne {
-	_u.mutation.ClearRedeemCodes()
-	return _u
-}
-
-// RemoveRedeemCodeIDs removes the "redeem_codes" edge to RedeemCode entities by IDs.
-func (_u *UserUpdateOne) RemoveRedeemCodeIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemoveRedeemCodeIDs(ids...)
-	return _u
-}
-
-// RemoveRedeemCodes removes "redeem_codes" edges to RedeemCode entities.
-func (_u *UserUpdateOne) RemoveRedeemCodes(v ...*RedeemCode) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveRedeemCodeIDs(ids...)
-}
-
-// ClearSubscriptions clears all "subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdateOne) ClearSubscriptions() *UserUpdateOne {
-	_u.mutation.ClearSubscriptions()
-	return _u
-}
-
-// RemoveSubscriptionIDs removes the "subscriptions" edge to UserSubscription entities by IDs.
-func (_u *UserUpdateOne) RemoveSubscriptionIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemoveSubscriptionIDs(ids...)
-	return _u
-}
-
-// RemoveSubscriptions removes "subscriptions" edges to UserSubscription entities.
-func (_u *UserUpdateOne) RemoveSubscriptions(v ...*UserSubscription) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveSubscriptionIDs(ids...)
-}
-
-// ClearAssignedSubscriptions clears all "assigned_subscriptions" edges to the UserSubscription entity.
-func (_u *UserUpdateOne) ClearAssignedSubscriptions() *UserUpdateOne {
-	_u.mutation.ClearAssignedSubscriptions()
-	return _u
-}
-
-// RemoveAssignedSubscriptionIDs removes the "assigned_subscriptions" edge to UserSubscription entities by IDs.
-func (_u *UserUpdateOne) RemoveAssignedSubscriptionIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemoveAssignedSubscriptionIDs(ids...)
-	return _u
-}
-
-// RemoveAssignedSubscriptions removes "assigned_subscriptions" edges to UserSubscription entities.
-func (_u *UserUpdateOne) RemoveAssignedSubscriptions(v ...*UserSubscription) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAssignedSubscriptionIDs(ids...)
-}
-
-// ClearAnnouncementReads clears all "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdateOne) ClearAnnouncementReads() *UserUpdateOne {
-	_u.mutation.ClearAnnouncementReads()
-	return _u
-}
-
-// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to AnnouncementRead entities by IDs.
-func (_u *UserUpdateOne) RemoveAnnouncementReadIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemoveAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// RemoveAnnouncementReads removes "announcement_reads" edges to AnnouncementRead entities.
-func (_u *UserUpdateOne) RemoveAnnouncementReads(v ...*AnnouncementRead) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAnnouncementReadIDs(ids...)
-}
-
 // ClearAllowedGroups clears all "allowed_groups" edges to the Group entity.
 func (_u *UserUpdateOne) ClearAllowedGroups() *UserUpdateOne {
 	_u.mutation.ClearAllowedGroups()
@@ -2426,48 +1509,6 @@ func (_u *UserUpdateOne) RemoveAttributeValues(v ...*UserAttributeValue) *UserUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAttributeValueIDs(ids...)
-}
-
-// ClearPromoCodeUsages clears all "promo_code_usages" edges to the PromoCodeUsage entity.
-func (_u *UserUpdateOne) ClearPromoCodeUsages() *UserUpdateOne {
-	_u.mutation.ClearPromoCodeUsages()
-	return _u
-}
-
-// RemovePromoCodeUsageIDs removes the "promo_code_usages" edge to PromoCodeUsage entities by IDs.
-func (_u *UserUpdateOne) RemovePromoCodeUsageIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemovePromoCodeUsageIDs(ids...)
-	return _u
-}
-
-// RemovePromoCodeUsages removes "promo_code_usages" edges to PromoCodeUsage entities.
-func (_u *UserUpdateOne) RemovePromoCodeUsages(v ...*PromoCodeUsage) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePromoCodeUsageIDs(ids...)
-}
-
-// ClearPaymentOrders clears all "payment_orders" edges to the PaymentOrder entity.
-func (_u *UserUpdateOne) ClearPaymentOrders() *UserUpdateOne {
-	_u.mutation.ClearPaymentOrders()
-	return _u
-}
-
-// RemovePaymentOrderIDs removes the "payment_orders" edge to PaymentOrder entities by IDs.
-func (_u *UserUpdateOne) RemovePaymentOrderIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemovePaymentOrderIDs(ids...)
-	return _u
-}
-
-// RemovePaymentOrders removes "payment_orders" edges to PaymentOrder entities.
-func (_u *UserUpdateOne) RemovePaymentOrders(v ...*PaymentOrder) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePaymentOrderIDs(ids...)
 }
 
 // ClearAuthIdentities clears all "auth_identities" edges to the AuthIdentity entity.
@@ -2670,12 +1711,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Balance(); ok {
-		_spec.SetField(user.FieldBalance, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedBalance(); ok {
-		_spec.AddField(user.FieldBalance, field.TypeFloat64, value)
-	}
 	if value, ok := _u.mutation.Concurrency(); ok {
 		_spec.SetField(user.FieldConcurrency, field.TypeInt, value)
 	}
@@ -2721,30 +1756,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if _u.mutation.LastActiveAtCleared() {
 		_spec.ClearField(user.FieldLastActiveAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.BalanceNotifyEnabled(); ok {
-		_spec.SetField(user.FieldBalanceNotifyEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.BalanceNotifyThresholdType(); ok {
-		_spec.SetField(user.FieldBalanceNotifyThresholdType, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.BalanceNotifyThreshold(); ok {
-		_spec.SetField(user.FieldBalanceNotifyThreshold, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedBalanceNotifyThreshold(); ok {
-		_spec.AddField(user.FieldBalanceNotifyThreshold, field.TypeFloat64, value)
-	}
-	if _u.mutation.BalanceNotifyThresholdCleared() {
-		_spec.ClearField(user.FieldBalanceNotifyThreshold, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.BalanceNotifyExtraEmails(); ok {
-		_spec.SetField(user.FieldBalanceNotifyExtraEmails, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.TotalRecharged(); ok {
-		_spec.SetField(user.FieldTotalRecharged, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedTotalRecharged(); ok {
-		_spec.AddField(user.FieldTotalRecharged, field.TypeFloat64, value)
-	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(user.FieldRpmLimit, field.TypeInt, value)
 	}
@@ -2789,186 +1800,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.RedeemCodesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedRedeemCodesIDs(); len(nodes) > 0 && !_u.mutation.RedeemCodesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RedeemCodesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.RedeemCodesTable,
-			Columns: []string{user.RedeemCodesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(redeemcode.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.SubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.SubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.SubscriptionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.SubscriptionsTable,
-			Columns: []string{user.SubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AssignedSubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAssignedSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.AssignedSubscriptionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AssignedSubscriptionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignedSubscriptionsTable,
-			Columns: []string{user.AssignedSubscriptionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAnnouncementReadsIDs(); len(nodes) > 0 && !_u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AnnouncementReadsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3116,96 +1947,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userattributevalue.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.PromoCodeUsagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPromoCodeUsagesIDs(); len(nodes) > 0 && !_u.mutation.PromoCodeUsagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PromoCodeUsagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PromoCodeUsagesTable,
-			Columns: []string{user.PromoCodeUsagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(promocodeusage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.PaymentOrdersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPaymentOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaymentOrdersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PaymentOrdersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PaymentOrdersTable,
-			Columns: []string{user.PaymentOrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

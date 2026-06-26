@@ -584,12 +584,12 @@ async function saveAllSettings() {
 
             <div class="flex items-center justify-between">
               <div>
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.ops.settings.ignoreInsufficientBalanceErrors') }}</label>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.ops.settings.ignoreUpstreamCreditErrors') }}</label>
                 <p class="mt-1 text-xs text-gray-500">
-                  {{ t('admin.ops.settings.ignoreInsufficientBalanceErrorsHint') }}
+                  {{ t('admin.ops.settings.ignoreUpstreamCreditErrorsHint') }}
                 </p>
               </div>
-              <Toggle v-model="advancedSettings.ignore_insufficient_balance_errors" />
+              <Toggle v-model="advancedSettings.ignore_upstream_credit_errors" />
             </div>
           </div>
 

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -37,15 +35,10 @@ type AdminService interface {
 	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
-	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
 	BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error)
 	GetUserUsageStats(ctx context.Context, userID int64, period string) (any, error)
 	GetUserRPMStatus(ctx context.Context, userID int64) (*UserRPMStatus, error)
-	// GetUserBalanceHistory returns paginated balance/concurrency change records for a user.
-	// codeType is optional - pass empty string to return all types.
-	// Also returns totalRecharged (sum of all positive balance top-ups).
-	GetUserBalanceHistory(ctx context.Context, userID int64, page, pageSize int, codeType string) ([]RedeemCode, int64, float64, error)
 	BindUserAuthIdentity(ctx context.Context, userID int64, input AdminBindAuthIdentityInput) (*AdminBoundAuthIdentity, error)
 
 	// Group management
@@ -119,13 +112,6 @@ type AdminService interface {
 	TestProxy(ctx context.Context, id int64) (*ProxyTestResult, error)
 	CheckProxyQuality(ctx context.Context, id int64) (*ProxyQualityCheckResult, error)
 
-	// Redeem code management
-	ListRedeemCodes(ctx context.Context, page, pageSize int, codeType, status, search string, sortBy, sortOrder string) ([]RedeemCode, int64, error)
-	GetRedeemCode(ctx context.Context, id int64) (*RedeemCode, error)
-	GenerateRedeemCodes(ctx context.Context, input *GenerateRedeemCodesInput) ([]RedeemCode, error)
-	DeleteRedeemCode(ctx context.Context, id int64) error
-	BatchDeleteRedeemCodes(ctx context.Context, ids []int64) (int64, error)
-	ExpireRedeemCode(ctx context.Context, id int64) (*RedeemCode, error)
 	ResetAccountQuota(ctx context.Context, id int64) error
 }
 
@@ -135,7 +121,6 @@ type CreateUserInput struct {
 	Password      string
 	Username      string
 	Notes         string
-	Balance       *float64
 	Concurrency   int
 	RPMLimit      int
 	AllowedGroups []int64
@@ -146,9 +131,8 @@ type UpdateUserInput struct {
 	Password      string
 	Username      *string
 	Notes         *string
-	Balance       *float64 // 使用指针区分"未提供"和"设置为0"
-	Concurrency   *int     // 使用指针区分"未提供"和"设置为0"
-	RPMLimit      *int     // 使用指针区分"未提供"和"设置为0"
+	Concurrency   *int // 使用指针区分"未提供"和"设置为0"
+	RPMLimit      *int // 使用指针区分"未提供"和"设置为0"
 	Status        string
 	AllowedGroups *[]int64 // 使用指针区分"未提供"和"设置为空数组"
 	// GroupRates 用户专属分组倍率配置
@@ -162,48 +146,29 @@ type AdminBindAuthIdentityInput struct {
 	ProviderSubject string
 	Issuer          *string
 	Metadata        map[string]any
-	Channel         *AdminBindAuthIdentityChannelInput
-}
-
-type AdminBindAuthIdentityChannelInput struct {
-	Channel        string
-	ChannelAppID   string
-	ChannelSubject string
-	Metadata       map[string]any
 }
 
 type AdminBoundAuthIdentity struct {
-	UserID          int64                          `json:"user_id"`
-	ProviderType    string                         `json:"provider_type"`
-	ProviderKey     string                         `json:"provider_key"`
-	ProviderSubject string                         `json:"provider_subject"`
-	VerifiedAt      *time.Time                     `json:"verified_at,omitempty"`
-	Issuer          *string                        `json:"issuer,omitempty"`
-	Metadata        map[string]any                 `json:"metadata"`
-	CreatedAt       time.Time                      `json:"created_at"`
-	UpdatedAt       time.Time                      `json:"updated_at"`
-	Channel         *AdminBoundAuthIdentityChannel `json:"channel,omitempty"`
-}
-
-type AdminBoundAuthIdentityChannel struct {
-	Channel        string         `json:"channel"`
-	ChannelAppID   string         `json:"channel_app_id"`
-	ChannelSubject string         `json:"channel_subject"`
-	Metadata       map[string]any `json:"metadata"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	UserID          int64          `json:"user_id"`
+	ProviderType    string         `json:"provider_type"`
+	ProviderKey     string         `json:"provider_key"`
+	ProviderSubject string         `json:"provider_subject"`
+	VerifiedAt      *time.Time     `json:"verified_at,omitempty"`
+	Issuer          *string        `json:"issuer,omitempty"`
+	Metadata        map[string]any `json:"metadata"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
 }
 
 type CreateGroupInput struct {
-	Name             string
-	Description      string
-	Platform         string
-	RateMultiplier   float64
-	IsExclusive      bool
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name            string
+	Description     string
+	Platform        string
+	RateMultiplier  float64
+	IsExclusive     bool
+	DailyLimitUSD   *float64 // 日限额 (USD)
+	WeeklyLimitUSD  *float64 // 周限额 (USD)
+	MonthlyLimitUSD *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration bool
 	ImageRateIndependent bool
@@ -235,16 +200,15 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name             string
-	Description      *string
-	Platform         string
-	RateMultiplier   *float64 // 使用指针以支持设置为0
-	IsExclusive      *bool
-	Status           string
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name            string
+	Description     *string
+	Platform        string
+	RateMultiplier  *float64 // 使用指针以支持设置为0
+	IsExclusive     *bool
+	Status          string
+	DailyLimitUSD   *float64 // 日限额 (USD)
+	WeeklyLimitUSD  *float64 // 周限额 (USD)
+	MonthlyLimitUSD *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration *bool
 	ImageRateIndependent *bool
@@ -416,15 +380,6 @@ type UpdateProxyInput struct {
 	ExpiryWarnDays int
 }
 
-type GenerateRedeemCodesInput struct {
-	Count        int
-	Type         string
-	Value        float64
-	GroupID      *int64 // 订阅类型专用：关联的分组ID
-	ValidityDays int    // 订阅类型专用：有效天数
-	ExpiresAt    *time.Time
-}
-
 type ProxyBatchDeleteResult struct {
 	DeletedIDs []int64                   `json:"deleted_ids"`
 	Skipped    []ProxyBatchDeleteSkipped `json:"skipped"`
@@ -544,7 +499,6 @@ type adminServiceImpl struct {
 	accountRepo          AccountRepository
 	proxyRepo            ProxyRepository
 	apiKeyRepo           APIKeyRepository
-	redeemCodeRepo       RedeemCodeRepository
 	userGroupRateRepo    UserGroupRateRepository
 	userRPMCache         UserRPMCache
 	billingCacheService  *BillingCacheService
@@ -553,8 +507,6 @@ type adminServiceImpl struct {
 	authCacheInvalidator APIKeyAuthCacheInvalidator
 	entClient            *dbent.Client // 用于开启数据库事务
 	settingService       *SettingService
-	defaultSubAssigner   DefaultSubscriptionAssigner
-	userSubRepo          UserSubscriptionRepository
 	privacyClientFactory PrivacyClientFactory
 	runtimeBlocker       AccountRuntimeBlocker
 }
@@ -570,7 +522,6 @@ func NewAdminService(
 	accountRepo AccountRepository,
 	proxyRepo ProxyRepository,
 	apiKeyRepo APIKeyRepository,
-	redeemCodeRepo RedeemCodeRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	userRPMCache UserRPMCache,
 	billingCacheService *BillingCacheService,
@@ -579,8 +530,6 @@ func NewAdminService(
 	authCacheInvalidator APIKeyAuthCacheInvalidator,
 	entClient *dbent.Client,
 	settingService *SettingService,
-	defaultSubAssigner DefaultSubscriptionAssigner,
-	userSubRepo UserSubscriptionRepository,
 	privacyClientFactory PrivacyClientFactory,
 	runtimeBlocker AccountRuntimeBlocker,
 ) AdminService {
@@ -590,7 +539,6 @@ func NewAdminService(
 		accountRepo:          accountRepo,
 		proxyRepo:            proxyRepo,
 		apiKeyRepo:           apiKeyRepo,
-		redeemCodeRepo:       redeemCodeRepo,
 		userGroupRateRepo:    userGroupRateRepo,
 		userRPMCache:         userRPMCache,
 		billingCacheService:  billingCacheService,
@@ -599,8 +547,6 @@ func NewAdminService(
 		authCacheInvalidator: authCacheInvalidator,
 		entClient:            entClient,
 		settingService:       settingService,
-		defaultSubAssigner:   defaultSubAssigner,
-		userSubRepo:          userSubRepo,
 		privacyClientFactory: privacyClientFactory,
 		runtimeBlocker:       runtimeBlocker,
 	}
@@ -694,19 +640,11 @@ func (s *adminServiceImpl) GetUserIncludeDeleted(ctx context.Context, id int64) 
 }
 
 func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
-	balance := 0.0
-	if input.Balance != nil {
-		balance = *input.Balance
-	} else if s.settingService != nil {
-		balance = s.settingService.GetDefaultBalance(ctx)
-	}
-
 	user := &User{
 		Email:         input.Email,
 		Username:      input.Username,
 		Notes:         input.Notes,
 		Role:          RoleUser, // Always create as regular user, never admin
-		Balance:       balance,
 		Concurrency:   input.Concurrency,
 		RPMLimit:      input.RPMLimit,
 		Status:        StatusActive,
@@ -718,25 +656,7 @@ func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInpu
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
-	s.assignDefaultSubscriptions(ctx, user.ID)
 	return user, nil
-}
-
-func (s *adminServiceImpl) assignDefaultSubscriptions(ctx context.Context, userID int64) {
-	if s.settingService == nil || s.defaultSubAssigner == nil || userID <= 0 {
-		return
-	}
-	items := s.settingService.GetDefaultSubscriptions(ctx)
-	for _, item := range items {
-		if _, _, err := s.defaultSubAssigner.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
-			UserID:       userID,
-			GroupID:      item.GroupID,
-			ValidityDays: item.ValidityDays,
-			Notes:        "auto assigned by default user subscriptions setting",
-		}); err != nil {
-			logger.LegacyPrintf("service.admin", "failed to assign default subscription: user_id=%d group_id=%d err=%v", userID, item.GroupID, err)
-		}
-	}
 }
 
 func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error) {
@@ -813,27 +733,6 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 		// allowed_groups 参与 API Key 专属分组授权判断；不失效缓存会让修改在一个 L2 TTL 内失去效果。
 		if user.Concurrency != oldConcurrency || user.Status != oldStatus || user.Role != oldRole || user.RPMLimit != oldRPMLimit || !sameInt64Set(user.AllowedGroups, oldAllowedGroups) {
 			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, user.ID)
-		}
-	}
-
-	concurrencyDiff := user.Concurrency - oldConcurrency
-	if concurrencyDiff != 0 {
-		code, err := GenerateRedeemCode()
-		if err != nil {
-			logger.LegacyPrintf("service.admin", "failed to generate adjustment redeem code: %v", err)
-			return user, nil
-		}
-		adjustmentRecord := &RedeemCode{
-			Code:   code,
-			Type:   AdjustmentTypeAdminConcurrency,
-			Value:  float64(concurrencyDiff),
-			Status: StatusUsed,
-			UsedBy: &user.ID,
-		}
-		now := time.Now()
-		adjustmentRecord.UsedAt = &now
-		if err := s.redeemCodeRepo.Create(ctx, adjustmentRecord); err != nil {
-			logger.LegacyPrintf("service.admin", "failed to create concurrency adjustment redeem code: %v", err)
 		}
 	}
 
@@ -984,71 +883,6 @@ func (s *adminServiceImpl) BatchUpdateConcurrency(ctx context.Context, userIDs [
 	return affected, nil
 }
 
-func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	oldBalance := user.Balance
-
-	switch operation {
-	case "set":
-		user.Balance = balance
-	case "add":
-		user.Balance += balance
-	case "subtract":
-		user.Balance -= balance
-	}
-
-	if user.Balance < 0 {
-		return nil, fmt.Errorf("balance cannot be negative, current balance: %.2f, requested operation would result in: %.2f", oldBalance, user.Balance)
-	}
-
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return nil, err
-	}
-	balanceDiff := user.Balance - oldBalance
-	if s.authCacheInvalidator != nil && balanceDiff != 0 {
-		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
-	}
-
-	if s.billingCacheService != nil {
-		go func() {
-			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := s.billingCacheService.InvalidateUserBalance(cacheCtx, userID); err != nil {
-				logger.LegacyPrintf("service.admin", "invalidate user balance cache failed: user_id=%d err=%v", userID, err)
-			}
-		}()
-	}
-
-	if balanceDiff != 0 {
-		code, err := GenerateRedeemCode()
-		if err != nil {
-			logger.LegacyPrintf("service.admin", "failed to generate adjustment redeem code: %v", err)
-			return user, nil
-		}
-
-		adjustmentRecord := &RedeemCode{
-			Code:   code,
-			Type:   AdjustmentTypeAdminBalance,
-			Value:  balanceDiff,
-			Status: StatusUsed,
-			UsedBy: &user.ID,
-			Notes:  notes,
-		}
-		now := time.Now()
-		adjustmentRecord.UsedAt = &now
-
-		if err := s.redeemCodeRepo.Create(ctx, adjustmentRecord); err != nil {
-			logger.LegacyPrintf("service.admin", "failed to create balance adjustment redeem code: %v", err)
-		}
-	}
-
-	return user, nil
-}
-
 func (s *adminServiceImpl) GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error) {
 	params := pagination.PaginationParams{Page: page, PageSize: pageSize, SortBy: sortBy, SortOrder: sortOrder}
 	keys, result, err := s.apiKeyRepo.ListByUserID(ctx, userID, params, APIKeyListFilters{})
@@ -1144,218 +978,6 @@ func (s *adminServiceImpl) GetUserUsageStats(ctx context.Context, userID int64, 
 	}, nil
 }
 
-// GetUserBalanceHistory returns paginated balance/concurrency change records for a user.
-func (s *adminServiceImpl) GetUserBalanceHistory(ctx context.Context, userID int64, page, pageSize int, codeType string) ([]RedeemCode, int64, float64, error) {
-	params := pagination.PaginationParams{Page: page, PageSize: pageSize}
-	if codeType == RedeemTypeAffiliateBalance {
-		codes, total, err := s.listAffiliateBalanceHistory(ctx, userID, params)
-		if err != nil {
-			return nil, 0, 0, err
-		}
-		totalRecharged, err := s.redeemCodeRepo.SumPositiveBalanceByUser(ctx, userID)
-		if err != nil {
-			return nil, 0, 0, err
-		}
-		return codes, total, totalRecharged, nil
-	}
-
-	if codeType == "" {
-		return s.getAllUserBalanceHistory(ctx, userID, params)
-	}
-
-	codes, result, err := s.redeemCodeRepo.ListByUserPaginated(ctx, userID, params, codeType)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	total := result.Total
-	// Aggregate total recharged amount (only once, regardless of type filter)
-	totalRecharged, err := s.redeemCodeRepo.SumPositiveBalanceByUser(ctx, userID)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	return codes, total, totalRecharged, nil
-}
-
-func (s *adminServiceImpl) getAllUserBalanceHistory(ctx context.Context, userID int64, params pagination.PaginationParams) ([]RedeemCode, int64, float64, error) {
-	needed := params.Offset() + params.Limit()
-	if needed < params.Limit() {
-		needed = params.Limit()
-	}
-
-	redeemCodes, redeemTotal, err := s.listRedeemBalanceHistoryForMerge(ctx, userID, needed)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	affiliateCodes, affiliateTotal, err := s.listAffiliateBalanceHistoryForMerge(ctx, userID, needed)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	codes := mergeBalanceHistoryCodes(redeemCodes, affiliateCodes, params)
-
-	totalRecharged, err := s.redeemCodeRepo.SumPositiveBalanceByUser(ctx, userID)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	return codes, redeemTotal + affiliateTotal, totalRecharged, nil
-}
-
-func (s *adminServiceImpl) listRedeemBalanceHistoryForMerge(ctx context.Context, userID int64, needed int) ([]RedeemCode, int64, error) {
-	if needed <= 0 {
-		return nil, 0, nil
-	}
-
-	var (
-		out   []RedeemCode
-		total int64
-	)
-	for page := 1; len(out) < needed; page++ {
-		params := pagination.PaginationParams{Page: page, PageSize: 1000}
-		codes, result, err := s.redeemCodeRepo.ListByUserPaginated(ctx, userID, params, "")
-		if err != nil {
-			return nil, 0, err
-		}
-		if result != nil {
-			total = result.Total
-		}
-		out = append(out, codes...)
-		if len(codes) < params.Limit() || int64(len(out)) >= total {
-			break
-		}
-	}
-	if len(out) > needed {
-		out = out[:needed]
-	}
-	return out, total, nil
-}
-
-func (s *adminServiceImpl) listAffiliateBalanceHistoryForMerge(ctx context.Context, userID int64, needed int) ([]RedeemCode, int64, error) {
-	if needed <= 0 {
-		return nil, 0, nil
-	}
-
-	var (
-		out   []RedeemCode
-		total int64
-	)
-	for page := 1; len(out) < needed; page++ {
-		params := pagination.PaginationParams{Page: page, PageSize: 1000}
-		codes, currentTotal, err := s.listAffiliateBalanceHistory(ctx, userID, params)
-		if err != nil {
-			return nil, 0, err
-		}
-		total = currentTotal
-		out = append(out, codes...)
-		if len(codes) < params.Limit() || int64(len(out)) >= total {
-			break
-		}
-	}
-	if len(out) > needed {
-		out = out[:needed]
-	}
-	return out, total, nil
-}
-
-func (s *adminServiceImpl) listAffiliateBalanceHistory(ctx context.Context, userID int64, params pagination.PaginationParams) ([]RedeemCode, int64, error) {
-	if s == nil || s.entClient == nil || userID <= 0 {
-		return nil, 0, nil
-	}
-
-	rows, err := s.entClient.QueryContext(ctx, `
-SELECT id,
-       amount::double precision,
-       created_at
-FROM user_affiliate_ledger
-WHERE user_id = $1
-  AND action = 'transfer'
-ORDER BY created_at DESC, id DESC
-OFFSET $2
-LIMIT $3`, userID, params.Offset(), params.Limit())
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	codes := make([]RedeemCode, 0, params.Limit())
-	for rows.Next() {
-		var id int64
-		var amount float64
-		var createdAt time.Time
-		if err := rows.Scan(&id, &amount, &createdAt); err != nil {
-			return nil, 0, err
-		}
-		usedBy := userID
-		usedAt := createdAt
-		codes = append(codes, RedeemCode{
-			ID:        -id,
-			Code:      fmt.Sprintf("AFF-%d", id),
-			Type:      RedeemTypeAffiliateBalance,
-			Value:     amount,
-			Status:    StatusUsed,
-			UsedBy:    &usedBy,
-			UsedAt:    &usedAt,
-			CreatedAt: createdAt,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	total, err := countAffiliateBalanceHistory(ctx, s.entClient, userID)
-	if err != nil {
-		return nil, 0, err
-	}
-	return codes, total, nil
-}
-
-func countAffiliateBalanceHistory(ctx context.Context, client *dbent.Client, userID int64) (int64, error) {
-	rows, err := client.QueryContext(ctx, `
-SELECT COUNT(*)
-FROM user_affiliate_ledger
-WHERE user_id = $1
-  AND action = 'transfer'`, userID)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	var total sql.NullInt64
-	if rows.Next() {
-		if err := rows.Scan(&total); err != nil {
-			return 0, err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return 0, err
-	}
-	if !total.Valid {
-		return 0, nil
-	}
-	return total.Int64, nil
-}
-
-func mergeBalanceHistoryCodes(redeemCodes, affiliateCodes []RedeemCode, params pagination.PaginationParams) []RedeemCode {
-	combined := append(append([]RedeemCode{}, redeemCodes...), affiliateCodes...)
-	sort.SliceStable(combined, func(i, j int) bool {
-		return redeemCodeHistoryTime(combined[i]).After(redeemCodeHistoryTime(combined[j]))
-	})
-	offset := params.Offset()
-	if offset >= len(combined) {
-		return []RedeemCode{}
-	}
-	end := offset + params.Limit()
-	if end > len(combined) {
-		end = len(combined)
-	}
-	return combined[offset:end]
-}
-
-func redeemCodeHistoryTime(code RedeemCode) time.Time {
-	if code.UsedAt != nil {
-		return *code.UsedAt
-	}
-	return code.CreatedAt
-}
-
 func (s *adminServiceImpl) BindUserAuthIdentity(ctx context.Context, userID int64, input AdminBindAuthIdentityInput) (*AdminBoundAuthIdentity, error) {
 	if userID <= 0 {
 		return nil, infraerrors.BadRequest("INVALID_INPUT", "user_id must be greater than 0")
@@ -1371,7 +993,7 @@ func (s *adminServiceImpl) BindUserAuthIdentity(ctx context.Context, userID int6
 	providerKey := strings.TrimSpace(input.ProviderKey)
 	providerSubject := strings.TrimSpace(input.ProviderSubject)
 	if providerType == "" {
-		return nil, infraerrors.BadRequest("INVALID_INPUT", "provider_type must be one of email, linuxdo, oidc, wechat, or dingtalk")
+		return nil, infraerrors.BadRequest("INVALID_INPUT", "provider_type must be one of email or oidc")
 	}
 	if providerKey == "" || providerSubject == "" {
 		return nil, infraerrors.BadRequest("INVALID_INPUT", "provider_type, provider_key, and provider_subject are required")
@@ -1385,11 +1007,6 @@ func (s *adminServiceImpl) BindUserAuthIdentity(ctx context.Context, userID int6
 		if trimmed != "" {
 			issuer = &trimmed
 		}
-	}
-
-	channelInput := normalizeAdminBindChannelInput(input.Channel)
-	if input.Channel != nil && channelInput == nil {
-		return nil, infraerrors.BadRequest("INVALID_INPUT", "channel, channel_app_id, and channel_subject are required when channel binding is provided")
 	}
 
 	verifiedAt := time.Now().UTC()
@@ -1447,93 +1064,20 @@ func (s *adminServiceImpl) BindUserAuthIdentity(ctx context.Context, userID int6
 		}
 	}
 
-	var channel *dbent.AuthIdentityChannel
-	if channelInput != nil {
-		channelRecords, err := tx.AuthIdentityChannel.Query().
-			Where(
-				authidentitychannel.ProviderTypeEQ(providerType),
-				authidentitychannel.ProviderKeyIn(compatibleProviderKeys...),
-				authidentitychannel.ChannelEQ(channelInput.Channel),
-				authidentitychannel.ChannelAppIDEQ(channelInput.ChannelAppID),
-				authidentitychannel.ChannelSubjectEQ(channelInput.ChannelSubject),
-			).
-			WithIdentity().
-			All(ctx)
-		if err != nil {
-			return nil, infraerrors.InternalServer("ADMIN_AUTH_IDENTITY_CHANNEL_LOOKUP_FAILED", "failed to inspect auth identity channel ownership").WithCause(err)
-		}
-		if hasAdminAuthIdentityChannelOwnershipConflict(channelRecords, userID) {
-			return nil, infraerrors.Conflict("AUTH_IDENTITY_CHANNEL_OWNERSHIP_CONFLICT", "auth identity channel already belongs to another user")
-		}
-		channel = selectOwnedAdminAuthIdentityChannel(channelRecords, userID)
-		if channel == nil {
-			create := tx.AuthIdentityChannel.Create().
-				SetIdentityID(identity.ID).
-				SetProviderType(providerType).
-				SetProviderKey(canonicalProviderKey).
-				SetChannel(channelInput.Channel).
-				SetChannelAppID(channelInput.ChannelAppID).
-				SetChannelSubject(channelInput.ChannelSubject)
-			if channelInput.Metadata != nil {
-				create = create.SetMetadata(cloneAdminAuthIdentityMetadata(channelInput.Metadata))
-			}
-			channel, err = create.Save(ctx)
-			if err != nil {
-				return nil, infraerrors.InternalServer("ADMIN_AUTH_IDENTITY_CHANNEL_SAVE_FAILED", "failed to save auth identity channel").WithCause(err)
-			}
-		} else {
-			update := tx.AuthIdentityChannel.UpdateOneID(channel.ID).
-				SetIdentityID(identity.ID).
-				SetProviderKey(canonicalProviderKey)
-			if channelInput.Metadata != nil {
-				update = update.SetMetadata(cloneAdminAuthIdentityMetadata(channelInput.Metadata))
-			}
-			channel, err = update.Save(ctx)
-			if err != nil {
-				return nil, infraerrors.InternalServer("ADMIN_AUTH_IDENTITY_CHANNEL_SAVE_FAILED", "failed to save auth identity channel").WithCause(err)
-			}
-		}
-	}
-
 	if err := tx.Commit(); err != nil {
 		return nil, infraerrors.InternalServer("ADMIN_AUTH_IDENTITY_BIND_COMMIT_FAILED", "failed to commit auth identity bind").WithCause(err)
 	}
-	return buildAdminBoundAuthIdentity(identity, channel), nil
+	return buildAdminBoundAuthIdentity(identity), nil
 }
 
 func compatibleAdminAuthIdentityProviderKeys(providerType, providerKey string) []string {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
 	providerKey = strings.TrimSpace(providerKey)
-	if providerKey == "" {
-		return []string{providerKey}
-	}
-	if providerType != "wechat" {
-		return []string{providerKey}
-	}
-
-	keys := []string{providerKey}
-	if !strings.EqualFold(providerKey, "wechat-main") {
-		keys = append(keys, "wechat-main")
-	}
-	if !strings.EqualFold(providerKey, "wechat") {
-		keys = append(keys, "wechat")
-	}
-	return keys
+	return []string{providerKey}
 }
 
 func canonicalAdminAuthIdentityProviderKey(providerType, existingKey, requestedKey string) string {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
 	existingKey = strings.TrimSpace(existingKey)
 	requestedKey = strings.TrimSpace(requestedKey)
-	if providerType != "wechat" {
-		if requestedKey != "" {
-			return requestedKey
-		}
-		return existingKey
-	}
-	if strings.EqualFold(existingKey, "wechat") || strings.EqualFold(existingKey, "wechat-main") || strings.EqualFold(requestedKey, "wechat-main") {
-		return "wechat-main"
-	}
 	if requestedKey != "" {
 		return requestedKey
 	}
@@ -1541,19 +1085,7 @@ func canonicalAdminAuthIdentityProviderKey(providerType, existingKey, requestedK
 }
 
 func adminAuthIdentityProviderKeyRank(providerType, providerKey string) int {
-	providerType = strings.TrimSpace(strings.ToLower(providerType))
-	providerKey = strings.TrimSpace(providerKey)
-	if providerType != "wechat" {
-		return 0
-	}
-	switch {
-	case strings.EqualFold(providerKey, "wechat-main"):
-		return 0
-	case strings.EqualFold(providerKey, "wechat"):
-		return 2
-	default:
-		return 1
-	}
+	return 0
 }
 
 func selectOwnedAdminAuthIdentity(records []*dbent.AuthIdentity, userID int64) *dbent.AuthIdentity {
@@ -1578,66 +1110,22 @@ func hasAdminAuthIdentityOwnershipConflict(records []*dbent.AuthIdentity, userID
 	return false
 }
 
-func selectOwnedAdminAuthIdentityChannel(records []*dbent.AuthIdentityChannel, userID int64) *dbent.AuthIdentityChannel {
-	var selected *dbent.AuthIdentityChannel
-	for _, record := range records {
-		if record.Edges.Identity == nil || record.Edges.Identity.UserID != userID {
-			continue
-		}
-		if selected == nil || adminAuthIdentityProviderKeyRank(record.ProviderType, record.ProviderKey) < adminAuthIdentityProviderKeyRank(selected.ProviderType, selected.ProviderKey) {
-			selected = record
-		}
-	}
-	return selected
-}
-
-func hasAdminAuthIdentityChannelOwnershipConflict(records []*dbent.AuthIdentityChannel, userID int64) bool {
-	for _, record := range records {
-		if record.Edges.Identity != nil && record.Edges.Identity.UserID != userID {
-			return true
-		}
-	}
-	return false
-}
-
-func normalizeAdminBindChannelInput(input *AdminBindAuthIdentityChannelInput) *AdminBindAuthIdentityChannelInput {
-	if input == nil {
-		return nil
-	}
-	channel := &AdminBindAuthIdentityChannelInput{
-		Channel:        strings.TrimSpace(input.Channel),
-		ChannelAppID:   strings.TrimSpace(input.ChannelAppID),
-		ChannelSubject: strings.TrimSpace(input.ChannelSubject),
-		Metadata:       cloneAdminAuthIdentityMetadata(input.Metadata),
-	}
-	if channel.Channel == "" || channel.ChannelAppID == "" || channel.ChannelSubject == "" {
-		return nil
-	}
-	return channel
-}
-
 func normalizeAdminAuthIdentityProviderType(input string) string {
 	switch strings.ToLower(strings.TrimSpace(input)) {
 	case "email":
 		return "email"
-	case "linuxdo":
-		return "linuxdo"
 	case "oidc":
 		return "oidc"
-	case "wechat":
-		return "wechat"
-	case "dingtalk":
-		return "dingtalk"
 	default:
 		return ""
 	}
 }
 
-func buildAdminBoundAuthIdentity(identity *dbent.AuthIdentity, channel *dbent.AuthIdentityChannel) *AdminBoundAuthIdentity {
+func buildAdminBoundAuthIdentity(identity *dbent.AuthIdentity) *AdminBoundAuthIdentity {
 	if identity == nil {
 		return nil
 	}
-	result := &AdminBoundAuthIdentity{
+	return &AdminBoundAuthIdentity{
 		UserID:          identity.UserID,
 		ProviderType:    strings.TrimSpace(identity.ProviderType),
 		ProviderKey:     strings.TrimSpace(identity.ProviderKey),
@@ -1648,17 +1136,6 @@ func buildAdminBoundAuthIdentity(identity *dbent.AuthIdentity, channel *dbent.Au
 		CreatedAt:       identity.CreatedAt,
 		UpdatedAt:       identity.UpdatedAt,
 	}
-	if channel != nil {
-		result.Channel = &AdminBoundAuthIdentityChannel{
-			Channel:        strings.TrimSpace(channel.Channel),
-			ChannelAppID:   strings.TrimSpace(channel.ChannelAppID),
-			ChannelSubject: strings.TrimSpace(channel.ChannelSubject),
-			Metadata:       cloneAdminAuthIdentityMetadata(channel.Metadata),
-			CreatedAt:      channel.CreatedAt,
-			UpdatedAt:      channel.UpdatedAt,
-		}
-	}
-	return result
 }
 
 func cloneAdminAuthIdentityMetadata(input map[string]any) map[string]any {
@@ -1799,11 +1276,6 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		platform = PlatformAnthropic
 	}
 
-	subscriptionType := input.SubscriptionType
-	if subscriptionType == "" {
-		subscriptionType = SubscriptionTypeStandard
-	}
-
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
 	dailyLimit := normalizeLimit(input.DailyLimitUSD)
 	weeklyLimit := normalizeLimit(input.WeeklyLimitUSD)
@@ -1833,7 +1305,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 	// 校验无效请求兜底分组
 	if fallbackOnInvalidRequest != nil {
-		if err := s.validateFallbackGroupOnInvalidRequest(ctx, 0, platform, subscriptionType, *fallbackOnInvalidRequest); err != nil {
+		if err := s.validateFallbackGroupOnInvalidRequest(ctx, 0, platform, *fallbackOnInvalidRequest); err != nil {
 			return nil, err
 		}
 	}
@@ -1883,7 +1355,6 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		RateMultiplier:                  input.RateMultiplier,
 		IsExclusive:                     input.IsExclusive,
 		Status:                          StatusActive,
-		SubscriptionType:                subscriptionType,
 		DailyLimitUSD:                   dailyLimit,
 		WeeklyLimitUSD:                  weeklyLimit,
 		MonthlyLimitUSD:                 monthlyLimit,
@@ -2000,14 +1471,10 @@ func (s *adminServiceImpl) validateFallbackGroup(ctx context.Context, currentGro
 
 // validateFallbackGroupOnInvalidRequest 校验无效请求兜底分组的有效性
 // currentGroupID: 当前分组 ID（新建时为 0）
-// platform/subscriptionType: 当前分组的有效平台/订阅类型
 // fallbackGroupID: 兜底分组 ID
-func (s *adminServiceImpl) validateFallbackGroupOnInvalidRequest(ctx context.Context, currentGroupID int64, platform, subscriptionType string, fallbackGroupID int64) error {
+func (s *adminServiceImpl) validateFallbackGroupOnInvalidRequest(ctx context.Context, currentGroupID int64, platform string, fallbackGroupID int64) error {
 	if platform != PlatformAnthropic && platform != PlatformAntigravity {
 		return fmt.Errorf("invalid request fallback only supported for anthropic or antigravity groups")
-	}
-	if subscriptionType == SubscriptionTypeSubscription {
-		return fmt.Errorf("subscription groups cannot set invalid request fallback")
 	}
 	if currentGroupID > 0 && currentGroupID == fallbackGroupID {
 		return fmt.Errorf("cannot set self as invalid request fallback group")
@@ -2019,9 +1486,6 @@ func (s *adminServiceImpl) validateFallbackGroupOnInvalidRequest(ctx context.Con
 	}
 	if fallbackGroup.Platform != PlatformAnthropic {
 		return fmt.Errorf("fallback group must be anthropic platform")
-	}
-	if fallbackGroup.SubscriptionType == SubscriptionTypeSubscription {
-		return fmt.Errorf("fallback group cannot be subscription type")
 	}
 	if fallbackGroup.FallbackGroupIDOnInvalidRequest != nil {
 		return fmt.Errorf("fallback group cannot have invalid request fallback configured")
@@ -2057,10 +1521,6 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		group.Status = input.Status
 	}
 
-	// 订阅相关字段
-	if input.SubscriptionType != "" {
-		group.SubscriptionType = input.SubscriptionType
-	}
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
 	// 前端始终发送这三个字段，无需 nil 守卫
 	group.DailyLimitUSD = normalizeLimit(input.DailyLimitUSD)
@@ -2114,7 +1574,7 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		}
 	}
 	if fallbackOnInvalidRequest != nil {
-		if err := s.validateFallbackGroupOnInvalidRequest(ctx, id, group.Platform, group.SubscriptionType, *fallbackOnInvalidRequest); err != nil {
+		if err := s.validateFallbackGroupOnInvalidRequest(ctx, id, group.Platform, *fallbackOnInvalidRequest); err != nil {
 			return nil, err
 		}
 	}
@@ -2248,25 +1708,11 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
 		}
 	}
 
-	affectedUserIDs, err := s.groupRepo.DeleteCascade(ctx, id)
+	_, err := s.groupRepo.DeleteCascade(ctx, id)
 	if err != nil {
 		return err
 	}
 	// 注意：user_group_rate_multipliers 表通过外键 ON DELETE CASCADE 自动清理
-
-	// 事务成功后，异步失效受影响用户的订阅缓存
-	if len(affectedUserIDs) > 0 && s.billingCacheService != nil {
-		groupID := id
-		go func() {
-			cacheCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			for _, userID := range affectedUserIDs {
-				if err := s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID); err != nil {
-					logger.LegacyPrintf("service.admin", "invalidate subscription cache failed: user_id=%d group_id=%d err=%v", userID, groupID, err)
-				}
-			}
-		}()
-	}
 	if s.authCacheInvalidator != nil {
 		for _, key := range groupKeys {
 			s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, key)
@@ -2380,25 +1826,12 @@ func (s *adminServiceImpl) AdminUpdateAPIKeyGroupID(ctx context.Context, keyID i
 		if group.Status != StatusActive {
 			return nil, infraerrors.BadRequest("GROUP_NOT_ACTIVE", "target group is not active")
 		}
-		// 订阅类型分组：用户须持有该分组的有效订阅才可绑定
-		if group.IsSubscriptionType() {
-			if s.userSubRepo == nil {
-				return nil, infraerrors.InternalServer("SUBSCRIPTION_REPOSITORY_UNAVAILABLE", "subscription repository is not configured")
-			}
-			if _, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, apiKey.UserID, *groupID); err != nil {
-				if errors.Is(err, ErrSubscriptionNotFound) {
-					return nil, infraerrors.BadRequest("SUBSCRIPTION_REQUIRED", "user does not have an active subscription for this group")
-				}
-				return nil, err
-			}
-		}
-
 		gid := *groupID
 		apiKey.GroupID = &gid
 		apiKey.Group = group
 
 		// 专属标准分组：使用事务保证「添加分组权限」与「更新 API Key」的原子性
-		if group.IsExclusive && !group.IsSubscriptionType() {
+		if group.IsExclusive {
 			opCtx := ctx
 			var tx *dbent.Tx
 			if s.entClient == nil {
@@ -2494,10 +1927,6 @@ func (s *adminServiceImpl) ReplaceUserGroup(ctx context.Context, userID, oldGrou
 	if !newGroup.IsExclusive {
 		return nil, infraerrors.BadRequest("GROUP_NOT_EXCLUSIVE", "target group is not exclusive")
 	}
-	if newGroup.IsSubscriptionType() {
-		return nil, infraerrors.BadRequest("GROUP_IS_SUBSCRIPTION", "subscription groups are not supported for replacement")
-	}
-
 	// 事务保证原子性
 	if s.entClient == nil {
 		return nil, fmt.Errorf("entClient is nil, cannot perform group replacement")
@@ -3228,95 +2657,6 @@ func (s *adminServiceImpl) GetProxyAccounts(ctx context.Context, proxyID int64) 
 
 func (s *adminServiceImpl) CheckProxyExists(ctx context.Context, host string, port int, username, password string) (bool, error) {
 	return s.proxyRepo.ExistsByHostPortAuth(ctx, host, port, username, password)
-}
-
-// Redeem code management implementations
-func (s *adminServiceImpl) ListRedeemCodes(ctx context.Context, page, pageSize int, codeType, status, search string, sortBy, sortOrder string) ([]RedeemCode, int64, error) {
-	params := pagination.PaginationParams{Page: page, PageSize: pageSize, SortBy: sortBy, SortOrder: sortOrder}
-	codes, result, err := s.redeemCodeRepo.ListWithFilters(ctx, params, codeType, status, search)
-	if err != nil {
-		return nil, 0, err
-	}
-	return codes, result.Total, nil
-}
-
-func (s *adminServiceImpl) GetRedeemCode(ctx context.Context, id int64) (*RedeemCode, error) {
-	return s.redeemCodeRepo.GetByID(ctx, id)
-}
-
-func (s *adminServiceImpl) GenerateRedeemCodes(ctx context.Context, input *GenerateRedeemCodesInput) ([]RedeemCode, error) {
-	if input.ExpiresAt != nil && !input.ExpiresAt.After(time.Now()) {
-		return nil, ErrRedeemCodeExpired
-	}
-
-	// 如果是订阅类型，验证必须有 GroupID
-	if input.Type == RedeemTypeSubscription {
-		if input.GroupID == nil {
-			return nil, errors.New("group_id is required for subscription type")
-		}
-		// 验证分组存在且为订阅类型
-		group, err := s.groupRepo.GetByID(ctx, *input.GroupID)
-		if err != nil {
-			return nil, fmt.Errorf("group not found: %w", err)
-		}
-		if !group.IsSubscriptionType() {
-			return nil, errors.New("group must be subscription type")
-		}
-	}
-
-	codes := make([]RedeemCode, 0, input.Count)
-	for i := 0; i < input.Count; i++ {
-		codeValue, err := GenerateRedeemCode()
-		if err != nil {
-			return nil, err
-		}
-		code := RedeemCode{
-			Code:      codeValue,
-			Type:      input.Type,
-			Value:     input.Value,
-			Status:    StatusUnused,
-			ExpiresAt: input.ExpiresAt,
-		}
-		// 订阅类型专用字段
-		if input.Type == RedeemTypeSubscription {
-			code.GroupID = input.GroupID
-			code.ValidityDays = input.ValidityDays
-			if code.ValidityDays <= 0 {
-				code.ValidityDays = 30 // 默认30天
-			}
-		}
-		if err := s.redeemCodeRepo.Create(ctx, &code); err != nil {
-			return nil, err
-		}
-		codes = append(codes, code)
-	}
-	return codes, nil
-}
-
-func (s *adminServiceImpl) DeleteRedeemCode(ctx context.Context, id int64) error {
-	return s.redeemCodeRepo.Delete(ctx, id)
-}
-
-func (s *adminServiceImpl) BatchDeleteRedeemCodes(ctx context.Context, ids []int64) (int64, error) {
-	var deleted int64
-	for _, id := range ids {
-		if err := s.redeemCodeRepo.Delete(ctx, id); err == nil {
-			deleted++
-		}
-	}
-	return deleted, nil
-}
-
-func (s *adminServiceImpl) ExpireRedeemCode(ctx context.Context, id int64) (*RedeemCode, error) {
-	code, err := s.redeemCodeRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	code.Status = StatusExpired
-	if err := s.redeemCodeRepo.Update(ctx, code); err != nil {
-		return nil, err
-	}
-	return code, nil
 }
 
 func (s *adminServiceImpl) TestProxy(ctx context.Context, id int64) (*ProxyTestResult, error) {

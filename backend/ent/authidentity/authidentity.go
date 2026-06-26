@@ -34,8 +34,6 @@ const (
 	FieldMetadata = "metadata"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
-	// EdgeChannels holds the string denoting the channels edge name in mutations.
-	EdgeChannels = "channels"
 	// EdgeAdoptionDecisions holds the string denoting the adoption_decisions edge name in mutations.
 	EdgeAdoptionDecisions = "adoption_decisions"
 	// Table holds the table name of the authidentity in the database.
@@ -47,13 +45,6 @@ const (
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
 	UserColumn = "user_id"
-	// ChannelsTable is the table that holds the channels relation/edge.
-	ChannelsTable = "auth_identity_channels"
-	// ChannelsInverseTable is the table name for the AuthIdentityChannel entity.
-	// It exists in this package in order to avoid circular dependency with the "authidentitychannel" package.
-	ChannelsInverseTable = "auth_identity_channels"
-	// ChannelsColumn is the table column denoting the channels relation/edge.
-	ChannelsColumn = "identity_id"
 	// AdoptionDecisionsTable is the table that holds the adoption_decisions relation/edge.
 	AdoptionDecisionsTable = "identity_adoption_decisions"
 	// AdoptionDecisionsInverseTable is the table name for the IdentityAdoptionDecision entity.
@@ -159,20 +150,6 @@ func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByChannelsCount orders the results by channels count.
-func ByChannelsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newChannelsStep(), opts...)
-	}
-}
-
-// ByChannels orders the results by channels terms.
-func ByChannels(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newChannelsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByAdoptionDecisionsCount orders the results by adoption_decisions count.
 func ByAdoptionDecisionsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -191,13 +168,6 @@ func newUserStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-	)
-}
-func newChannelsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ChannelsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ChannelsTable, ChannelsColumn),
 	)
 }
 func newAdoptionDecisionsStep() *sqlgraph.Step {

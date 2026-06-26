@@ -1,16 +1,15 @@
 /**
  * Authentication API endpoints
- * Handles user login, registration, and logout operations
+ * Handles user login, OIDC account creation, and logout operations
  */
 
 import { apiClient } from './client'
 import type {
   LoginRequest,
-  RegisterRequest,
   AuthResponse,
   CurrentUserResponse,
-  SendVerifyCodeRequest,
-  SendVerifyCodeResponse,
+  EmailVerifyCodeRequest,
+  EmailVerifyCodeResponse,
   PublicSettings,
   TotpLoginResponse,
   TotpLogin2FARequest
@@ -128,27 +127,6 @@ export async function login2FA(request: TotpLogin2FARequest): Promise<AuthRespon
 }
 
 /**
- * User registration
- * @param userData - Registration data (username, email, password)
- * @returns Authentication response with token and user data
- */
-export async function register(userData: RegisterRequest): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>('/auth/register', userData)
-
-  // Store token and user data
-  setAuthToken(data.access_token)
-  if (data.refresh_token) {
-    setRefreshToken(data.refresh_token)
-  }
-  if (data.expires_in) {
-    setTokenExpiresAt(data.expires_in)
-  }
-  localStorage.setItem('auth_user', JSON.stringify(data.user))
-
-  return data
-}
-
-/**
  * Get current authenticated user
  * @returns User profile data
  */
@@ -211,7 +189,7 @@ export interface PendingOAuthCreateAccountResponse extends OAuthTokenResponse {
   auth_result?: string
 }
 
-export interface PendingOAuthSendVerifyCodeResponse extends SendVerifyCodeResponse {
+export interface PendingOAuthEmailVerifyCodeResponse extends EmailVerifyCodeResponse {
   auth_result?: string
   provider?: string
   redirect?: string
@@ -329,139 +307,17 @@ export function isAuthenticated(): boolean {
 
 /**
  * Get public settings (no auth required)
- * @returns Public settings including registration and Turnstile config
+ * @returns Public settings including OIDC account creation and Turnstile config
  */
 export async function getPublicSettings(): Promise<PublicSettings> {
   const { data } = await apiClient.get<PublicSettings>('/settings/public')
   return data
 }
 
-export type WeChatOAuthMode = 'open' | 'mp'
-export type WeChatOAuthUnavailableReason =
-  | 'not_configured'
-  | 'capability_unknown'
-  | 'external_browser_required'
-  | 'wechat_browser_required'
-  | 'native_app_required'
-
-export interface ResolvedWeChatOAuthStart {
-  mode: WeChatOAuthMode | null
-  openEnabled: boolean
-  mpEnabled: boolean
-  mobileEnabled: boolean
-  isWeChatBrowser: boolean
-  unavailableReason: WeChatOAuthUnavailableReason | null
-}
-
-export type WeChatOAuthPublicSettings = {
-  wechat_oauth_enabled?: boolean
-  wechat_oauth_open_enabled?: boolean
-  wechat_oauth_mp_enabled?: boolean
-  wechat_oauth_mobile_enabled?: boolean
-}
-
-export function isWeChatWebOAuthEnabled(
-  settings: WeChatOAuthPublicSettings | null | undefined,
-): boolean {
-  const legacyEnabled = settings?.wechat_oauth_enabled ?? false
-  const hasExplicitCapabilities =
-    typeof settings?.wechat_oauth_open_enabled === 'boolean' ||
-    typeof settings?.wechat_oauth_mp_enabled === 'boolean'
-
-  if (!hasExplicitCapabilities) {
-    return legacyEnabled
-  }
-
-  return settings?.wechat_oauth_open_enabled === true || settings?.wechat_oauth_mp_enabled === true
-}
-
-export function hasExplicitWeChatOAuthCapabilities(
-  settings: WeChatOAuthPublicSettings | null | undefined,
-): settings is WeChatOAuthPublicSettings & {
-  wechat_oauth_open_enabled: boolean
-  wechat_oauth_mp_enabled: boolean
-} {
-  return typeof settings?.wechat_oauth_open_enabled === 'boolean'
-    && typeof settings?.wechat_oauth_mp_enabled === 'boolean'
-}
-
-export function resolveWeChatOAuthStart(
-  settings: WeChatOAuthPublicSettings | null | undefined,
-  userAgent?: string
-): ResolvedWeChatOAuthStart {
-  const normalizedUserAgent = (userAgent
-    ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '')
-    ?? '').trim()
-  const isWeChatBrowser = /MicroMessenger/i.test(normalizedUserAgent)
-  const legacyEnabled = settings?.wechat_oauth_enabled ?? false
-  const openEnabled = typeof settings?.wechat_oauth_open_enabled === 'boolean'
-    ? settings.wechat_oauth_open_enabled
-    : legacyEnabled
-  const mpEnabled = typeof settings?.wechat_oauth_mp_enabled === 'boolean'
-    ? settings.wechat_oauth_mp_enabled
-    : legacyEnabled
-  const mobileEnabled = typeof settings?.wechat_oauth_mobile_enabled === 'boolean'
-    ? settings.wechat_oauth_mobile_enabled
-    : false
-
-  if (isWeChatBrowser) {
-    if (mpEnabled) {
-      return { mode: 'mp', openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: null }
-    }
-    if (openEnabled) {
-      return { mode: null, openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: 'external_browser_required' }
-    }
-    return { mode: null, openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: 'not_configured' }
-  }
-
-  if (openEnabled) {
-    return { mode: 'open', openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: null }
-  }
-  if (mpEnabled) {
-    return { mode: null, openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: 'wechat_browser_required' }
-  }
-  return { mode: null, openEnabled, mpEnabled, mobileEnabled, isWeChatBrowser, unavailableReason: 'not_configured' }
-}
-
-export function resolveWeChatOAuthStartStrict(
-  settings: WeChatOAuthPublicSettings | null | undefined,
-  userAgent?: string,
-): ResolvedWeChatOAuthStart {
-  const normalizedUserAgent = (userAgent
-    ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '')
-    ?? '').trim()
-  const isWeChatBrowser = /MicroMessenger/i.test(normalizedUserAgent)
-
-  if (!hasExplicitWeChatOAuthCapabilities(settings)) {
-    return {
-      mode: null,
-      openEnabled: false,
-      mpEnabled: false,
-      mobileEnabled: false,
-      isWeChatBrowser,
-      unavailableReason: 'capability_unknown',
-    }
-  }
-
-  return resolveWeChatOAuthStart(settings, normalizedUserAgent)
-}
-
-/**
- * Send verification code to email
- * @param request - Email and optional Turnstile token
- * @returns Response with countdown seconds
- */
-export async function sendVerifyCode(
-  request: SendVerifyCodeRequest
-): Promise<SendVerifyCodeResponse> {
-  const { data } = await apiClient.post<SendVerifyCodeResponse>('/auth/send-verify-code', request)
-  return data
-}
-
 export async function sendPendingOAuthVerifyCode(
-  request: SendVerifyCodeRequest
-): Promise<PendingOAuthSendVerifyCodeResponse> {
-  const { data } = await apiClient.post<PendingOAuthSendVerifyCodeResponse>(
+  request: EmailVerifyCodeRequest
+): Promise<PendingOAuthEmailVerifyCodeResponse> {
+  const { data } = await apiClient.post<PendingOAuthEmailVerifyCodeResponse>(
     '/auth/oauth/pending/send-verify-code',
     request
   )
@@ -469,176 +325,37 @@ export async function sendPendingOAuthVerifyCode(
 }
 
 /**
- * Validate promo code response
- */
-export interface ValidatePromoCodeResponse {
-  valid: boolean
-  bonus_amount?: number
-  error_code?: string
-  message?: string
-}
-
-/**
- * Validate promo code (public endpoint, no auth required)
- * @param code - Promo code to validate
- * @returns Validation result with bonus amount if valid
- */
-export async function validatePromoCode(code: string): Promise<ValidatePromoCodeResponse> {
-  const { data } = await apiClient.post<ValidatePromoCodeResponse>('/auth/validate-promo-code', { code })
-  return data
-}
-
-/**
- * Validate invitation code response
- */
-export interface ValidateInvitationCodeResponse {
-  valid: boolean
-  error_code?: string
-}
-
-/**
- * Validate invitation code (public endpoint, no auth required)
- * @param code - Invitation code to validate
- * @returns Validation result
- */
-export async function validateInvitationCode(code: string): Promise<ValidateInvitationCodeResponse> {
-  const { data } = await apiClient.post<ValidateInvitationCodeResponse>('/auth/validate-invitation-code', { code })
-  return data
-}
-
-/**
- * Forgot password request
- */
-export interface ForgotPasswordRequest {
-  email: string
-  turnstile_token?: string
-}
-
-/**
- * Forgot password response
- */
-export interface ForgotPasswordResponse {
-  message: string
-}
-
-/**
- * Request password reset link
- * @param request - Email and optional Turnstile token
- * @returns Response with message
- */
-export async function forgotPassword(request: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
-  const { data } = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', request)
-  return data
-}
-
-/**
- * Reset password request
- */
-export interface ResetPasswordRequest {
-  email: string
-  token: string
-  new_password: string
-}
-
-/**
- * Reset password response
- */
-export interface ResetPasswordResponse {
-  message: string
-}
-
-/**
- * Reset password with token
- * @param request - Email, token, and new password
- * @returns Response with message
- */
-export async function resetPassword(request: ResetPasswordRequest): Promise<ResetPasswordResponse> {
-  const { data } = await apiClient.post<ResetPasswordResponse>('/auth/reset-password', request)
-  return data
-}
-
-/**
- * Complete LinuxDo OAuth registration by supplying an invitation code
+ * Complete OIDC OAuth account creation by supplying an invitation code
  * @param invitationCode - Invitation code entered by the user
  * @returns Token pair on success
  */
-export async function completeLinuxDoOAuthRegistration(
+export async function completeOIDCOAuthAccountCreation(
   invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
+  decision?: OAuthAdoptionDecision
 ): Promise<OAuthTokenResponse> {
-  return createPendingLinuxDoOAuthAccount(invitationCode, decision, affiliateCode)
-}
-
-/**
- * Complete OIDC OAuth registration by supplying an invitation code
- * @param invitationCode - Invitation code entered by the user
- * @returns Token pair on success
- */
-export async function completeOIDCOAuthRegistration(
-  invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
-): Promise<OAuthTokenResponse> {
-  return createPendingOIDCOAuthAccount(invitationCode, decision, affiliateCode)
-}
-
-export async function completeWeChatOAuthRegistration(
-  invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
-): Promise<OAuthTokenResponse> {
-  return createPendingWeChatOAuthAccount(invitationCode, decision, affiliateCode)
+  return createPendingOIDCOAuthAccount(invitationCode, decision)
 }
 
 async function createPendingOAuthAccount(
-  provider: 'linuxdo' | 'oidc' | 'wechat' | 'dingtalk',
+  provider: 'oidc',
   invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
+  decision?: OAuthAdoptionDecision
 ): Promise<PendingOAuthCreateAccountResponse> {
-  const normalizedAffiliateCode = affiliateCode?.trim()
   const { data } = await apiClient.post<PendingOAuthCreateAccountResponse>(
     `/auth/oauth/${provider}/complete-registration`,
     {
       invitation_code: invitationCode,
-      ...(normalizedAffiliateCode ? { aff_code: normalizedAffiliateCode } : {}),
       ...serializeOAuthAdoptionDecision(decision)
     }
   )
   return data
 }
 
-export async function createPendingLinuxDoOAuthAccount(
-  invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
-): Promise<PendingOAuthCreateAccountResponse> {
-  return createPendingOAuthAccount('linuxdo', invitationCode, decision, affiliateCode)
-}
-
 export async function createPendingOIDCOAuthAccount(
   invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
+  decision?: OAuthAdoptionDecision
 ): Promise<PendingOAuthCreateAccountResponse> {
-  return createPendingOAuthAccount('oidc', invitationCode, decision, affiliateCode)
-}
-
-export async function createPendingWeChatOAuthAccount(
-  invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
-): Promise<PendingOAuthCreateAccountResponse> {
-  return createPendingOAuthAccount('wechat', invitationCode, decision, affiliateCode)
-}
-
-export async function createPendingDingTalkOAuthAccount(
-  invitationCode: string,
-  decision?: OAuthAdoptionDecision,
-  affiliateCode?: string
-): Promise<PendingOAuthCreateAccountResponse> {
-  return createPendingOAuthAccount('dingtalk', invitationCode, decision, affiliateCode)
+  return createPendingOAuthAccount('oidc', invitationCode, decision)
 }
 
 export async function completePendingOAuthBindLogin(
@@ -661,7 +378,6 @@ export const authAPI = {
   login,
   login2FA,
   isTotp2FARequired,
-  register,
   getCurrentUser,
   logout,
   isAuthenticated,
@@ -673,26 +389,16 @@ export const authAPI = {
   getTokenExpiresAt,
   clearAuthToken,
   getPublicSettings,
-  sendVerifyCode,
   sendPendingOAuthVerifyCode,
-  validatePromoCode,
-  validateInvitationCode,
-  forgotPassword,
-  resetPassword,
   refreshToken,
   revokeAllSessions,
   getPendingOAuthBindLoginKind,
   isPendingOAuthCreateAccountRequired,
   hasPendingOAuthSuggestedProfile,
   completePendingOAuthBindLogin,
-  createPendingLinuxDoOAuthAccount,
   createPendingOIDCOAuthAccount,
-  createPendingWeChatOAuthAccount,
   exchangePendingOAuthCompletion,
-  completeLinuxDoOAuthRegistration,
-  completeOIDCOAuthRegistration,
-  completeWeChatOAuthRegistration,
-  createPendingDingTalkOAuthAccount
+  completeOIDCOAuthAccountCreation,
 }
 
 export default authAPI

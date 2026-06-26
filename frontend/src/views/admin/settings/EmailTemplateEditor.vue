@@ -64,8 +64,8 @@
             >
               <option
                 v-for="option in eventOptions"
-                :key="option.value"
-                :value="option.value"
+                :key="option.event"
+                :value="option.event"
               >
                 {{ formatEventOptionLabel(option) }}
               </option>
@@ -250,15 +250,7 @@ const fallbackPlaceholders = [
   "{{verification_code}}",
   "{{expires_in_minutes}}",
   "{{reset_url}}",
-  "{{subscription_group}}",
-  "{{subscription_days}}",
-  "{{expiry_time}}",
-  "{{days_remaining}}",
-  "{{current_balance}}",
   "{{threshold}}",
-  "{{recharge_url}}",
-  "{{recharge_amount}}",
-  "{{order_id}}",
   "{{unsubscribe_url}}",
   "{{account_id}}",
   "{{account_name}}",
@@ -319,7 +311,7 @@ function localText(zh: string, en: string): string {
 const eventDisplayMeta: Record<string, EventDisplayMeta> = {
   "auth.verify_code": {
     label: "邮箱验证码",
-    timing: "注册、绑定邮箱、OAuth 补全邮箱或 TOTP 邮箱校验时发送。",
+    timing: "账号创建、绑定邮箱、OAuth 补全邮箱或 TOTP 邮箱校验时发送。",
     categoryLabel: "认证安全",
   },
   "auth.password_reset": {
@@ -331,26 +323,6 @@ const eventDisplayMeta: Record<string, EventDisplayMeta> = {
     label: "通知邮箱验证码",
     timing: "用户添加并验证额外通知邮箱时发送。",
     categoryLabel: "认证安全",
-  },
-  "subscription.purchase_success": {
-    label: "订阅开通成功",
-    timing: "订阅订单完成支付并成功开通或续期后发送。",
-    categoryLabel: "订阅",
-  },
-  "subscription.expiry_reminder": {
-    label: "订阅到期提醒",
-    timing: "后台任务在订阅仍有效且距离到期剩余 7 天、3 天、1 天时各发送一次，可通过邮件设置中的开关关闭。",
-    categoryLabel: "订阅",
-  },
-  "balance.low": {
-    label: "余额不足提醒",
-    timing: "用户余额低于全局或个人配置的提醒阈值时发送。",
-    categoryLabel: "计费",
-  },
-  "balance.recharge_success": {
-    label: "余额充值成功",
-    timing: "余额充值订单支付完成并入账后发送。",
-    categoryLabel: "计费",
   },
   "account.quota_alert": {
     label: "账号限额告警",
@@ -382,7 +354,7 @@ const eventDisplayMeta: Record<string, EventDisplayMeta> = {
 const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
   "auth.verify_code": {
     label: "Email Verification Code",
-    timing: "Sent for registration, email binding, OAuth pending email completion, or TOTP email verification.",
+    timing: "Sent for account creation, email binding, OAuth pending email completion, or TOTP email verification.",
     categoryLabel: "Auth",
   },
   "auth.password_reset": {
@@ -394,26 +366,6 @@ const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
     label: "Notification Email Verification",
     timing: "Sent when a user adds and verifies an extra notification email address.",
     categoryLabel: "Auth",
-  },
-  "subscription.purchase_success": {
-    label: "Subscription Activated",
-    timing: "Sent after a subscription order is paid and the subscription is activated or extended.",
-    categoryLabel: "Subscription",
-  },
-  "subscription.expiry_reminder": {
-    label: "Subscription Expiry Reminder",
-    timing: "Sent by the background job when an active subscription has 7, 3, or 1 day remaining. It can be disabled in Email settings.",
-    categoryLabel: "Subscription",
-  },
-  "balance.low": {
-    label: "Low Balance Alert",
-    timing: "Sent when a user's balance drops below the global or personal reminder threshold.",
-    categoryLabel: "Billing",
-  },
-  "balance.recharge_success": {
-    label: "Balance Recharge Success",
-    timing: "Sent after a balance recharge order is paid and credited.",
-    categoryLabel: "Billing",
   },
   "account.quota_alert": {
     label: "Account Quota Alert",
@@ -444,7 +396,7 @@ const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
 
 function normalizeEventOption(option: EmailTemplateEventOption): EmailTemplateOption {
   if (typeof option === "string") {
-    return { value: option };
+    return { event: option };
   }
   return option;
 }
@@ -455,8 +407,8 @@ function eventMetaFor(option?: EmailTemplateOption | null) {
     locale.value.toLowerCase().startsWith("zh")
       ? eventDisplayMeta
       : eventDisplayMetaEn
-  )[option.value];
-  const label = displayMeta?.label || option.label || option.value;
+  )[option.event];
+  const label = displayMeta?.label || option.label || option.event;
   const timing = displayMeta?.timing || option.description || "";
   const categoryLabel =
     displayMeta?.categoryLabel || formatCategory(option.category || "");
@@ -470,7 +422,7 @@ function eventMetaFor(option?: EmailTemplateOption | null) {
 
 function formatEventOptionLabel(option: EmailTemplateOption): string {
   const meta = eventMetaFor(option);
-  if (!meta) return option.label || option.value;
+  if (!meta) return option.label || option.event;
   return meta.label;
 }
 
@@ -479,8 +431,6 @@ function formatCategory(category: string): string {
   if (!normalized) return localText("通知", "Notification");
   const labels: Record<string, { zh: string; en: string }> = {
     auth: { zh: "认证安全", en: "Auth" },
-    subscription: { zh: "订阅", en: "Subscription" },
-    billing: { zh: "计费", en: "Billing" },
     admin: { zh: "管理告警", en: "Admin" },
     risk_control: { zh: "风控", en: "Risk Control" },
     ops: { zh: "运维", en: "Ops" },
@@ -491,7 +441,7 @@ function formatCategory(category: string): string {
 
 const selectedEventOption = computed(() => {
   return (
-    eventOptions.value.find((option) => option.value === selectedEvent.value) ||
+    eventOptions.value.find((option) => option.event === selectedEvent.value) ||
     null
   );
 });
@@ -597,7 +547,7 @@ async function loadTemplateList() {
     localeOptions.value = response.locales;
     placeholders.value = response.placeholders || [];
     initializingSelection.value = true;
-    selectedEvent.value = eventOptions.value[0]?.value || "";
+    selectedEvent.value = eventOptions.value[0]?.event || "";
     selectedLocale.value = selectInitialLocale(response.locales);
     await loadTemplate();
     initializingSelection.value = false;

@@ -297,10 +297,9 @@ describe('useAppStore', () => {
 
     it('fetchPublicSettings(force) 会同步更新运行时注入配置', async () => {
       vi.mocked(getPublicSettings).mockResolvedValue({
-        registration_enabled: false,
         email_verify_enabled: false,
-        registration_email_suffix_whitelist: [],
-        promo_code_enabled: true,
+        force_email_on_oidc_account_creation: false,
+        account_creation_email_suffix_whitelist: [],
         password_reset_enabled: false,
         invitation_code_enabled: false,
         turnstile_enabled: false,
@@ -313,15 +312,21 @@ describe('useAppStore', () => {
         doc_url: '',
         home_content: '',
         hide_ccs_import_button: false,
-        purchase_subscription_enabled: false,
-        purchase_subscription_url: '',
         table_default_page_size: 1000,
         table_page_size_options: [20, 100, 1000],
         custom_menu_items: [],
         custom_endpoints: [],
-        linuxdo_oauth_enabled: false,
+        oidc_oauth_enabled: false,
+        oidc_oauth_provider_name: 'OIDC',
         backend_mode_enabled: false,
-        version: '1.0.0'
+        version: '1.0.0',
+        account_quota_notify_enabled: false,
+        channel_monitor_enabled: true,
+        channel_monitor_default_interval_seconds: 60,
+        available_channels_enabled: false,
+        risk_control_enabled: false,
+        service_quota_enabled: false,
+        allow_user_view_error_requests: false
       })
 
       const store = useAppStore()

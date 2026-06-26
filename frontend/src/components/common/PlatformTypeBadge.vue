@@ -46,8 +46,8 @@
         <span>{{ privacyBadge.label }}</span>
       </span>
     </div>
-    <!-- Row 3: Subscription expiration (non-free paid accounts only) -->
-    <div v-if="expiresLabel" class="text-[10px] leading-tight text-gray-400 dark:text-gray-500 pl-0.5" :title="subscriptionExpiresAt">
+    <!-- Row 3: Upstream plan expiration (non-free paid accounts only) -->
+    <div v-if="expiresLabel" class="text-[10px] leading-tight text-gray-400 dark:text-gray-500 pl-0.5" :title="planExpiresAt">
       {{ expiresLabel }}
     </div>
   </div>
@@ -67,7 +67,7 @@ interface Props {
   type: AccountType
   planType?: string
   privacyMode?: string
-  subscriptionExpiresAt?: string
+  planExpiresAt?: string
 }
 
 const props = defineProps<Props>()
@@ -110,7 +110,7 @@ const planLabel = computed(() => {
     case 'free':
       return 'Free'
     case 'abnormal':
-      return t('admin.accounts.subscriptionAbnormal')
+      return t('admin.accounts.planAbnormal')
     default:
       return props.planType
   }
@@ -149,17 +149,17 @@ const planBadgeClass = computed(() => {
   return typeClass.value
 })
 
-// Subscription expiration label (non-free only)
+// Upstream plan expiration label (non-free only)
 const expiresLabel = computed(() => {
-  if (!props.subscriptionExpiresAt || !props.planType) return ''
+  if (!props.planExpiresAt || !props.planType) return ''
   if (props.planType.toLowerCase() === 'free') return ''
   try {
-    const d = new Date(props.subscriptionExpiresAt)
+    const d = new Date(props.planExpiresAt)
     if (isNaN(d.getTime())) return ''
     const yyyy = d.getFullYear()
     const mm = String(d.getMonth() + 1).padStart(2, '0')
     const dd = String(d.getDate()).padStart(2, '0')
-    return `${t('admin.accounts.subscriptionExpires')} ${yyyy}-${mm}-${dd}`
+    return `${t('admin.accounts.planExpires')} ${yyyy}-${mm}-${dd}`
   } catch {
     return ''
   }

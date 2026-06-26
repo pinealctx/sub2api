@@ -13,7 +13,7 @@ const mockGetDashboardStats = vi.fn()
 vi.mock('@/api', () => ({
   authAPI: {
     getCurrentUser: vi.fn().mockResolvedValue({
-      data: { id: 1, username: 'test', email: 'test@example.com', role: 'user', balance: 100, concurrency: 5, status: 'active', allowed_groups: null, created_at: '', updated_at: '' },
+      data: { id: 1, username: 'test', email: 'test@example.com', role: 'user', concurrency: 5, status: 'active', allowed_groups: null, created_at: '', updated_at: '' },
     }),
     logout: vi.fn(),
     refreshToken: vi.fn(),
@@ -36,7 +36,6 @@ vi.mock('@/api/auth', () => ({
 }))
 
 interface DashboardStats {
-  balance: number
   api_key_count: number
   active_api_key_count: number
   today_requests: number
@@ -75,8 +74,8 @@ const DashboardTestComponent = defineComponent({
       <div v-if="loading" class="loading">加载中...</div>
       <div v-if="error" class="error">{{ error }}</div>
       <div v-if="stats" class="stats">
-        <span class="balance">{{ stats.balance }}</span>
         <span class="api-keys">{{ stats.api_key_count }}</span>
+        <span class="active-api-keys">{{ stats.active_api_key_count }}</span>
         <span class="today-requests">{{ stats.today_requests }}</span>
         <span class="today-cost">{{ stats.today_cost }}</span>
       </div>
@@ -92,7 +91,6 @@ describe('Dashboard 数据加载', () => {
   })
 
   const fakeStats: DashboardStats = {
-    balance: 100.5,
     api_key_count: 3,
     active_api_key_count: 2,
     today_requests: 150,
@@ -108,8 +106,8 @@ describe('Dashboard 数据加载', () => {
     await flushPromises()
 
     expect(mockGetDashboardStats).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('.balance').text()).toBe('100.5')
     expect(wrapper.find('.api-keys').text()).toBe('3')
+    expect(wrapper.find('.active-api-keys').text()).toBe('2')
     expect(wrapper.find('.today-requests').text()).toBe('150')
     expect(wrapper.find('.today-cost').text()).toBe('2.5')
   })

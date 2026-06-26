@@ -20,14 +20,8 @@ type Tx struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
-	// Announcement is the client for interacting with the Announcement builders.
-	Announcement *AnnouncementClient
-	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
-	AnnouncementRead *AnnouncementReadClient
 	// AuthIdentity is the client for interacting with the AuthIdentity builders.
 	AuthIdentity *AuthIdentityClient
-	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
-	AuthIdentityChannel *AuthIdentityChannelClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
 	ChannelMonitor *ChannelMonitorClient
 	// ChannelMonitorDailyRollup is the client for interacting with the ChannelMonitorDailyRollup builders.
@@ -44,28 +38,14 @@ type Tx struct {
 	IdempotencyRecord *IdempotencyRecordClient
 	// IdentityAdoptionDecision is the client for interacting with the IdentityAdoptionDecision builders.
 	IdentityAdoptionDecision *IdentityAdoptionDecisionClient
-	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
-	PaymentAuditLog *PaymentAuditLogClient
-	// PaymentOrder is the client for interacting with the PaymentOrder builders.
-	PaymentOrder *PaymentOrderClient
-	// PaymentProviderInstance is the client for interacting with the PaymentProviderInstance builders.
-	PaymentProviderInstance *PaymentProviderInstanceClient
 	// PendingAuthSession is the client for interacting with the PendingAuthSession builders.
 	PendingAuthSession *PendingAuthSessionClient
-	// PromoCode is the client for interacting with the PromoCode builders.
-	PromoCode *PromoCodeClient
-	// PromoCodeUsage is the client for interacting with the PromoCodeUsage builders.
-	PromoCodeUsage *PromoCodeUsageClient
 	// Proxy is the client for interacting with the Proxy builders.
 	Proxy *ProxyClient
-	// RedeemCode is the client for interacting with the RedeemCode builders.
-	RedeemCode *RedeemCodeClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
-	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
-	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -82,8 +62,6 @@ type Tx struct {
 	UserAttributeValue *UserAttributeValueClient
 	// UserPlatformQuota is the client for interacting with the UserPlatformQuota builders.
 	UserPlatformQuota *UserPlatformQuotaClient
-	// UserSubscription is the client for interacting with the UserSubscription builders.
-	UserSubscription *UserSubscriptionClient
 
 	// lazily loaded.
 	client     *Client
@@ -218,10 +196,7 @@ func (tx *Tx) init() {
 	tx.APIKey = NewAPIKeyClient(tx.config)
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
-	tx.Announcement = NewAnnouncementClient(tx.config)
-	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
-	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
 	tx.ChannelMonitor = NewChannelMonitorClient(tx.config)
 	tx.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(tx.config)
 	tx.ChannelMonitorHistory = NewChannelMonitorHistoryClient(tx.config)
@@ -230,17 +205,10 @@ func (tx *Tx) init() {
 	tx.Group = NewGroupClient(tx.config)
 	tx.IdempotencyRecord = NewIdempotencyRecordClient(tx.config)
 	tx.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(tx.config)
-	tx.PaymentAuditLog = NewPaymentAuditLogClient(tx.config)
-	tx.PaymentOrder = NewPaymentOrderClient(tx.config)
-	tx.PaymentProviderInstance = NewPaymentProviderInstanceClient(tx.config)
 	tx.PendingAuthSession = NewPendingAuthSessionClient(tx.config)
-	tx.PromoCode = NewPromoCodeClient(tx.config)
-	tx.PromoCodeUsage = NewPromoCodeUsageClient(tx.config)
 	tx.Proxy = NewProxyClient(tx.config)
-	tx.RedeemCode = NewRedeemCodeClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
-	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)
@@ -249,7 +217,6 @@ func (tx *Tx) init() {
 	tx.UserAttributeDefinition = NewUserAttributeDefinitionClient(tx.config)
 	tx.UserAttributeValue = NewUserAttributeValueClient(tx.config)
 	tx.UserPlatformQuota = NewUserPlatformQuotaClient(tx.config)
-	tx.UserSubscription = NewUserSubscriptionClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

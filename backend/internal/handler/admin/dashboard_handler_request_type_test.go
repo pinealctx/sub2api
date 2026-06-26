@@ -32,7 +32,6 @@ func (s *dashboardUsageRepoCapture) GetUsageTrendWithFilters(
 	model string,
 	requestType *int16,
 	stream *bool,
-	billingType *int8,
 ) ([]usagestats.TrendDataPoint, error) {
 	s.trendRequestType = requestType
 	s.trendStream = stream
@@ -45,7 +44,6 @@ func (s *dashboardUsageRepoCapture) GetModelStatsWithFilters(
 	userID, apiKeyID, accountID, groupID int64,
 	requestType *int16,
 	stream *bool,
-	billingType *int8,
 ) ([]usagestats.ModelStat, error) {
 	s.modelRequestType = requestType
 	s.modelStream = stream

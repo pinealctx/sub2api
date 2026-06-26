@@ -111,55 +111,55 @@ func TestManager_GetAllUsage_NilRedis(t *testing.T) {
 	require.Equal(t, int64(0), usage["brave"])
 }
 
-// --- Quota TTL from subscription ---
+// --- Quota TTL from reset anchor ---
 
-func TestQuotaTTLFromSubscription_NilSubscription(t *testing.T) {
-	ttl := quotaTTLFromSubscription(nil)
+func TestQuotaTTLFromAnchor_NilAnchor(t *testing.T) {
+	ttl := quotaTTLFromAnchor(nil)
 	require.Equal(t, defaultQuotaTTL, ttl)
 }
 
-func TestQuotaTTLFromSubscription_ZeroSubscription(t *testing.T) {
+func TestQuotaTTLFromAnchor_ZeroAnchor(t *testing.T) {
 	zero := int64(0)
-	ttl := quotaTTLFromSubscription(&zero)
+	ttl := quotaTTLFromAnchor(&zero)
 	require.Equal(t, defaultQuotaTTL, ttl)
 }
 
-func TestQuotaTTLFromSubscription_ValidSubscription(t *testing.T) {
-	// Subscribed 10 days ago — next reset in ~20 days
-	sub := time.Now().Add(-10 * 24 * time.Hour).Unix()
-	ttl := quotaTTLFromSubscription(&sub)
+func TestQuotaTTLFromAnchor_ValidAnchor(t *testing.T) {
+	// Anchored 10 days ago; next reset is in roughly 20 days.
+	anchor := time.Now().Add(-10 * 24 * time.Hour).Unix()
+	ttl := quotaTTLFromAnchor(&anchor)
 	require.Greater(t, ttl, 15*24*time.Hour) // at least 15 days
 	require.Less(t, ttl, 25*24*time.Hour+quotaTTLBuffer)
 }
 
-func TestNextMonthlyReset_SubscribedRecentPast(t *testing.T) {
-	// Subscribed on the 10th of this month (always valid day)
+func TestNextMonthlyReset_AnchorRecentPast(t *testing.T) {
+	// Anchored on the 10th of this month (always valid day).
 	now := time.Now().UTC()
-	sub := time.Date(now.Year(), now.Month(), 10, 0, 0, 0, 0, time.UTC)
-	next := nextMonthlyReset(sub)
+	anchor := time.Date(now.Year(), now.Month(), 10, 0, 0, 0, 0, time.UTC)
+	next := nextMonthlyReset(anchor)
 	require.True(t, next.After(now) || next.Equal(now), "next reset should be in the future or now")
 	require.True(t, next.Before(now.AddDate(0, 1, 1)))
 }
 
-func TestNextMonthlyReset_SubscribedLongAgo(t *testing.T) {
-	// Subscribed 6 months ago on the 1st
-	sub := time.Now().UTC().AddDate(0, -6, 0)
-	sub = time.Date(sub.Year(), sub.Month(), 1, 0, 0, 0, 0, time.UTC)
-	next := nextMonthlyReset(sub)
+func TestNextMonthlyReset_AnchorLongAgo(t *testing.T) {
+	// Anchored 6 months ago on the 1st.
+	anchor := time.Now().UTC().AddDate(0, -6, 0)
+	anchor = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, time.UTC)
+	next := nextMonthlyReset(anchor)
 	require.True(t, next.After(time.Now().UTC()))
 	// Should be within the next 31 days
 	require.True(t, next.Before(time.Now().UTC().AddDate(0, 1, 1)))
 }
 
-func TestNextMonthlyReset_FutureSubscription(t *testing.T) {
-	sub := time.Now().UTC().AddDate(0, 0, 5)
-	next := nextMonthlyReset(sub)
+func TestNextMonthlyReset_FutureAnchor(t *testing.T) {
+	anchor := time.Now().UTC().AddDate(0, 0, 5)
+	next := nextMonthlyReset(anchor)
 	require.True(t, next.After(time.Now().UTC()))
 }
 
 func TestAddMonthsClamped_Jan31ToFeb(t *testing.T) {
-	sub := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
-	next := addMonthsClamped(sub, 1)
+	anchor := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
+	next := addMonthsClamped(anchor, 1)
 	require.Equal(t, time.Month(2), next.Month())
 	require.Equal(t, 28, next.Day()) // Feb 28 (2026 is not a leap year)
 }

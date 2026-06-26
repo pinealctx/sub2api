@@ -4787,7 +4787,7 @@ const createAccountAndFinish = async (
   })
 }
 
-// OpenAI OAuth 授权码兑换
+// OpenAI OAuth 授权码交换
 const handleOpenAIExchange = async (authCode: string) => {
   const oauthClient = openaiOAuth
   if (!authCode.trim() || !oauthClient.sessionId.value) return
@@ -5187,7 +5187,7 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
   }
 }
 
-// Gemini OAuth 授权码兑换
+// Gemini OAuth 授权码交换
 const handleGeminiExchange = async (authCode: string) => {
   if (!authCode.trim() || !geminiOAuth.sessionId.value) return
 
@@ -5224,7 +5224,7 @@ const handleGeminiExchange = async (authCode: string) => {
   }
 }
 
-// Antigravity OAuth 授权码兑换
+// Antigravity OAuth 授权码交换
 const handleAntigravityExchange = async (authCode: string) => {
   if (!authCode.trim() || !antigravityOAuth.sessionId.value) return
 
@@ -5269,7 +5269,7 @@ const handleAntigravityExchange = async (authCode: string) => {
   }
 }
 
-// Anthropic OAuth 授权码兑换
+// Anthropic OAuth 授权码交换
 const handleAnthropicExchange = async (authCode: string) => {
   if (!authCode.trim() || !oauth.sessionId.value) return
 

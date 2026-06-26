@@ -103,14 +103,14 @@ func TestAppendAuthSourceDefaultChanges_DetectsPerWindow(t *testing.T) {
 	five := 5.0
 	ten := 10.0
 	before := &service.AuthSourceDefaultSettings{
-		LinuxDo: service.ProviderDefaultGrantSettings{
+		OIDC: service.ProviderDefaultGrantSettings{
 			PlatformQuotas: map[string]*service.DefaultPlatformQuotaSetting{
 				"anthropic": {DailyLimitUSD: &five},
 			},
 		},
 	}
 	after := &service.AuthSourceDefaultSettings{
-		LinuxDo: service.ProviderDefaultGrantSettings{
+		OIDC: service.ProviderDefaultGrantSettings{
 			PlatformQuotas: map[string]*service.DefaultPlatformQuotaSetting{
 				"anthropic": {DailyLimitUSD: &ten},
 			},
@@ -119,7 +119,7 @@ func TestAppendAuthSourceDefaultChanges_DetectsPerWindow(t *testing.T) {
 
 	changed := appendAuthSourceDefaultChanges([]string{}, before, after)
 	// 改动 B5：整体替换语义，审计 log 发单个 JSON key，而非展开 84 个扁平 key。
-	key := service.SettingKeyAuthSourcePlatformQuotas("linuxdo")
+	key := service.SettingKeyAuthSourcePlatformQuotas("oidc")
 	found := false
 	for _, k := range changed {
 		if k == key {
@@ -137,12 +137,10 @@ func TestAppendAuthSourceDefaultChanges_DetectsPerWindow(t *testing.T) {
 func TestSettingHandler_AuthSourcePlatformQuotas_PutGetRoundTrip(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
-		values: map[string]string{
-			service.SettingKeyPromoCodeEnabled: "true",
-		},
+		values: map[string]string{},
 	}
 	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
-	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+	handler := NewSettingHandler(svc, nil, nil, nil)
 
 	// PUT：发 email platform quota（openai monthly=20）
 	putBody := map[string]any{

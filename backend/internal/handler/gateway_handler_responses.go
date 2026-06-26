@@ -114,8 +114,6 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		service.BindErrorPassthroughService(c, h.errorPassthroughService)
 	}
 
-	subscription, _ := middleware2.GetSubscriptionFromContext(c)
-
 	service.SetOpsLatencyMs(c, service.OpsAuthLatencyMsKey, time.Since(requestStart).Milliseconds())
 
 	userReleaseFunc, err := h.concurrencyHelper.AcquireUserSlotWithWait(c, subject.UserID, subject.Concurrency, reqStream, &streamStarted)
@@ -130,9 +128,9 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 	}
 
 	// 2. Re-check billing
-	if err := h.billingCacheService.CheckBillingEligibility(requestCtx, apiKey.User, apiKey, apiKey.Group, subscription, service.QuotaPlatform(requestCtx, apiKey)); err != nil {
+	if err := h.billingCacheService.CheckBillingEligibility(requestCtx, apiKey.User, apiKey, apiKey.Group, service.QuotaPlatform(requestCtx, apiKey)); err != nil {
 		reqLog.Info("gateway.responses.billing_check_failed", zap.Error(err))
-		status, code, message, retryAfter := billingErrorDetails(err)
+		status, code, message, retryAfter := gatewayPolicyErrorDetails(err)
 		if retryAfter > 0 {
 			c.Header("Retry-After", strconv.Itoa(retryAfter))
 		}
@@ -266,7 +264,6 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 				APIKey:             apiKey,
 				User:               apiKey.User,
 				Account:            account,
-				Subscription:       subscription,
 				InboundEndpoint:    inboundEndpoint,
 				UpstreamEndpoint:   upstreamEndpoint,
 				UserAgent:          userAgent,

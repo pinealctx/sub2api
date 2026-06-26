@@ -45,7 +45,7 @@ func TestLeaderLockCache_AcquireContendedRelease(t *testing.T) {
 func TestLeaderLockCache_ReleaseIsCompareAndDelete(t *testing.T) {
 	cache, _ := newLeaderLockTestCache(t)
 	ctx := context.Background()
-	const key = "payment:order:expiry:leader"
+	const key = "ops:job:expiry:leader"
 
 	ok, err := cache.TryAcquireLeaderLock(ctx, key, "A", time.Minute)
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestLeaderLockCache_ReleaseIsCompareAndDelete(t *testing.T) {
 func TestLeaderLockCache_TTLExpires(t *testing.T) {
 	cache, mr := newLeaderLockTestCache(t)
 	ctx := context.Background()
-	const key = "subscription:expiry:reminder:leader"
+	const key = "ops:reminder:expiry:leader"
 
 	ok, err := cache.TryAcquireLeaderLock(ctx, key, "A", time.Minute)
 	require.NoError(t, err)

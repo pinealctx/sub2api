@@ -311,11 +311,11 @@
         />
 
         <div v-if="aiCreditsDisplay" class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-          💳 {{ t('admin.accounts.aiCreditsBalance') }}: {{ aiCreditsDisplay }}
+          💳 {{ t('admin.accounts.aiCredits') }}: {{ aiCreditsDisplay }}
         </div>
       </div>
       <div v-else-if="aiCreditsDisplay" class="text-[10px] text-gray-500 dark:text-gray-400">
-        💳 {{ t('admin.accounts.aiCreditsBalance') }}: {{ aiCreditsDisplay }}
+        💳 {{ t('admin.accounts.aiCredits') }}: {{ aiCreditsDisplay }}
       </div>
       <div v-else class="text-xs text-gray-400">-</div>
     </template>
@@ -1226,7 +1226,10 @@ watch(openAIUsageRefreshKey, (nextKey, prevKey) => {
   if (!prevKey || nextKey === prevKey) return
   if (props.account.platform !== 'openai' || props.account.type !== 'oauth') return
 
-  requestAutoLoad()
+  _usageCache.delete(props.account.id)
+  loadUsage({ bypassCache: true }).catch((e) => {
+    console.error('Failed to refresh OpenAI usage after account update:', e)
+  })
 })
 
 watch(

@@ -77,6 +77,10 @@ func (s *userGroupRateRepoStubForGroupRate) DeleteByUserID(_ context.Context, _ 
 	panic("unexpected DeleteByUserID call")
 }
 
+func ptrFloat(v float64) *float64 {
+	return &v
+}
+
 func TestAdminService_GetGroupRateMultipliers(t *testing.T) {
 	t.Run("returns entries for group", func(t *testing.T) {
 		repo := &userGroupRateRepoStubForGroupRate{

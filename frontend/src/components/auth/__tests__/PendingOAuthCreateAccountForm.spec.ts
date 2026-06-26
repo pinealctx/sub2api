@@ -49,16 +49,16 @@ describe('PendingOAuthCreateAccountForm', () => {
   it('emits trimmed email, password, and verify code on submit', async () => {
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        providerName: 'LinuxDo',
-        testIdPrefix: 'linuxdo',
+        providerName: 'OIDC',
+        testIdPrefix: 'oidc',
         initialEmail: 'prefill@example.com',
         isSubmitting: false
       }
     })
 
-    await wrapper.get('[data-testid="linuxdo-create-account-email"]').setValue('  user@example.com  ')
-    await wrapper.get('[data-testid="linuxdo-create-account-password"]').setValue('secret-123')
-    await wrapper.get('[data-testid="linuxdo-create-account-verify-code"]').setValue(' 246810 ')
+    await wrapper.get('[data-testid="oidc-create-account-email"]').setValue('  user@example.com  ')
+    await wrapper.get('[data-testid="oidc-create-account-password"]').setValue('secret-123')
+    await wrapper.get('[data-testid="oidc-create-account-verify-code"]').setValue(' 246810 ')
     await wrapper.get('form').trigger('submit.prevent')
 
     expect(wrapper.emitted('submit')).toEqual([
@@ -75,7 +75,7 @@ describe('PendingOAuthCreateAccountForm', () => {
   it('renders action labels through i18n keys', () => {
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        testIdPrefix: 'linuxdo',
+        testIdPrefix: 'oidc',
         initialEmail: '',
         isSubmitting: false
       }
@@ -94,18 +94,18 @@ describe('PendingOAuthCreateAccountForm', () => {
 
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        testIdPrefix: 'linuxdo',
+        testIdPrefix: 'oidc',
         initialEmail: 'prefill@example.com',
         isSubmitting: false
       }
     })
 
     await flushPromises()
-    await wrapper.get('[data-testid="linuxdo-create-account-password"]').setValue('secret-123')
+    await wrapper.get('[data-testid="oidc-create-account-password"]').setValue('secret-123')
     await wrapper.get('form').trigger('submit.prevent')
 
-    expect(wrapper.find('[data-testid="linuxdo-create-account-verify-code"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="linuxdo-create-account-send-code"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="oidc-create-account-verify-code"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="oidc-create-account-send-code"]').exists()).toBe(false)
     expect(wrapper.emitted('submit')).toEqual([
       [
         {
@@ -117,7 +117,7 @@ describe('PendingOAuthCreateAccountForm', () => {
     ])
   })
 
-  it('shows and emits invitation code when invitation-only signup is enabled', async () => {
+  it('shows and emits invitation code when invitation-only account creation is enabled', async () => {
     getPublicSettings.mockResolvedValue({
       invitation_code_enabled: true,
       email_verify_enabled: true,
@@ -127,17 +127,17 @@ describe('PendingOAuthCreateAccountForm', () => {
 
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        providerName: 'LinuxDo',
-        testIdPrefix: 'linuxdo',
+        providerName: 'OIDC',
+        testIdPrefix: 'oidc',
         initialEmail: 'prefill@example.com',
         isSubmitting: false
       }
     })
 
     await flushPromises()
-    await wrapper.get('[data-testid="linuxdo-create-account-password"]').setValue('secret-123')
-    await wrapper.get('[data-testid="linuxdo-create-account-verify-code"]').setValue('246810')
-    await wrapper.get('[data-testid="linuxdo-create-account-invitation-code"]').setValue(' INVITE123 ')
+    await wrapper.get('[data-testid="oidc-create-account-password"]').setValue('secret-123')
+    await wrapper.get('[data-testid="oidc-create-account-verify-code"]').setValue('246810')
+    await wrapper.get('[data-testid="oidc-create-account-invitation-code"]').setValue(' INVITE123 ')
     await wrapper.get('form').trigger('submit.prevent')
 
     expect(wrapper.emitted('submit')).toEqual([
@@ -160,15 +160,15 @@ describe('PendingOAuthCreateAccountForm', () => {
 
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        providerName: 'LinuxDo',
-        testIdPrefix: 'linuxdo',
+        providerName: 'OIDC',
+        testIdPrefix: 'oidc',
         initialEmail: '',
         isSubmitting: false
       }
     })
 
-    await wrapper.get('[data-testid="linuxdo-create-account-email"]').setValue('  user@example.com  ')
-    await wrapper.get('[data-testid="linuxdo-create-account-send-code"]').trigger('click')
+    await wrapper.get('[data-testid="oidc-create-account-email"]').setValue('  user@example.com  ')
+    await wrapper.get('[data-testid="oidc-create-account-send-code"]').trigger('click')
     await flushPromises()
 
     expect(sendPendingOAuthVerifyCode).toHaveBeenCalledWith({
@@ -181,14 +181,14 @@ describe('PendingOAuthCreateAccountForm', () => {
 
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        testIdPrefix: 'linuxdo',
+        testIdPrefix: 'oidc',
         initialEmail: '',
         isSubmitting: false
       }
     })
 
-    await wrapper.get('[data-testid="linuxdo-create-account-email"]').setValue('user@example.com')
-    await wrapper.get('[data-testid="linuxdo-create-account-send-code"]').trigger('click')
+    await wrapper.get('[data-testid="oidc-create-account-email"]').setValue('user@example.com')
+    await wrapper.get('[data-testid="oidc-create-account-send-code"]').trigger('click')
     await flushPromises()
 
     expect(showError).toHaveBeenCalledWith('send failed')
@@ -207,8 +207,8 @@ describe('PendingOAuthCreateAccountForm', () => {
 
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
-        providerName: 'LinuxDo',
-        testIdPrefix: 'linuxdo',
+        providerName: 'OIDC',
+        testIdPrefix: 'oidc',
         initialEmail: '',
         isSubmitting: false
       },
@@ -222,12 +222,12 @@ describe('PendingOAuthCreateAccountForm', () => {
     })
 
     await flushPromises()
-    await wrapper.get('[data-testid="linuxdo-create-account-email"]').setValue('  user@example.com  ')
+    await wrapper.get('[data-testid="oidc-create-account-email"]').setValue('  user@example.com  ')
 
-    expect(wrapper.get('[data-testid="linuxdo-create-account-send-code"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="oidc-create-account-send-code"]').attributes('disabled')).toBeDefined()
 
     await wrapper.get('[data-testid="turnstile-verify"]').trigger('click')
-    await wrapper.get('[data-testid="linuxdo-create-account-send-code"]').trigger('click')
+    await wrapper.get('[data-testid="oidc-create-account-send-code"]').trigger('click')
     await flushPromises()
 
     expect(sendPendingOAuthVerifyCode).toHaveBeenCalledWith({

@@ -71,32 +71,32 @@ describe('admin users api auth identity binding', () => {
 
   it('posts the backend-compatible auth identity bind payload and returns the backend response shape', async () => {
     const payload: AdminBindAuthIdentityRequest = {
-      provider_type: 'wechat',
-      provider_key: 'wechat-main',
-      provider_subject: 'union-123',
+      provider_type: 'oidc',
+      provider_key: 'internal-oidc',
+      provider_subject: 'subject-123',
       metadata: { source: 'admin-repair' },
       channel: {
-        channel: 'open',
-        channel_app_id: 'wx-open',
-        channel_subject: 'openid-123',
+        channel: 'oidc',
+        channel_app_id: 'internal-client',
+        channel_subject: 'subject-123',
         metadata: { scene: 'migration' },
       },
     }
 
     const response: AdminBoundAuthIdentity = {
       user_id: 9,
-      provider_type: 'wechat',
-      provider_key: 'wechat-main',
-      provider_subject: 'union-123',
+      provider_type: 'oidc',
+      provider_key: 'internal-oidc',
+      provider_subject: 'subject-123',
       verified_at: '2026-04-22T00:00:00Z',
       issuer: null,
       metadata: { source: 'admin-repair' },
       created_at: '2026-04-22T00:00:00Z',
       updated_at: '2026-04-22T00:00:00Z',
       channel: {
-        channel: 'open',
-        channel_app_id: 'wx-open',
-        channel_subject: 'openid-123',
+        channel: 'oidc',
+        channel_app_id: 'internal-client',
+        channel_subject: 'subject-123',
         metadata: { scene: 'migration' },
         created_at: '2026-04-22T00:00:00Z',
         updated_at: '2026-04-22T00:00:00Z',

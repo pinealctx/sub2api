@@ -48,11 +48,12 @@ func TestAuthRoutesRateLimitFailCloseWhenRedisUnavailable(t *testing.T) {
 
 	router := newAuthRoutesTestRouter(rdb)
 	paths := []string{
-		"/api/v1/auth/register",
 		"/api/v1/auth/login",
 		"/api/v1/auth/login/2fa",
-		"/api/v1/auth/send-verify-code",
+		"/api/v1/auth/oauth/pending/exchange",
 		"/api/v1/auth/oauth/pending/send-verify-code",
+		"/api/v1/auth/oauth/pending/create-account",
+		"/api/v1/auth/oauth/pending/bind-login",
 	}
 
 	for _, path := range paths {
@@ -65,5 +66,38 @@ func TestAuthRoutesRateLimitFailCloseWhenRedisUnavailable(t *testing.T) {
 
 		require.Equal(t, http.StatusTooManyRequests, w.Code, "path=%s", path)
 		require.Contains(t, w.Body.String(), "rate limit exceeded", "path=%s", path)
+	}
+}
+
+func TestAuthRoutesRemovedInternalForkPublicEndpointsReturn404(t *testing.T) {
+	router := newAuthRoutesTestRouter(nil)
+
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{http.MethodPost, "/api/v1/auth/register"},
+		{http.MethodPost, "/api/v1/auth/send-verify-code"},
+		{http.MethodPost, "/api/v1/auth/forgot-password"},
+		{http.MethodPost, "/api/v1/auth/reset-password"},
+		{http.MethodGet, "/api/v1/auth/oauth/linuxdo/start"},
+		{http.MethodGet, "/api/v1/auth/oauth/linuxdo/callback"},
+		{http.MethodGet, "/api/v1/auth/oauth/wechat/start"},
+		{http.MethodGet, "/api/v1/auth/oauth/wechat/callback"},
+		{http.MethodGet, "/api/v1/auth/oauth/github/start"},
+		{http.MethodGet, "/api/v1/auth/oauth/github/callback"},
+		{http.MethodGet, "/api/v1/auth/oauth/google/start"},
+		{http.MethodGet, "/api/v1/auth/oauth/google/callback"},
+		{http.MethodGet, "/api/v1/auth/oauth/dingtalk/start"},
+		{http.MethodGet, "/api/v1/auth/oauth/dingtalk/callback"},
+	}
+
+	for _, tc := range tests {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusNotFound, w.Code, "method=%s path=%s", tc.method, tc.path)
 	}
 }

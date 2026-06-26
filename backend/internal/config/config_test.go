@@ -281,28 +281,6 @@ func TestLoadSchedulingConfigFromEnv(t *testing.T) {
 	}
 }
 
-func TestLoadWeChatConnectConfigFromLegacyEnv(t *testing.T) {
-	resetViperWithJWTSecret(t)
-	t.Setenv("WECHAT_OAUTH_OPEN_APP_ID", "wx-open-app")
-	t.Setenv("WECHAT_OAUTH_OPEN_APP_SECRET", "wx-open-secret")
-	t.Setenv("WECHAT_OAUTH_MP_APP_ID", "wx-mp-app")
-	t.Setenv("WECHAT_OAUTH_MP_APP_SECRET", "wx-mp-secret")
-	t.Setenv("WECHAT_OAUTH_FRONTEND_REDIRECT_URL", "/auth/wechat/legacy-callback")
-
-	cfg, err := Load()
-	require.NoError(t, err)
-	require.True(t, cfg.WeChat.Enabled)
-	require.True(t, cfg.WeChat.OpenEnabled)
-	require.True(t, cfg.WeChat.MPEnabled)
-	require.False(t, cfg.WeChat.MobileEnabled)
-	require.Equal(t, "open", cfg.WeChat.Mode)
-	require.Equal(t, "wx-open-app", cfg.WeChat.OpenAppID)
-	require.Equal(t, "wx-open-secret", cfg.WeChat.OpenAppSecret)
-	require.Equal(t, "wx-mp-app", cfg.WeChat.MPAppID)
-	require.Equal(t, "wx-mp-secret", cfg.WeChat.MPAppSecret)
-	require.Equal(t, "/auth/wechat/legacy-callback", cfg.WeChat.FrontendRedirectURL)
-}
-
 func TestLoadDefaultOIDCSecurityDefaults(t *testing.T) {
 	resetViperWithJWTSecret(t)
 
@@ -420,53 +398,6 @@ func TestLoadDefaultDatabaseSSLMode(t *testing.T) {
 
 	if cfg.Database.SSLMode != "prefer" {
 		t.Fatalf("Database.SSLMode = %q, want %q", cfg.Database.SSLMode, "prefer")
-	}
-}
-
-func TestValidateLinuxDoFrontendRedirectURL(t *testing.T) {
-	resetViperWithJWTSecret(t)
-
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
-
-	cfg.LinuxDo.Enabled = true
-	cfg.LinuxDo.ClientID = "test-client"
-	cfg.LinuxDo.ClientSecret = "test-secret"
-	cfg.LinuxDo.RedirectURL = "https://example.com/api/v1/auth/oauth/linuxdo/callback"
-	cfg.LinuxDo.TokenAuthMethod = "client_secret_post"
-	cfg.LinuxDo.UsePKCE = true
-
-	cfg.LinuxDo.FrontendRedirectURL = "javascript:alert(1)"
-	err = cfg.Validate()
-	if err == nil {
-		t.Fatalf("Validate() expected error for javascript scheme, got nil")
-	}
-	if !strings.Contains(err.Error(), "linuxdo_connect.frontend_redirect_url") {
-		t.Fatalf("Validate() expected frontend_redirect_url error, got: %v", err)
-	}
-}
-
-func TestValidateLinuxDoAllowsDisablingPKCEForCompatibility(t *testing.T) {
-	resetViperWithJWTSecret(t)
-
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
-
-	cfg.LinuxDo.Enabled = true
-	cfg.LinuxDo.ClientID = "test-client"
-	cfg.LinuxDo.ClientSecret = ""
-	cfg.LinuxDo.RedirectURL = "https://example.com/api/v1/auth/oauth/linuxdo/callback"
-	cfg.LinuxDo.FrontendRedirectURL = "/auth/linuxdo/callback"
-	cfg.LinuxDo.TokenAuthMethod = "none"
-	cfg.LinuxDo.UsePKCE = false
-
-	err = cfg.Validate()
-	if err != nil {
-		t.Fatalf("Validate() expected LinuxDo config without PKCE to pass for compatibility, got: %v", err)
 	}
 }
 
@@ -950,33 +881,6 @@ func TestProvideConfig(t *testing.T) {
 	}
 }
 
-func TestValidateConfigWithLinuxDoEnabled(t *testing.T) {
-	resetViperWithJWTSecret(t)
-
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
-
-	cfg.Security.CSP.Enabled = true
-	cfg.Security.CSP.Policy = "default-src 'self'"
-
-	cfg.LinuxDo.Enabled = true
-	cfg.LinuxDo.ClientID = "client"
-	cfg.LinuxDo.ClientSecret = "secret"
-	cfg.LinuxDo.AuthorizeURL = "https://example.com/oauth2/authorize"
-	cfg.LinuxDo.TokenURL = "https://example.com/oauth2/token"
-	cfg.LinuxDo.UserInfoURL = "https://example.com/oauth2/userinfo"
-	cfg.LinuxDo.RedirectURL = "https://example.com/api/v1/auth/oauth/linuxdo/callback"
-	cfg.LinuxDo.FrontendRedirectURL = "/auth/linuxdo/callback"
-	cfg.LinuxDo.TokenAuthMethod = "client_secret_post"
-	cfg.LinuxDo.UsePKCE = true
-
-	if err := cfg.Validate(); err != nil {
-		t.Fatalf("Validate() unexpected error: %v", err)
-	}
-}
-
 func TestValidateJWTSecretStrength(t *testing.T) {
 	if !isWeakJWTSecret("change-me-in-production") {
 		t.Fatalf("isWeakJWTSecret should detect weak secret")
@@ -1088,16 +992,6 @@ func TestValidateConfigErrors(t *testing.T) {
 			wantErr: "jwt.secret must be at least 32 bytes",
 		},
 		{
-			name:    "subscription maintenance worker_count non-negative",
-			mutate:  func(c *Config) { c.SubscriptionMaintenance.WorkerCount = -1 },
-			wantErr: "subscription_maintenance.worker_count",
-		},
-		{
-			name:    "subscription maintenance queue_size non-negative",
-			mutate:  func(c *Config) { c.SubscriptionMaintenance.QueueSize = -1 },
-			wantErr: "subscription_maintenance.queue_size",
-		},
-		{
 			name:    "jwt expire hour positive",
 			mutate:  func(c *Config) { c.JWT.ExpireHour = 0 },
 			wantErr: "jwt.expire_hour must be positive",
@@ -1116,31 +1010,6 @@ func TestValidateConfigErrors(t *testing.T) {
 			name:    "csp policy required",
 			mutate:  func(c *Config) { c.Security.CSP.Enabled = true; c.Security.CSP.Policy = "" },
 			wantErr: "security.csp.policy",
-		},
-		{
-			name: "linuxdo client id required",
-			mutate: func(c *Config) {
-				c.LinuxDo.Enabled = true
-				c.LinuxDo.UsePKCE = true
-				c.LinuxDo.ClientID = ""
-			},
-			wantErr: "linuxdo_connect.client_id",
-		},
-		{
-			name: "linuxdo token auth method",
-			mutate: func(c *Config) {
-				c.LinuxDo.Enabled = true
-				c.LinuxDo.UsePKCE = true
-				c.LinuxDo.ClientID = "client"
-				c.LinuxDo.ClientSecret = "secret"
-				c.LinuxDo.AuthorizeURL = "https://example.com/authorize"
-				c.LinuxDo.TokenURL = "https://example.com/token"
-				c.LinuxDo.UserInfoURL = "https://example.com/userinfo"
-				c.LinuxDo.RedirectURL = "https://example.com/callback"
-				c.LinuxDo.FrontendRedirectURL = "/auth/callback"
-				c.LinuxDo.TokenAuthMethod = "invalid"
-			},
-			wantErr: "linuxdo_connect.token_auth_method",
 		},
 		{
 			name:    "billing circuit breaker threshold",

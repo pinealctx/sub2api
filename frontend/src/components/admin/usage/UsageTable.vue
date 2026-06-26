@@ -12,14 +12,12 @@
       >
         <template #cell-user="{ row }">
           <div class="text-sm">
-            <button
+            <span
               v-if="row.user?.email"
-              class="font-medium text-primary-600 underline decoration-dashed underline-offset-2 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-              @click="$emit('userClick', row.user_id, row.user?.email)"
-              :title="t('admin.usage.clickToViewBalance')"
+              class="font-medium text-gray-900 dark:text-white"
             >
               {{ row.user.email }}
-            </button>
+            </span>
             <span v-else class="font-medium text-gray-900 dark:text-white">-</span>
             <span v-if="row.user?.deleted_at" class="ml-1 inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30">
               {{ t('admin.usage.userDeletedBadge') }}
@@ -301,7 +299,7 @@
               <span class="font-medium text-pink-300">${{ tooltipData.image_output_cost.toFixed(6) }}</span>
             </div>
             <!-- Token billing: show unit prices per 1M tokens -->
-            <template v-if="!tooltipData?.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN">
+            <template v-if="tooltipData && !isImageUsage(tooltipData) && (!tooltipData.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN)">
               <div v-if="tooltipData && tooltipData.input_tokens > 0" class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('usage.inputTokenPrice') }}</span>
                 <span class="font-medium text-sky-300">{{ formatTokenPricePerMillion(tooltipData.input_cost, tooltipData.input_tokens) }} {{ t('usage.perMillionTokens') }}</span>
@@ -315,7 +313,7 @@
                 <span class="font-medium text-pink-300">{{ formatTokenPricePerMillion(tooltipData.image_output_cost ?? 0, tooltipData.image_output_tokens) }} {{ t('usage.perMillionTokens') }}</span>
               </div>
             </template>
-            <template v-else-if="isImageUsage(tooltipData)">
+            <template v-else-if="tooltipData && isImageUsage(tooltipData)">
               <div class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('usage.imageCount') }}</span>
                 <span class="font-medium text-white">{{ tooltipData.image_count }}{{ t('usage.imageUnit') }}</span>
@@ -458,7 +456,6 @@ withDefaults(defineProps<Props>(), {
   defaultSortOrder: 'asc'
 })
 defineEmits<{
-  userClick: [userID: number, email?: string]
   sort: [key: string, order: 'asc' | 'desc']
 }>()
 const { t } = useI18n()

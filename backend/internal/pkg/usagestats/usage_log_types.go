@@ -186,7 +186,6 @@ type UserBreakdownDimension struct {
 	AccountID   int64  // filter by account_id (>0 to enable)
 	RequestType *int16 // filter by request_type (non-nil to enable)
 	Stream      *bool  // filter by stream flag (non-nil to enable)
-	BillingType *int8  // filter by billing_type (non-nil to enable)
 }
 
 // APIKeyUsageTrendPoint represents API key usage trend data point
@@ -268,7 +267,6 @@ type UsageLogFilters struct {
 	Model       string
 	RequestType *int16
 	Stream      *bool
-	BillingType *int8
 	BillingMode string
 	StartTime   *time.Time
 	EndTime     *time.Time

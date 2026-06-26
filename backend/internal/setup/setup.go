@@ -404,7 +404,6 @@ func createAdminUser(cfg *SetupConfig) (bool, string, error) {
 		Email:       cfg.Admin.Email,
 		Role:        service.RoleAdmin,
 		Status:      service.StatusActive,
-		Balance:     0,
 		Concurrency: setupDefaultAdminConcurrency(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -416,12 +415,11 @@ func createAdminUser(cfg *SetupConfig) (bool, string, error) {
 
 	_, err = db.ExecContext(
 		ctx,
-		`INSERT INTO users (email, password_hash, role, balance, concurrency, status, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		`INSERT INTO users (email, password_hash, role, concurrency, status, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		admin.Email,
 		admin.PasswordHash,
 		admin.Role,
-		admin.Balance,
 		admin.Concurrency,
 		admin.Status,
 		admin.CreatedAt,
@@ -451,7 +449,6 @@ func writeConfigFile(cfg *SetupConfig) error {
 		} `yaml:"jwt"`
 		Default struct {
 			UserConcurrency int     `yaml:"user_concurrency"`
-			UserBalance     float64 `yaml:"user_balance"`
 			APIKeyPrefix    string  `yaml:"api_key_prefix"`
 			RateMultiplier  float64 `yaml:"rate_multiplier"`
 		} `yaml:"default"`
@@ -473,12 +470,10 @@ func writeConfigFile(cfg *SetupConfig) error {
 		},
 		Default: struct {
 			UserConcurrency int     `yaml:"user_concurrency"`
-			UserBalance     float64 `yaml:"user_balance"`
 			APIKeyPrefix    string  `yaml:"api_key_prefix"`
 			RateMultiplier  float64 `yaml:"rate_multiplier"`
 		}{
 			UserConcurrency: defaultUserConcurrency,
-			UserBalance:     0,
 			APIKeyPrefix:    "sk-",
 			RateMultiplier:  1.0,
 		},

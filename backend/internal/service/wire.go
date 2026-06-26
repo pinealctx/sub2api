@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/google/wire"
@@ -179,16 +177,6 @@ func ProvideAccountExpiryService(accountRepo AccountRepository) *AccountExpirySe
 // ProvideProxyExpiryService creates and starts ProxyExpiryService.
 func ProvideProxyExpiryService(proxyRepo ProxyRepository) *ProxyExpiryService {
 	svc := NewProxyExpiryService(proxyRepo, time.Minute)
-	svc.Start()
-	return svc
-}
-
-// ProvideSubscriptionExpiryService creates and starts SubscriptionExpiryService.
-func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, settingRepo SettingRepository, notificationEmailService *NotificationEmailService, lockCache LeaderLockCache, db *sql.DB) *SubscriptionExpiryService {
-	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute)
-	svc.SetSettingRepository(settingRepo)
-	svc.SetNotificationEmailService(notificationEmailService)
-	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -470,9 +458,8 @@ func ProvideOpsService(
 }
 
 // ProvideSettingService wires SettingService with group reader and proxy repo.
-func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
+func ProvideSettingService(settingRepo SettingRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
 	svc := NewSettingService(settingRepo, cfg)
-	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	svc.SetProxyRepository(proxyRepo)
 	if err := svc.LoadAPIKeyACLTrustForwardedIPSetting(context.Background()); err != nil {
 		logger.LegacyPrintf("service.setting", "Warning: load api key acl forwarded ip setting failed: %v", err)
@@ -485,14 +472,13 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 func ProvideBillingCacheService(
 	cache BillingCache,
 	userRepo UserRepository,
-	subRepo UserSubscriptionRepository,
 	apiKeyRepo APIKeyRepository,
 	rpmCache UserRPMCache,
 	rateRepo UserGroupRateRepository,
 	cfg *config.Config,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
 ) *BillingCacheService {
-	return NewBillingCacheService(cache, userRepo, subRepo, apiKeyRepo, rpmCache, rateRepo, cfg, userPlatformQuotaRepo)
+	return NewBillingCacheService(cache, userRepo, apiKeyRepo, rpmCache, rateRepo, cfg, userPlatformQuotaRepo)
 }
 
 // ProvideAPIKeyService wires APIKeyService and connects rate-limit cache invalidation.
@@ -500,13 +486,12 @@ func ProvideAPIKeyService(
 	apiKeyRepo APIKeyRepository,
 	userRepo UserRepository,
 	groupRepo GroupRepository,
-	userSubRepo UserSubscriptionRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	cache APIKeyCache,
 	cfg *config.Config,
 	billingCacheService *BillingCacheService,
 ) *APIKeyService {
-	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, userSubRepo, userGroupRateRepo, cache, cfg)
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, userGroupRateRepo, cache, cfg)
 	svc.SetRateLimitCacheInvalidator(billingCacheService)
 	return svc
 }
@@ -521,14 +506,11 @@ var ProviderSet = wire.NewSet(
 	NewGroupService,
 	NewAccountService,
 	NewProxyService,
-	NewRedeemService,
-	NewPromoService,
 	NewUsageService,
 	NewDashboardService,
 	ProvidePricingService,
 	NewBillingService,
 	ProvideBillingCacheService,
-	NewAnnouncementService,
 	NewAdminService,
 	NewGatewayService,
 	NewOpenAIGatewayService,
@@ -565,8 +547,6 @@ var ProviderSet = wire.NewSet(
 	NewNotificationEmailService,
 	ProvideEmailQueueService,
 	NewTurnstileService,
-	NewSubscriptionService,
-	wire.Bind(new(DefaultSubscriptionAssigner), new(*SubscriptionService)),
 	ProvideConcurrencyService,
 	ProvideUserMessageQueueService,
 	NewUsageRecordWorkerPool,
@@ -577,7 +557,6 @@ var ProviderSet = wire.NewSet(
 	ProvideTokenRefreshService,
 	ProvideAccountExpiryService,
 	ProvideProxyExpiryService,
-	ProvideSubscriptionExpiryService,
 	ProvideTimingWheelService,
 	ProvideDashboardAggregationService,
 	ProvideUsageCleanupService,
@@ -598,11 +577,6 @@ var ProviderSet = wire.NewSet(
 	NewChannelService,
 	NewModelPricingResolver,
 	NewContentModerationService,
-	NewAffiliateService,
-	ProvidePaymentConfigService,
-	ProvidePaymentService,
-	ProvidePaymentOrderExpiryService,
-	ProvideBalanceNotifyService,
 	ProvideChannelMonitorService,
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
@@ -612,34 +586,6 @@ var ProviderSet = wire.NewSet(
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
 func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache, quotaRepo UserPlatformQuotaRepository, tw *TimingWheelService) *UserPlatformQuotaUsageFlusher {
 	svc := NewUserPlatformQuotaUsageFlusher(cfg, cache, quotaRepo, tw)
-	svc.Start()
-	return svc
-}
-
-// ProvidePaymentConfigService wraps NewPaymentConfigService to accept the named
-// payment.EncryptionKey type instead of raw []byte, avoiding Wire ambiguity.
-func ProvidePaymentConfigService(entClient *dbent.Client, settingRepo SettingRepository, key payment.EncryptionKey) *PaymentConfigService {
-	return NewPaymentConfigService(entClient, settingRepo, []byte(key))
-}
-
-// ProvideBalanceNotifyService creates BalanceNotifyService
-func ProvideBalanceNotifyService(emailService *EmailService, settingRepo SettingRepository, accountRepo AccountRepository, notificationEmailService *NotificationEmailService) *BalanceNotifyService {
-	svc := NewBalanceNotifyService(emailService, settingRepo, accountRepo)
-	svc.SetNotificationEmailService(notificationEmailService)
-	return svc
-}
-
-// ProvidePaymentService creates PaymentService and attaches notification email delivery.
-func ProvidePaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService, notificationEmailService *NotificationEmailService) *PaymentService {
-	svc := NewPaymentService(entClient, registry, loadBalancer, redeemService, subscriptionSvc, configService, userRepo, groupRepo, affiliateService)
-	svc.SetNotificationEmailService(notificationEmailService)
-	return svc
-}
-
-// ProvidePaymentOrderExpiryService creates and starts PaymentOrderExpiryService.
-func ProvidePaymentOrderExpiryService(paymentSvc *PaymentService, lockCache LeaderLockCache, db *sql.DB) *PaymentOrderExpiryService {
-	svc := NewPaymentOrderExpiryService(paymentSvc, 60*time.Second)
-	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }

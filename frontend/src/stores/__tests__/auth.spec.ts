@@ -7,7 +7,6 @@ const mockLogin = vi.fn()
 const mockLogin2FA = vi.fn()
 const mockLogout = vi.fn()
 const mockGetCurrentUser = vi.fn()
-const mockRegister = vi.fn()
 const mockRefreshToken = vi.fn()
 
 vi.mock('@/api', () => ({
@@ -16,7 +15,6 @@ vi.mock('@/api', () => ({
     login2FA: (...args: any[]) => mockLogin2FA(...args),
     logout: (...args: any[]) => mockLogout(...args),
     getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
-    register: (...args: any[]) => mockRegister(...args),
     refreshToken: (...args: any[]) => mockRefreshToken(...args),
   },
   isTotp2FARequired: (response: any) => response?.requires_2fa === true,
@@ -27,7 +25,6 @@ const fakeUser = {
   username: 'testuser',
   email: 'test@example.com',
   role: 'user' as const,
-  balance: 100,
   concurrency: 5,
   status: 'active' as const,
   allowed_groups: null,
@@ -218,7 +215,7 @@ describe('useAuthStore', () => {
         JSON.stringify({
           token: 'pending-token',
           token_field: 'pending_auth_token',
-          provider: 'wechat',
+          provider: 'oidc',
           redirect: '/profile',
         })
       )
@@ -230,7 +227,7 @@ describe('useAuthStore', () => {
       expect(store.pendingAuthSession).toEqual({
         token: 'pending-token',
         token_field: 'pending_auth_token',
-        provider: 'wechat',
+        provider: 'oidc',
         redirect: '/profile',
       })
     })
@@ -243,7 +240,7 @@ describe('useAuthStore', () => {
       store.setPendingAuthSession({
         token: 'pending-token',
         token_field: 'pending_auth_token',
-        provider: 'wechat',
+        provider: 'oidc',
         redirect: '/profile',
       })
 
@@ -251,7 +248,7 @@ describe('useAuthStore', () => {
       expect(JSON.parse(localStorage.getItem('pending_auth_session') || 'null')).toEqual({
         token: 'pending-token',
         token_field: 'pending_auth_token',
-        provider: 'wechat',
+        provider: 'oidc',
         redirect: '/profile',
       })
 
@@ -290,28 +287,6 @@ describe('useAuthStore', () => {
       })
     })
 
-    it('preserves pending auth session when registration fails', async () => {
-      const store = useAuthStore()
-      store.setPendingAuthSession({
-        token: 'pending-token',
-        token_field: 'pending_auth_token',
-        provider: 'oidc',
-        redirect: '/register',
-      })
-      mockRegister.mockRejectedValue(new Error('Register failed'))
-
-      await expect(
-        store.register({ email: 'user@example.com', password: 'secret-123' })
-      ).rejects.toThrow('Register failed')
-
-      expect(store.hasPendingAuthSession).toBe(true)
-      expect(store.pendingAuthSession).toEqual({
-        token: 'pending-token',
-        token_field: 'pending_auth_token',
-        provider: 'oidc',
-        redirect: '/register',
-      })
-    })
   })
 
   // --- isAdmin ---

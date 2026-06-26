@@ -199,7 +199,6 @@ type APIKeyService struct {
 	apiKeyRepo            APIKeyRepository
 	userRepo              UserRepository
 	groupRepo             GroupRepository
-	userSubRepo           UserSubscriptionRepository
 	userGroupRateRepo     UserGroupRateRepository
 	cache                 APIKeyCache
 	rateLimitCacheInvalid RateLimitCacheInvalidator // optional: invalidate Redis rate limit cache
@@ -216,7 +215,6 @@ func NewAPIKeyService(
 	apiKeyRepo APIKeyRepository,
 	userRepo UserRepository,
 	groupRepo GroupRepository,
-	userSubRepo UserSubscriptionRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	cache APIKeyCache,
 	cfg *config.Config,
@@ -225,7 +223,6 @@ func NewAPIKeyService(
 		apiKeyRepo:        apiKeyRepo,
 		userRepo:          userRepo,
 		groupRepo:         groupRepo,
-		userSubRepo:       userSubRepo,
 		userGroupRateRepo: userGroupRateRepo,
 		cache:             cache,
 		cfg:               cfg,
@@ -315,16 +312,7 @@ func (s *APIKeyService) incrementAPIKeyErrorCount(ctx context.Context, userID in
 	_ = s.cache.IncrementCreateAttemptCount(ctx, userID)
 }
 
-// canUserBindGroup 检查用户是否可以绑定指定分组
-// 对于订阅类型分组：检查用户是否有有效订阅
-// 对于标准类型分组：使用原有的 AllowedGroups 和 IsExclusive 逻辑
 func (s *APIKeyService) canUserBindGroup(ctx context.Context, user *User, group *Group) bool {
-	// 订阅类型分组：需要有效订阅
-	if group.IsSubscriptionType() {
-		_, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, user.ID, group.ID)
-		return err == nil // 有有效订阅则允许
-	}
-	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)
 }
 
@@ -739,10 +727,7 @@ func (s *APIKeyService) IncrementUsage(ctx context.Context, keyID int64) error {
 	return nil
 }
 
-// GetAvailableGroups 获取用户有权限绑定的分组列表
-// 返回用户可以选择的分组：
-// - 标准类型分组：公开的（非专属）或用户被明确允许的
-// - 订阅类型分组：用户有有效订阅的
+// GetAvailableGroups 获取用户有权限绑定的分组列表。
 func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([]Group, error) {
 	// 获取用户信息
 	user, err := s.userRepo.GetByID(ctx, userID)
@@ -756,37 +741,15 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 		return nil, fmt.Errorf("list active groups: %w", err)
 	}
 
-	// 获取用户的所有有效订阅
-	activeSubscriptions, err := s.userSubRepo.ListActiveByUserID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("list active subscriptions: %w", err)
-	}
-
-	// 构建订阅分组 ID 集合
-	subscribedGroupIDs := make(map[int64]bool)
-	for _, sub := range activeSubscriptions {
-		subscribedGroupIDs[sub.GroupID] = true
-	}
-
 	// 过滤出用户有权限的分组
 	availableGroups := make([]Group, 0)
 	for _, group := range allGroups {
-		if s.canUserBindGroupInternal(user, &group, subscribedGroupIDs) {
+		if user.CanBindGroup(group.ID, group.IsExclusive) {
 			availableGroups = append(availableGroups, group)
 		}
 	}
 
 	return availableGroups, nil
-}
-
-// canUserBindGroupInternal 内部方法，检查用户是否可以绑定分组（使用预加载的订阅数据）
-func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool) bool {
-	// 订阅类型分组：需要有效订阅
-	if group.IsSubscriptionType() {
-		return subscribedGroupIDs[group.ID]
-	}
-	// 标准类型分组：使用原有逻辑
-	return user.CanBindGroup(group.ID, group.IsExclusive)
 }
 
 func (s *APIKeyService) SearchAPIKeys(ctx context.Context, userID int64, keyword string, limit int) ([]APIKey, error) {

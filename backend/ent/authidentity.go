@@ -47,13 +47,11 @@ type AuthIdentity struct {
 type AuthIdentityEdges struct {
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
-	// Channels holds the value of the channels edge.
-	Channels []*AuthIdentityChannel `json:"channels,omitempty"`
 	// AdoptionDecisions holds the value of the adoption_decisions edge.
 	AdoptionDecisions []*IdentityAdoptionDecision `json:"adoption_decisions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -67,19 +65,10 @@ func (e AuthIdentityEdges) UserOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "user"}
 }
 
-// ChannelsOrErr returns the Channels value or an error if the edge
-// was not loaded in eager-loading.
-func (e AuthIdentityEdges) ChannelsOrErr() ([]*AuthIdentityChannel, error) {
-	if e.loadedTypes[1] {
-		return e.Channels, nil
-	}
-	return nil, &NotLoadedError{edge: "channels"}
-}
-
 // AdoptionDecisionsOrErr returns the AdoptionDecisions value or an error if the edge
 // was not loaded in eager-loading.
 func (e AuthIdentityEdges) AdoptionDecisionsOrErr() ([]*IdentityAdoptionDecision, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.AdoptionDecisions, nil
 	}
 	return nil, &NotLoadedError{edge: "adoption_decisions"}
@@ -193,11 +182,6 @@ func (_m *AuthIdentity) Value(name string) (ent.Value, error) {
 // QueryUser queries the "user" edge of the AuthIdentity entity.
 func (_m *AuthIdentity) QueryUser() *UserQuery {
 	return NewAuthIdentityClient(_m.config).QueryUser(_m)
-}
-
-// QueryChannels queries the "channels" edge of the AuthIdentity entity.
-func (_m *AuthIdentity) QueryChannels() *AuthIdentityChannelQuery {
-	return NewAuthIdentityClient(_m.config).QueryChannels(_m)
 }
 
 // QueryAdoptionDecisions queries the "adoption_decisions" edge of the AuthIdentity entity.

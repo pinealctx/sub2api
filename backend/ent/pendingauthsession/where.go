@@ -105,9 +105,9 @@ func ResolvedEmail(v string) predicate.PendingAuthSession {
 	return predicate.PendingAuthSession(sql.FieldEQ(FieldResolvedEmail, v))
 }
 
-// RegistrationPasswordHash applies equality check predicate on the "registration_password_hash" field. It's identical to RegistrationPasswordHashEQ.
-func RegistrationPasswordHash(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldEQ(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHash applies equality check predicate on the "account_creation_password_hash" field. It's identical to AccountCreationPasswordHashEQ.
+func AccountCreationPasswordHash(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldEQ(FieldAccountCreationPasswordHash, v))
 }
 
 // BrowserSessionKey applies equality check predicate on the "browser_session_key" field. It's identical to BrowserSessionKeyEQ.
@@ -715,69 +715,69 @@ func ResolvedEmailContainsFold(v string) predicate.PendingAuthSession {
 	return predicate.PendingAuthSession(sql.FieldContainsFold(FieldResolvedEmail, v))
 }
 
-// RegistrationPasswordHashEQ applies the EQ predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashEQ(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldEQ(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashEQ applies the EQ predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashEQ(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldEQ(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashNEQ applies the NEQ predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashNEQ(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldNEQ(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashNEQ applies the NEQ predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashNEQ(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldNEQ(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashIn applies the In predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashIn(vs ...string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldIn(FieldRegistrationPasswordHash, vs...))
+// AccountCreationPasswordHashIn applies the In predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashIn(vs ...string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldIn(FieldAccountCreationPasswordHash, vs...))
 }
 
-// RegistrationPasswordHashNotIn applies the NotIn predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashNotIn(vs ...string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldNotIn(FieldRegistrationPasswordHash, vs...))
+// AccountCreationPasswordHashNotIn applies the NotIn predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashNotIn(vs ...string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldNotIn(FieldAccountCreationPasswordHash, vs...))
 }
 
-// RegistrationPasswordHashGT applies the GT predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashGT(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldGT(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashGT applies the GT predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashGT(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldGT(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashGTE applies the GTE predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashGTE(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldGTE(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashGTE applies the GTE predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashGTE(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldGTE(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashLT applies the LT predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashLT(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldLT(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashLT applies the LT predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashLT(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldLT(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashLTE applies the LTE predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashLTE(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldLTE(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashLTE applies the LTE predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashLTE(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldLTE(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashContains applies the Contains predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashContains(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldContains(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashContains applies the Contains predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashContains(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldContains(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashHasPrefix applies the HasPrefix predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashHasPrefix(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldHasPrefix(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashHasPrefix applies the HasPrefix predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashHasPrefix(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldHasPrefix(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashHasSuffix applies the HasSuffix predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashHasSuffix(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldHasSuffix(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashHasSuffix applies the HasSuffix predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashHasSuffix(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldHasSuffix(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashEqualFold applies the EqualFold predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashEqualFold(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldEqualFold(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashEqualFold applies the EqualFold predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashEqualFold(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldEqualFold(FieldAccountCreationPasswordHash, v))
 }
 
-// RegistrationPasswordHashContainsFold applies the ContainsFold predicate on the "registration_password_hash" field.
-func RegistrationPasswordHashContainsFold(v string) predicate.PendingAuthSession {
-	return predicate.PendingAuthSession(sql.FieldContainsFold(FieldRegistrationPasswordHash, v))
+// AccountCreationPasswordHashContainsFold applies the ContainsFold predicate on the "account_creation_password_hash" field.
+func AccountCreationPasswordHashContainsFold(v string) predicate.PendingAuthSession {
+	return predicate.PendingAuthSession(sql.FieldContainsFold(FieldAccountCreationPasswordHash, v))
 }
 
 // BrowserSessionKeyEQ applies the EQ predicate on the "browser_session_key" field.

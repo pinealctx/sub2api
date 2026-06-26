@@ -619,7 +619,6 @@ type GatewayService struct {
 	usageLogRepo          UsageLogRepository
 	usageBillingRepo      UsageBillingRepository
 	userRepo              UserRepository
-	userSubRepo           UserSubscriptionRepository
 	userGroupRateRepo     UserGroupRateRepository
 	cache                 GatewayCache
 	digestStore           *DigestSessionStore
@@ -648,7 +647,6 @@ type GatewayService struct {
 	resolver              *ModelPricingResolver
 	debugGatewayBodyFile  atomic.Pointer[os.File] // non-nil when SUB2API_DEBUG_GATEWAY_BODY is set
 	tlsFPProfileService   *TLSFingerprintProfileService
-	balanceNotifyService  *BalanceNotifyService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
 }
 
@@ -659,7 +657,6 @@ func NewGatewayService(
 	usageLogRepo UsageLogRepository,
 	usageBillingRepo UsageBillingRepository,
 	userRepo UserRepository,
-	userSubRepo UserSubscriptionRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	cache GatewayCache,
 	cfg *config.Config,
@@ -679,7 +676,6 @@ func NewGatewayService(
 	tlsFPProfileService *TLSFingerprintProfileService,
 	channelService *ChannelService,
 	resolver *ModelPricingResolver,
-	balanceNotifyService *BalanceNotifyService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
@@ -691,7 +687,6 @@ func NewGatewayService(
 		usageLogRepo:          usageLogRepo,
 		usageBillingRepo:      usageBillingRepo,
 		userRepo:              userRepo,
-		userSubRepo:           userSubRepo,
 		userGroupRateRepo:     userGroupRateRepo,
 		cache:                 cache,
 		digestStore:           digestStore,
@@ -715,7 +710,6 @@ func NewGatewayService(
 		tlsFPProfileService:   tlsFPProfileService,
 		channelService:        channelService,
 		resolver:              resolver,
-		balanceNotifyService:  balanceNotifyService,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
 	}
 	svc.userGroupRateResolver = newUserGroupRateResolver(
@@ -8815,7 +8809,6 @@ type RecordUsageInput struct {
 	APIKey             *APIKey
 	User               *User
 	Account            *Account
-	Subscription       *UserSubscription  // 可选：订阅信息
 	InboundEndpoint    string             // 入站端点（客户端请求路径）
 	UpstreamEndpoint   string             // 上游端点（标准化后的上游路径）
 	UserAgent          string             // 请求的 User-Agent
@@ -8848,9 +8841,7 @@ type postUsageBillingParams struct {
 	User                  *User
 	APIKey                *APIKey
 	Account               *Account
-	Subscription          *UserSubscription
 	RequestPayloadHash    string
-	IsSubscriptionBill    bool
 	AccountRateMultiplier float64
 	APIKeyService         APIKeyQuotaUpdater
 	Platform              string // 来自 APIKey 关联 Group 的平台标识
@@ -8901,22 +8892,6 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 
 	cost := p.Cost
 
-	if p.IsSubscriptionBill {
-		// Subscription usage tracked by ActualCost so group rate multiplier
-		// consumes the quota at the expected speed.
-		if cost.ActualCost > 0 {
-			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.ActualCost); err != nil {
-				slog.Error("increment subscription usage failed", "subscription_id", p.Subscription.ID, "error", err)
-			}
-		}
-	} else {
-		if cost.ActualCost > 0 {
-			if err := deps.userRepo.DeductBalance(billingCtx, p.User.ID, cost.ActualCost); err != nil {
-				slog.Error("deduct balance failed", "user_id", p.User.ID, "error", err)
-			}
-		}
-	}
-
 	if p.shouldDeductAPIKeyQuota() {
 		if err := p.APIKeyService.UpdateQuotaUsed(billingCtx, p.APIKey.ID, cost.ActualCost); err != nil {
 			slog.Error("update api key quota failed", "api_key_id", p.APIKey.ID, "error", err)
@@ -8936,13 +8911,13 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		}
 	}
 
-	// Platform quota 累加（legacy 兜底路径）：仅对 standard（余额）模式生效；订阅模式豁免；仅对有 limit 的用户写
+	// Platform quota 累加（legacy 兜底路径）：仅对有 limit 的用户写
 	//   - HasUserPlatformQuotaLimit 守卫:与正常路径对齐，无 limit 公司跳过
 	//   - 新增 Redis 同步写:enforcement 走 Redis，legacy 路径也必须同步写，否则 preflight 看不到消费
 	//   - flusher_enabled=false（降级）:保留原有同步直写 DB
 	//   - flusher_enabled=true:跳过直写 DB，由 flusher 异步批量刷（markDirty 在 IncrementUserPlatformQuotaUsage 内部完成）
 	//   - 失败仅记 ALERT log + counter，不阻断主扣费流程
-	if !p.IsSubscriptionBill && p.Platform != "" && cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil {
+	if p.Platform != "" && cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil {
 		if deps.billingCacheService.HasUserPlatformQuotaLimit(billingCtx, p.User.ID, p.Platform) {
 			deps.billingCacheService.IncrementUserPlatformQuotaUsage(p.User.ID, p.Platform, cost.ActualCost)
 			if deps.cfg == nil || !deps.cfg.Database.UserPlatformQuotaFlusherEnabled {
@@ -9007,7 +8982,6 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 	}
 	if usageLog != nil {
 		cmd.Model = usageLog.Model
-		cmd.BillingType = usageLog.BillingType
 		cmd.InputTokens = usageLog.InputTokens
 		cmd.OutputTokens = usageLog.OutputTokens
 		cmd.CacheCreationTokens = usageLog.CacheCreationTokens
@@ -9019,20 +8993,6 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		if usageLog.ReasoningEffort != nil {
 			cmd.ReasoningEffort = *usageLog.ReasoningEffort
 		}
-		if usageLog.SubscriptionID != nil {
-			cmd.SubscriptionID = usageLog.SubscriptionID
-		}
-	}
-
-	// Record subscription / balance cost using ActualCost so the group (and any
-	// user-specific) rate multiplier consumes subscription quota at the expected
-	// speed. TotalCost remains the raw (pre-multiplier) value; downstream guards
-	// on "> 0" still correctly skip free subscriptions (RateMultiplier == 0).
-	if p.IsSubscriptionBill && p.Subscription != nil && p.Cost.TotalCost > 0 {
-		cmd.SubscriptionID = &p.Subscription.ID
-		cmd.SubscriptionCost = p.Cost.ActualCost
-	} else if p.Cost.ActualCost > 0 {
-		cmd.BalanceCost = p.Cost.ActualCost
 	}
 
 	if p.shouldDeductAPIKeyQuota() {
@@ -9088,28 +9048,20 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		return
 	}
 
-	if p.IsSubscriptionBill {
-		if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
-			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.ActualCost)
-		}
-	} else if p.Cost.ActualCost > 0 && p.User != nil {
-		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
-	}
-
 	if p.Cost.ActualCost > 0 && p.APIKey != nil && p.APIKey.HasRateLimits() {
 		deps.billingCacheService.QueueUpdateAPIKeyRateLimitUsage(p.APIKey.ID, p.Cost.ActualCost)
 	}
 
 	deps.deferredService.ScheduleLastUsedUpdate(p.Account.ID)
 
-	// Platform quota 累加：仅在 standard（余额）模式生效；订阅模式豁免；仅对有 limit 的用户写
+	// Platform quota 累加：仅对有 limit 的用户写
 	// Redis 同步写 + DB 异步持久化（flag=false 降级）或 flusher 异步刷（flag=true）:
 	//   - HasUserPlatformQuotaLimit 守卫:无 limit 的公司跳过,避免无效写入 + 浪费 Redis 容量
 	//   - Redis 同步:确保下次 preflight 立即看到最新 usage,把 TOCTOU 超支窗口
 	//     限制在并发 in-flight 请求数量内（旧实现的异步入队会让超支无限累积直到 worker 处理）
 	//   - DB 异步(flusher_enabled=false):在独立 goroutine 中走 detached context,失败用 ALERT log 触发 oncall 对账
 	//   - flusher_enabled=true:不直写 DB,由 flusher 异步批量刷（markDirty 已在 IncrementUserPlatformQuotaUsage 内部完成）
-	if !p.IsSubscriptionBill && p.Platform != "" && p.Cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil {
+	if p.Platform != "" && p.Cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil {
 		if deps.billingCacheService.HasUserPlatformQuotaLimit(ctx, p.User.ID, p.Platform) {
 			deps.billingCacheService.IncrementUserPlatformQuotaUsage(p.User.ID, p.Platform, p.Cost.ActualCost)
 			if deps.cfg == nil || !deps.cfg.Database.UserPlatformQuotaFlusherEnabled {
@@ -9136,82 +9088,6 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		}
 	}
 
-	// Notification checks run async — all parameters are already captured,
-	// no dependency on the request context or upstream connection.
-	go notifyBalanceLow(p, deps, result)
-	go notifyAccountQuota(p, deps, result)
-}
-
-// notifyBalanceLow sends balance low notification after deduction.
-// When result.NewBalance is available (from DB transaction RETURNING), it is used directly
-// to reconstruct oldBalance, avoiding stale Redis reads and concurrent-deduction races.
-func notifyBalanceLow(p *postUsageBillingParams, deps *billingDeps, result *UsageBillingApplyResult) {
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("panic in notifyBalanceLow", "recover", r)
-		}
-	}()
-	if p.IsSubscriptionBill || p.Cost.ActualCost <= 0 || p.User == nil || deps.balanceNotifyService == nil {
-		slog.Debug("notifyBalanceLow: skipped",
-			"is_subscription", p.IsSubscriptionBill,
-			"actual_cost", p.Cost.ActualCost,
-			"user_nil", p.User == nil,
-			"service_nil", deps.balanceNotifyService == nil,
-		)
-		return
-	}
-
-	oldBalance := resolveOldBalance(p, result)
-	slog.Debug("notifyBalanceLow: calling CheckBalanceAfterDeduction",
-		"user_id", p.User.ID,
-		"old_balance", oldBalance,
-		"cost", p.Cost.ActualCost,
-		"notify_enabled", p.User.BalanceNotifyEnabled,
-		"threshold", p.User.BalanceNotifyThreshold,
-		"result_has_new_balance", result != nil && result.NewBalance != nil,
-	)
-	deps.balanceNotifyService.CheckBalanceAfterDeduction(context.Background(), p.User, oldBalance, p.Cost.ActualCost)
-}
-
-// resolveOldBalance returns the pre-deduction balance.
-// Prefers the DB transaction result (newBalance + cost) over snapshot.
-func resolveOldBalance(p *postUsageBillingParams, result *UsageBillingApplyResult) float64 {
-	if result != nil && result.NewBalance != nil {
-		return *result.NewBalance + p.Cost.ActualCost
-	}
-	// Legacy fallback: snapshot balance from request context
-	return p.User.Balance
-}
-
-// notifyAccountQuota sends account quota threshold notification after increment.
-// When result.QuotaState is available (from DB transaction RETURNING), it is passed directly
-// to avoid a separate DB read that may see stale or concurrently-modified data.
-func notifyAccountQuota(p *postUsageBillingParams, deps *billingDeps, result *UsageBillingApplyResult) {
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("panic in notifyAccountQuota", "recover", r)
-		}
-	}()
-	if p.Cost.TotalCost <= 0 || p.Account == nil || !p.Account.IsAPIKeyOrBedrock() || deps.balanceNotifyService == nil {
-		slog.Debug("notifyAccountQuota: skipped",
-			"total_cost", p.Cost.TotalCost,
-			"account_nil", p.Account == nil,
-			"is_apikey_or_bedrock", p.Account != nil && p.Account.IsAPIKeyOrBedrock(),
-			"service_nil", deps.balanceNotifyService == nil,
-		)
-		return
-	}
-	accountCost := p.Cost.TotalCost * p.AccountRateMultiplier
-	var quotaState *AccountQuotaState
-	if result != nil {
-		quotaState = result.QuotaState
-	}
-	slog.Debug("notifyAccountQuota: calling CheckAccountQuotaAfterIncrement",
-		"account_id", p.Account.ID,
-		"account_cost", accountCost,
-		"has_quota_state", quotaState != nil,
-	)
-	deps.balanceNotifyService.CheckAccountQuotaAfterIncrement(context.Background(), p.Account, accountCost, quotaState)
 }
 
 func detachedBillingContext(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -9243,10 +9119,8 @@ func detachUpstreamContext(ctx context.Context) (context.Context, context.Cancel
 type billingDeps struct {
 	accountRepo           AccountRepository
 	userRepo              UserRepository
-	userSubRepo           UserSubscriptionRepository
 	billingCacheService   *BillingCacheService
 	deferredService       *DeferredService
-	balanceNotifyService  *BalanceNotifyService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
 	cfg                   *config.Config
 }
@@ -9255,10 +9129,8 @@ func (s *GatewayService) billingDeps() *billingDeps {
 	return &billingDeps{
 		accountRepo:           s.accountRepo,
 		userRepo:              s.userRepo,
-		userSubRepo:           s.userSubRepo,
 		billingCacheService:   s.billingCacheService,
 		deferredService:       s.deferredService,
-		balanceNotifyService:  s.balanceNotifyService,
 		userPlatformQuotaRepo: s.userPlatformQuotaRepo,
 		cfg:                   s.cfg,
 	}
@@ -9296,14 +9168,13 @@ type recordUsageOpts struct {
 	LongContextMultiplier float64
 }
 
-// RecordUsage 记录使用量并扣费（或更新订阅用量）
+// RecordUsage records usage and updates internal quotas.
 func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInput) error {
 	return s.recordUsageCore(ctx, &recordUsageCoreInput{
 		Result:             input.Result,
 		APIKey:             input.APIKey,
 		User:               input.User,
 		Account:            input.Account,
-		Subscription:       input.Subscription,
 		InboundEndpoint:    input.InboundEndpoint,
 		UpstreamEndpoint:   input.UpstreamEndpoint,
 		UserAgent:          input.UserAgent,
@@ -9322,7 +9193,6 @@ type RecordUsageLongContextInput struct {
 	APIKey                *APIKey
 	User                  *User
 	Account               *Account
-	Subscription          *UserSubscription  // 可选：订阅信息
 	InboundEndpoint       string             // 入站端点（客户端请求路径）
 	UpstreamEndpoint      string             // 上游端点（标准化后的上游路径）
 	UserAgent             string             // 请求的 User-Agent
@@ -9344,7 +9214,6 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		APIKey:             input.APIKey,
 		User:               input.User,
 		Account:            input.Account,
-		Subscription:       input.Subscription,
 		InboundEndpoint:    input.InboundEndpoint,
 		UpstreamEndpoint:   input.UpstreamEndpoint,
 		UserAgent:          input.UserAgent,
@@ -9366,7 +9235,6 @@ type recordUsageCoreInput struct {
 	APIKey             *APIKey
 	User               *User
 	Account            *Account
-	Subscription       *UserSubscription
 	InboundEndpoint    string
 	UpstreamEndpoint   string
 	UserAgent          string
@@ -9385,7 +9253,6 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	apiKey := input.APIKey
 	user := input.User
 	account := input.Account
-	subscription := input.Subscription
 	ApplyForwardImageBillingResolution(result)
 
 	// 强制缓存计费：将 input_tokens 转为 cache_read_input_tokens
@@ -9434,17 +9301,10 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	// 计算费用
 	cost := s.calculateRecordUsageCost(ctx, result, apiKey, billingModel, multiplier, imageMultiplier, opts)
 
-	// 判断计费方式：订阅模式 vs 余额模式
-	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
-	billingType := BillingTypeBalance
-	if isSubscriptionBilling {
-		billingType = BillingTypeSubscription
-	}
-
 	// 创建使用日志
 	accountRateMultiplier := account.BillingRateMultiplier()
-	usageLog := s.buildRecordUsageLog(ctx, input, result, apiKey, user, account, subscription,
-		requestedModel, multiplier, imageMultiplier, accountRateMultiplier, billingType, cacheTTLOverridden, cost, opts)
+	usageLog := s.buildRecordUsageLog(ctx, input, result, apiKey, user, account,
+		requestedModel, multiplier, imageMultiplier, accountRateMultiplier, cacheTTLOverridden, cost, opts)
 
 	// 计算账号统计定价费用（使用最终上游模型匹配自定义规则）
 	if apiKey.GroupID != nil {
@@ -9483,9 +9343,7 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		User:                  user,
 		APIKey:                apiKey,
 		Account:               account,
-		Subscription:          subscription,
 		RequestPayloadHash:    resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
-		IsSubscriptionBill:    isSubscriptionBilling,
 		AccountRateMultiplier: accountRateMultiplier,
 		APIKeyService:         input.APIKeyService,
 		Platform:              quotaPlatform,
@@ -9639,12 +9497,10 @@ func (s *GatewayService) buildRecordUsageLog(
 	apiKey *APIKey,
 	user *User,
 	account *Account,
-	subscription *UserSubscription,
 	requestedModel string,
 	multiplier float64,
 	imageMultiplier float64,
 	accountRateMultiplier float64,
-	billingType int8,
 	cacheTTLOverridden bool,
 	cost *CostBreakdown,
 	opts *recordUsageOpts,
@@ -9671,7 +9527,6 @@ func (s *GatewayService) buildRecordUsageLog(
 		ImageOutputTokens:     result.Usage.ImageOutputTokens,
 		RateMultiplier:        multiplier,
 		AccountRateMultiplier: &accountRateMultiplier,
-		BillingType:           billingType,
 		BillingMode:           resolveBillingMode(result, cost),
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,
@@ -9688,7 +9543,6 @@ func (s *GatewayService) buildRecordUsageLog(
 		UserAgent:             optionalTrimmedStringPtr(input.UserAgent),
 		IPAddress:             optionalTrimmedStringPtr(input.IPAddress),
 		GroupID:               apiKey.GroupID,
-		SubscriptionID:        optionalSubscriptionID(subscription),
 		CreatedAt:             time.Now(),
 	}
 	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
@@ -9719,13 +9573,6 @@ func resolveBillingMode(result *ForwardResult, cost *CostBreakdown) *string {
 		mode = string(BillingModeToken)
 	}
 	return &mode
-}
-
-func optionalSubscriptionID(subscription *UserSubscription) *int64 {
-	if subscription != nil {
-		return &subscription.ID
-	}
-	return nil
 }
 
 // ResolveChannelMapping 委托渠道服务解析模型映射

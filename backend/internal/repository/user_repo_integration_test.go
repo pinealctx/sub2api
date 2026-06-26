@@ -9,7 +9,6 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/suite"
@@ -28,9 +27,7 @@ func (s *UserRepoSuite) SetupTest() {
 	s.repo = newUserRepositoryWithSQL(s.client, integrationDB)
 
 	// 清理测试数据，确保每个测试从干净状态开始
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM auth_identity_channels")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM auth_identities")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_subscriptions")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_allowed_groups")
 	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM users")
 }
@@ -71,28 +68,6 @@ func (s *UserRepoSuite) mustCreateGroup(name string) *service.Group {
 		Save(s.ctx)
 	s.Require().NoError(err, "create group")
 	return groupEntityToService(g)
-}
-
-func (s *UserRepoSuite) mustCreateSubscription(userID, groupID int64, mutate func(*dbent.UserSubscriptionCreate)) *dbent.UserSubscription {
-	s.T().Helper()
-
-	now := time.Now()
-	create := s.client.UserSubscription.Create().
-		SetUserID(userID).
-		SetGroupID(groupID).
-		SetStartsAt(now.Add(-1 * time.Hour)).
-		SetExpiresAt(now.Add(24 * time.Hour)).
-		SetStatus(service.SubscriptionStatusActive).
-		SetAssignedAt(now).
-		SetNotes("")
-
-	if mutate != nil {
-		mutate(create)
-	}
-
-	sub, err := create.Save(s.ctx)
-	s.Require().NoError(err, "create subscription")
-	return sub
 }
 
 // --- Create / GetByID / GetByEmail / Update / Delete ---
@@ -194,24 +169,14 @@ func (s *UserRepoSuite) TestDelete() {
 	s.Require().Error(err, "expected error after delete")
 }
 
-func (s *UserRepoSuite) TestDeleteRemovesAuthIdentitiesAndChannels() {
-	user := s.mustCreateUser(&service.User{Email: "delete-oauth@test.com"})
+func (s *UserRepoSuite) TestDeleteRemovesAuthIdentities() {
+	user := s.mustCreateUser(&service.User{Email: "delete-oidc@test.com"})
 
-	identity, err := s.client.AuthIdentity.Create().
+	_, err := s.client.AuthIdentity.Create().
 		SetUserID(user.ID).
-		SetProviderType("linuxdo").
-		SetProviderKey("linuxdo").
-		SetProviderSubject("delete-oauth-subject").
-		Save(s.ctx)
-	s.Require().NoError(err)
-
-	_, err = s.client.AuthIdentityChannel.Create().
-		SetIdentityID(identity.ID).
-		SetProviderType("wechat").
-		SetProviderKey("wechat").
-		SetChannel("open").
-		SetChannelAppID("app-id").
-		SetChannelSubject("openid-123").
+		SetProviderType("oidc").
+		SetProviderKey("https://issuer.example").
+		SetProviderSubject("delete-oidc-subject").
 		Save(s.ctx)
 	s.Require().NoError(err)
 
@@ -221,10 +186,6 @@ func (s *UserRepoSuite) TestDeleteRemovesAuthIdentitiesAndChannels() {
 	identityCount, err := s.client.AuthIdentity.Query().Where(authidentity.UserIDEQ(user.ID)).Count(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Zero(identityCount)
-
-	channelCount, err := s.client.AuthIdentityChannel.Query().Where(authidentitychannel.IdentityIDEQ(identity.ID)).Count(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Zero(channelCount)
 }
 
 // --- List / ListWithFilters ---
@@ -279,42 +240,18 @@ func (s *UserRepoSuite) TestListWithFilters_SearchByUsername() {
 	s.Require().Equal("JohnDoe", users[0].Username)
 }
 
-func (s *UserRepoSuite) TestListWithFilters_LoadsActiveSubscriptions() {
-	user := s.mustCreateUser(&service.User{Email: "sub@test.com", Status: service.StatusActive})
-	groupActive := s.mustCreateGroup("g-sub-active")
-	groupExpired := s.mustCreateGroup("g-sub-expired")
-
-	_ = s.mustCreateSubscription(user.ID, groupActive.ID, func(c *dbent.UserSubscriptionCreate) {
-		c.SetStatus(service.SubscriptionStatusActive)
-		c.SetExpiresAt(time.Now().Add(1 * time.Hour))
-	})
-	_ = s.mustCreateSubscription(user.ID, groupExpired.ID, func(c *dbent.UserSubscriptionCreate) {
-		c.SetStatus(service.SubscriptionStatusExpired)
-		c.SetExpiresAt(time.Now().Add(-1 * time.Hour))
-	})
-
-	users, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, service.UserListFilters{Search: "sub@"})
-	s.Require().NoError(err, "ListWithFilters")
-	s.Require().Len(users, 1, "expected 1 user")
-	s.Require().Len(users[0].Subscriptions, 1, "expected 1 active subscription")
-	s.Require().NotNil(users[0].Subscriptions[0].Group, "expected subscription group preload")
-	s.Require().Equal(groupActive.ID, users[0].Subscriptions[0].Group.ID, "group ID mismatch")
-}
-
 func (s *UserRepoSuite) TestListWithFilters_CombinedFilters() {
 	s.mustCreateUser(&service.User{
 		Email:    "a@example.com",
 		Username: "Alice",
 		Role:     service.RoleUser,
 		Status:   service.StatusActive,
-		Balance:  10,
 	})
 	target := s.mustCreateUser(&service.User{
 		Email:    "b@example.com",
 		Username: "Bob",
 		Role:     service.RoleAdmin,
 		Status:   service.StatusActive,
-		Balance:  1,
 	})
 	s.mustCreateUser(&service.User{
 		Email:  "c@example.com",
@@ -327,78 +264,6 @@ func (s *UserRepoSuite) TestListWithFilters_CombinedFilters() {
 	s.Require().Equal(int64(1), page.Total, "ListWithFilters total mismatch")
 	s.Require().Len(users, 1, "ListWithFilters len mismatch")
 	s.Require().Equal(target.ID, users[0].ID, "ListWithFilters result mismatch")
-}
-
-// --- Balance operations ---
-
-func (s *UserRepoSuite) TestUpdateBalance() {
-	user := s.mustCreateUser(&service.User{Email: "bal@test.com", Balance: 10})
-
-	err := s.repo.UpdateBalance(s.ctx, user.ID, 2.5)
-	s.Require().NoError(err, "UpdateBalance")
-
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(12.5, got.Balance, 1e-6)
-}
-
-func (s *UserRepoSuite) TestUpdateBalance_Negative() {
-	user := s.mustCreateUser(&service.User{Email: "balneg@test.com", Balance: 10})
-
-	err := s.repo.UpdateBalance(s.ctx, user.ID, -3)
-	s.Require().NoError(err, "UpdateBalance with negative")
-
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(7.0, got.Balance, 1e-6)
-}
-
-func (s *UserRepoSuite) TestDeductBalance() {
-	user := s.mustCreateUser(&service.User{Email: "deduct@test.com", Balance: 10})
-
-	err := s.repo.DeductBalance(s.ctx, user.ID, 5)
-	s.Require().NoError(err, "DeductBalance")
-
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(5.0, got.Balance, 1e-6)
-}
-
-func (s *UserRepoSuite) TestDeductBalance_InsufficientFunds() {
-	user := s.mustCreateUser(&service.User{Email: "insuf@test.com", Balance: 5})
-
-	// 透支策略：允许扣除超过余额的金额
-	err := s.repo.DeductBalance(s.ctx, user.ID, 999)
-	s.Require().NoError(err, "DeductBalance should allow overdraft")
-
-	// 验证余额变为负数
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(-994.0, got.Balance, 1e-6, "Balance should be negative after overdraft")
-}
-
-func (s *UserRepoSuite) TestDeductBalance_ExactAmount() {
-	user := s.mustCreateUser(&service.User{Email: "exact@test.com", Balance: 10})
-
-	err := s.repo.DeductBalance(s.ctx, user.ID, 10)
-	s.Require().NoError(err, "DeductBalance exact amount")
-
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(0.0, got.Balance, 1e-6)
-}
-
-func (s *UserRepoSuite) TestDeductBalance_AllowsOverdraft() {
-	user := s.mustCreateUser(&service.User{Email: "overdraft@test.com", Balance: 5.0})
-
-	// 扣除超过余额的金额 - 应该成功
-	err := s.repo.DeductBalance(s.ctx, user.ID, 10.0)
-	s.Require().NoError(err, "DeductBalance should allow overdraft")
-
-	// 验证余额为负
-	got, err := s.repo.GetByID(s.ctx, user.ID)
-	s.Require().NoError(err)
-	s.Require().InDelta(-5.0, got.Balance, 1e-6, "Balance should be -5.0 after overdraft")
 }
 
 // --- Concurrency ---
@@ -533,14 +398,12 @@ func (s *UserRepoSuite) TestCRUD_And_Filters_And_AtomicUpdates() {
 		Username: "Alice",
 		Role:     service.RoleUser,
 		Status:   service.StatusActive,
-		Balance:  10,
 	})
 	user2 := s.mustCreateUser(&service.User{
 		Email:    "b@example.com",
 		Username: "Bob",
 		Role:     service.RoleAdmin,
 		Status:   service.StatusActive,
-		Balance:  1,
 	})
 	s.mustCreateUser(&service.User{
 		Email:  "c@example.com",
@@ -562,27 +425,10 @@ func (s *UserRepoSuite) TestCRUD_And_Filters_And_AtomicUpdates() {
 	s.Require().NoError(err, "GetByID after update")
 	s.Require().Equal("Alice2", got2.Username, "Update did not persist")
 
-	s.Require().NoError(s.repo.UpdateBalance(s.ctx, user1.ID, 2.5), "UpdateBalance")
-	got3, err := s.repo.GetByID(s.ctx, user1.ID)
-	s.Require().NoError(err, "GetByID after UpdateBalance")
-	s.Require().InDelta(12.5, got3.Balance, 1e-6)
-
-	s.Require().NoError(s.repo.DeductBalance(s.ctx, user1.ID, 5), "DeductBalance")
-	got4, err := s.repo.GetByID(s.ctx, user1.ID)
-	s.Require().NoError(err, "GetByID after DeductBalance")
-	s.Require().InDelta(7.5, got4.Balance, 1e-6)
-
-	// 透支策略：允许扣除超过余额的金额
-	err = s.repo.DeductBalance(s.ctx, user1.ID, 999)
-	s.Require().NoError(err, "DeductBalance should allow overdraft")
-	gotOverdraft, err := s.repo.GetByID(s.ctx, user1.ID)
-	s.Require().NoError(err, "GetByID after overdraft")
-	s.Require().Less(gotOverdraft.Balance, 0.0, "Balance should be negative after overdraft")
-
 	s.Require().NoError(s.repo.UpdateConcurrency(s.ctx, user1.ID, 3), "UpdateConcurrency")
-	got5, err := s.repo.GetByID(s.ctx, user1.ID)
+	got3, err := s.repo.GetByID(s.ctx, user1.ID)
 	s.Require().NoError(err, "GetByID after UpdateConcurrency")
-	s.Require().Equal(user1.Concurrency+3, got5.Concurrency)
+	s.Require().Equal(user1.Concurrency+3, got3.Concurrency)
 
 	params := pagination.PaginationParams{Page: 1, PageSize: 10}
 	users, page, err := s.repo.ListWithFilters(s.ctx, params, service.UserListFilters{Status: service.StatusActive, Role: service.RoleAdmin, Search: "b@"})
@@ -592,23 +438,10 @@ func (s *UserRepoSuite) TestCRUD_And_Filters_And_AtomicUpdates() {
 	s.Require().Equal(user2.ID, users[0].ID, "ListWithFilters result mismatch")
 }
 
-// --- UpdateBalance/UpdateConcurrency 影响行数校验测试 ---
-
-func (s *UserRepoSuite) TestUpdateBalance_NotFound() {
-	err := s.repo.UpdateBalance(s.ctx, 999999, 10.0)
-	s.Require().Error(err, "expected error for non-existent user")
-	s.Require().ErrorIs(err, service.ErrUserNotFound)
-}
+// --- UpdateConcurrency 影响行数校验测试 ---
 
 func (s *UserRepoSuite) TestUpdateConcurrency_NotFound() {
 	err := s.repo.UpdateConcurrency(s.ctx, 999999, 5)
 	s.Require().Error(err, "expected error for non-existent user")
-	s.Require().ErrorIs(err, service.ErrUserNotFound)
-}
-
-func (s *UserRepoSuite) TestDeductBalance_NotFound() {
-	err := s.repo.DeductBalance(s.ctx, 999999, 5)
-	s.Require().Error(err, "expected error for non-existent user")
-	// DeductBalance 在用户不存在时返回 ErrUserNotFound
 	s.Require().ErrorIs(err, service.ErrUserNotFound)
 }

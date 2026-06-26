@@ -10,7 +10,7 @@ const setToken = vi.fn()
 const setPendingAuthSession = vi.fn()
 const clearPendingAuthSession = vi.fn()
 const exchangePendingOAuthCompletion = vi.fn()
-const completeOIDCOAuthRegistration = vi.fn()
+const completeOIDCOAuthAccountCreation = vi.fn()
 const getPublicSettings = vi.fn()
 const login2FA = vi.fn()
 const apiClientPost = vi.fn()
@@ -67,7 +67,7 @@ vi.mock('@/api/auth', async () => {
   return {
     ...actual,
     exchangePendingOAuthCompletion: (...args: any[]) => exchangePendingOAuthCompletion(...args),
-    completeOIDCOAuthRegistration: (...args: any[]) => completeOIDCOAuthRegistration(...args),
+    completeOIDCOAuthAccountCreation: (...args: any[]) => completeOIDCOAuthAccountCreation(...args),
     getPublicSettings: (...args: any[]) => getPublicSettings(...args),
     login2FA: (...args: any[]) => login2FA(...args),
     sendVerifyCode: (...args: any[]) => sendVerifyCode(...args),
@@ -84,7 +84,7 @@ describe('OidcCallbackView', () => {
     setPendingAuthSession.mockReset()
     clearPendingAuthSession.mockReset()
     exchangePendingOAuthCompletion.mockReset()
-    completeOIDCOAuthRegistration.mockReset()
+    completeOIDCOAuthAccountCreation.mockReset()
     getPublicSettings.mockReset()
     login2FA.mockReset()
     apiClientPost.mockReset()
@@ -353,7 +353,7 @@ describe('OidcCallbackView', () => {
       suggested_display_name: 'OIDC Nick',
       suggested_avatar_url: 'https://cdn.example/oidc.png'
     })
-    completeOIDCOAuthRegistration.mockResolvedValue({
+    completeOIDCOAuthAccountCreation.mockResolvedValue({
       access_token: 'access-token',
       refresh_token: 'refresh-token',
       expires_in: 3600,
@@ -380,7 +380,7 @@ describe('OidcCallbackView', () => {
     await wrapper.find('input[type="text"]').setValue('invite-code')
     await wrapper.find('button').trigger('click')
 
-    expect(completeOIDCOAuthRegistration).toHaveBeenCalledWith('invite-code', {
+    expect(completeOIDCOAuthAccountCreation).toHaveBeenCalledWith('invite-code', {
       adoptDisplayName: true,
       adoptAvatar: false
     })
@@ -394,13 +394,13 @@ describe('OidcCallbackView', () => {
       suggested_display_name: 'OIDC Nick',
       suggested_avatar_url: 'https://cdn.example/oidc.png'
     })
-    completeOIDCOAuthRegistration.mockResolvedValue({
+    completeOIDCOAuthAccountCreation.mockResolvedValue({
       auth_result: 'pending_session',
       step: 'choose_account_action_required',
       redirect: '/dashboard',
       email: 'fresh@example.com',
       resolved_email: 'fresh@example.com',
-      force_email_on_signup: true,
+      force_email_on_account_creation: true,
       adoption_required: true
     })
 
@@ -420,7 +420,7 @@ describe('OidcCallbackView', () => {
     await wrapper.find('button').trigger('click')
     await flushPromises()
 
-    expect(completeOIDCOAuthRegistration).toHaveBeenCalledWith('invite-code', {
+    expect(completeOIDCOAuthAccountCreation).toHaveBeenCalledWith('invite-code', {
       adoptDisplayName: true,
       adoptAvatar: true
     })

@@ -89,11 +89,10 @@ func (s *APIKeyRepoSuite) TestGetByKey_NotFound() {
 func (s *APIKeyRepoSuite) TestGetByKeyForAuth_PreservesMessagesDispatchModelConfig() {
 	user := s.mustCreateUser("getbykey-auth-dispatch@test.com")
 	group, err := s.client.Group.Create().
-		SetName("g-auth-dispatch").
-		SetPlatform(service.PlatformOpenAI).
-		SetStatus(service.StatusActive).
-		SetSubscriptionType(service.SubscriptionTypeStandard).
-		SetRateMultiplier(1).
+			SetName("g-auth-dispatch").
+			SetPlatform(service.PlatformOpenAI).
+			SetStatus(service.StatusActive).
+			SetRateMultiplier(1).
 		SetAllowMessagesDispatch(true).
 		SetDefaultMappedModel("gpt-5.4").
 		SetMessagesDispatchModelConfig(service.OpenAIMessagesDispatchModelConfig{

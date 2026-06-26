@@ -53,7 +53,6 @@ type CreateUsageCleanupTaskRequest struct {
 	Model       *string `json:"model"`
 	RequestType *string `json:"request_type"`
 	Stream      *bool   `json:"stream"`
-	BillingType *int8   `json:"billing_type"`
 	Timezone    string  `json:"timezone"`
 }
 
@@ -130,18 +129,6 @@ func (h *UsageHandler) List(c *gin.Context) {
 		}
 		stream = &val
 	}
-
-	var billingType *int8
-	if billingTypeStr := c.Query("billing_type"); billingTypeStr != "" {
-		val, err := strconv.ParseInt(billingTypeStr, 10, 8)
-		if err != nil {
-			response.BadRequest(c, "Invalid billing_type")
-			return
-		}
-		bt := int8(val)
-		billingType = &bt
-	}
-
 	// Parse date range
 	var startTime, endTime *time.Time
 	userTZ := c.Query("timezone") // Get user's timezone from request
@@ -179,7 +166,6 @@ func (h *UsageHandler) List(c *gin.Context) {
 		Model:       model,
 		RequestType: requestType,
 		Stream:      stream,
-		BillingType: billingType,
 		BillingMode: billingMode,
 		StartTime:   startTime,
 		EndTime:     endTime,
@@ -261,18 +247,6 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 		}
 		stream = &val
 	}
-
-	var billingType *int8
-	if billingTypeStr := c.Query("billing_type"); billingTypeStr != "" {
-		val, err := strconv.ParseInt(billingTypeStr, 10, 8)
-		if err != nil {
-			response.BadRequest(c, "Invalid billing_type")
-			return
-		}
-		bt := int8(val)
-		billingType = &bt
-	}
-
 	// Parse date range
 	userTZ := c.Query("timezone")
 	now := timezone.NowInUserLocation(userTZ)
@@ -319,7 +293,6 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 		Model:       model,
 		RequestType: requestType,
 		Stream:      stream,
-		BillingType: billingType,
 		BillingMode: billingMode,
 		StartTime:   &startTime,
 		EndTime:     &endTime,
@@ -512,7 +485,6 @@ func (h *UsageHandler) CreateCleanupTask(c *gin.Context) {
 		Model:       req.Model,
 		RequestType: requestType,
 		Stream:      stream,
-		BillingType: req.BillingType,
 	}
 
 	var userID any
@@ -543,11 +515,6 @@ func (h *UsageHandler) CreateCleanupTask(c *gin.Context) {
 	if filters.RequestType != nil {
 		requestTypeName = service.RequestTypeFromInt16(*filters.RequestType).String()
 	}
-	var billingType any
-	if filters.BillingType != nil {
-		billingType = *filters.BillingType
-	}
-
 	idempotencyPayload := struct {
 		OperatorID int64                         `json:"operator_id"`
 		Body       CreateUsageCleanupTaskRequest `json:"body"`
@@ -556,7 +523,7 @@ func (h *UsageHandler) CreateCleanupTask(c *gin.Context) {
 		Body:       req,
 	}
 	executeAdminIdempotentJSON(c, "admin.usage.cleanup_tasks.create", idempotencyPayload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
-		logger.LegacyPrintf("handler.admin.usage", "[UsageCleanup] 请求创建清理任务: operator=%d start=%s end=%s user_id=%v api_key_id=%v account_id=%v group_id=%v model=%v request_type=%v stream=%v billing_type=%v tz=%q",
+		logger.LegacyPrintf("handler.admin.usage", "[UsageCleanup] 请求创建清理任务: operator=%d start=%s end=%s user_id=%v api_key_id=%v account_id=%v group_id=%v model=%v request_type=%v stream=%v tz=%q",
 			subject.UserID,
 			filters.StartTime.Format(time.RFC3339),
 			filters.EndTime.Format(time.RFC3339),
@@ -567,7 +534,6 @@ func (h *UsageHandler) CreateCleanupTask(c *gin.Context) {
 			model,
 			requestTypeName,
 			streamValue,
-			billingType,
 			req.Timezone,
 		)
 

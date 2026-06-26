@@ -48,7 +48,6 @@ export interface UsageCleanupFilters {
   model?: string | null
   request_type?: UsageRequestType | null
   stream?: boolean | null
-  billing_type?: number | null
 }
 
 export interface UsageCleanupTask {
@@ -76,7 +75,6 @@ export interface CreateUsageCleanupTaskRequest {
   model?: string | null
   request_type?: UsageRequestType | null
   stream?: boolean | null
-  billing_type?: number | null
   timezone?: string
 }
 

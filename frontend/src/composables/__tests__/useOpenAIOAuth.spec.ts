@@ -10,7 +10,7 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => {
       const messages: Record<string, string> = {
-        'admin.accounts.oauth.openai.failedToExchangeCode': 'OpenAI 授权码兑换失败',
+        'admin.accounts.oauth.openai.failedToExchangeCode': 'OpenAI 授权码交换失败',
         'admin.accounts.oauth.openai.errors.OPENAI_OAUTH_PROXY_REQUIRED':
           '未设置代理，当前服务器无法直连 OpenAI，导致 OpenAI OAuth 请求失败。请先选择可访问 OpenAI 的代理后重试；如果授权码已失效，请重新生成授权链接。'
       }

@@ -35,7 +35,6 @@ func (s *dailyUsageRepoStub) GetUsageTrendWithFilters(
 	model string,
 	requestType *int16,
 	stream *bool,
-	billingType *int8,
 ) ([]usagestats.TrendDataPoint, error) {
 	s.called = true
 	s.startTime = startTime
@@ -63,7 +62,7 @@ func (s *dailyUsageAPIKeyRepoStub) GetByID(ctx context.Context, id int64) (*serv
 func newDailyUsageTestRouter(usageRepo *dailyUsageRepoStub, apiKeyRepo *dailyUsageAPIKeyRepoStub, userID int64) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	usageSvc := service.NewUsageService(usageRepo, nil, nil, nil)
-	apiKeySvc := service.NewAPIKeyService(apiKeyRepo, nil, nil, nil, nil, nil, nil)
+	apiKeySvc := service.NewAPIKeyService(apiKeyRepo, nil, nil, nil, nil, nil)
 	handler := NewUsageHandler(usageSvc, apiKeySvc, nil, nil)
 	router := gin.New()
 	router.Use(func(c *gin.Context) {

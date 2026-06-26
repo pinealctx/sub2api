@@ -30,18 +30,6 @@ func TestAuthIdentityFoundationSchemas(t *testing.T) {
 	)
 	requireHasUniqueIndex(t, authIdentity, "provider_type", "provider_key", "provider_subject")
 
-	authIdentityChannel := requireSchema(t, schemas, "AuthIdentityChannel")
-	requireSchemaFields(t, authIdentityChannel,
-		"identity_id",
-		"provider_type",
-		"provider_key",
-		"channel",
-		"channel_app_id",
-		"channel_subject",
-		"metadata",
-	)
-	requireHasUniqueIndex(t, authIdentityChannel, "provider_type", "provider_key", "channel", "channel_app_id", "channel_subject")
-
 	pendingAuthSession := requireSchema(t, schemas, "PendingAuthSession")
 	requireSchemaFields(t, pendingAuthSession,
 		"intent",
@@ -51,7 +39,7 @@ func TestAuthIdentityFoundationSchemas(t *testing.T) {
 		"target_user_id",
 		"redirect_to",
 		"resolved_email",
-		"registration_password_hash",
+		"account_creation_password_hash",
 		"upstream_identity_claims",
 		"local_flow_state",
 		"browser_session_key",
@@ -83,7 +71,7 @@ func TestAuthIdentityFoundationSchemas(t *testing.T) {
 	require.Equal(t, 1, signupSource.Validators)
 
 	validator := requireStringFieldValidator(t, User{}.Fields(), "signup_source")
-	for _, value := range []string{"email", "linuxdo", "wechat", "oidc", "github", "google", "dingtalk"} {
+	for _, value := range []string{"email", "oidc"} {
 		require.NoError(t, validator(value))
 	}
 	require.Error(t, validator("unknown"))

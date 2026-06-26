@@ -46,8 +46,8 @@ func newGatewayModelsHandlerForTest(repo service.AccountRepository) *GatewayHand
 	return &GatewayHandler{
 		gatewayService: service.NewGatewayService(
 			repo,
-			nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-			nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+			nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+			nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 		),
 	}
 }

@@ -17,7 +17,7 @@ func TestSettingKeyAuthSourcePlatformQuotas(t *testing.T) {
 	if got := SettingKeyAuthSourcePlatformQuotas("email"); got != "auth_source_default_email_platform_quotas" {
 		t.Fatalf("got %q, want %q", got, "auth_source_default_email_platform_quotas")
 	}
-	if got := SettingKeyAuthSourcePlatformQuotas("dingtalk"); got != "auth_source_default_dingtalk_platform_quotas" {
-		t.Fatalf("got %q, want %q", got, "auth_source_default_dingtalk_platform_quotas")
+	if got := SettingKeyAuthSourcePlatformQuotas("oidc"); got != "auth_source_default_oidc_platform_quotas" {
+		t.Fatalf("got %q, want %q", got, "auth_source_default_oidc_platform_quotas")
 	}
 }

@@ -24,8 +24,6 @@ export interface FetchOptions {
 
 // ==================== Notification Types ====================
 
-/** Notification email entry with enable/disable and verification state.
- *  email="" is a placeholder for the primary email (user's registration email or admin email). */
 export interface NotifyEmailEntry {
   email: string
   disabled: boolean
@@ -34,7 +32,7 @@ export interface NotifyEmailEntry {
 
 // ==================== User & Auth Types ====================
 
-export type UserAuthProvider = 'email' | 'linuxdo' | 'oidc' | 'wechat' | 'github' | 'google' | 'dingtalk'
+export type UserAuthProvider = 'email' | 'oidc'
 
 export interface UserAuthBindingStatus {
   bound?: boolean
@@ -81,19 +79,12 @@ export interface User {
   auth_bindings?: Partial<Record<UserAuthProvider, boolean | UserAuthBindingStatus>>
   identity_bindings?: Partial<Record<UserAuthProvider, boolean | UserAuthBindingStatus>>
   email_bound?: boolean
-  linuxdo_bound?: boolean
   oidc_bound?: boolean
-  wechat_bound?: boolean
   role: 'admin' | 'user' // User role for authorization
-  balance: number // User balance for API usage
   concurrency: number // Allowed concurrent requests
   rpm_limit?: number // User-level RPM cap (0 = unlimited); effective as fallback when group has no rpm_limit
   status: 'active' | 'disabled' // Account status
   allowed_groups: number[] | null // Allowed group IDs (null = all non-exclusive groups)
-  balance_notify_enabled: boolean
-  balance_notify_threshold: number | null
-  balance_notify_extra_emails: NotifyEmailEntry[]
-  subscriptions?: UserSubscription[] // User's active subscriptions
   last_active_at?: string | null
   created_at: string
   updated_at: string
@@ -116,50 +107,14 @@ export interface LoginRequest {
   turnstile_token?: string
 }
 
-export interface RegisterRequest {
-  email: string
-  password: string
-  verify_code?: string
-  turnstile_token?: string
-  promo_code?: string
-  invitation_code?: string
-  aff_code?: string
-}
-
-export interface AffiliateInvitee {
-  user_id: number
-  email: string
-  username: string
-  created_at?: string
-  total_rebate: number
-}
-
-export interface UserAffiliateDetail {
-  user_id: number
-  aff_code: string
-  inviter_id?: number | null
-  aff_count: number
-  aff_quota: number
-  aff_frozen_quota: number
-  aff_history_quota: number
-  /** 当前用户作为邀请人时实际生效的返利比例（专属覆盖全局）。0-100。 */
-  effective_rebate_rate_percent: number
-  invitees: AffiliateInvitee[]
-}
-
-export interface AffiliateTransferResponse {
-  transferred_quota: number
-  balance: number
-}
-
-export interface SendVerifyCodeRequest {
+export interface EmailVerifyCodeRequest {
   email: string
   turnstile_token?: string
   pending_auth_token?: string
   pending_oauth_token?: string
 }
 
-export interface SendVerifyCodeResponse {
+export interface EmailVerifyCodeResponse {
   message: string
   countdown: number
 }
@@ -187,11 +142,9 @@ export interface LoginAgreementDocument {
 }
 
 export interface PublicSettings {
-  registration_enabled: boolean
   email_verify_enabled: boolean
-  force_email_on_third_party_signup: boolean
-  registration_email_suffix_whitelist: string[]
-  promo_code_enabled: boolean
+  force_email_on_oidc_account_creation: boolean
+  account_creation_email_suffix_whitelist: string[]
   password_reset_enabled: boolean
   invitation_code_enabled: boolean
   login_agreement_enabled?: boolean
@@ -209,32 +162,20 @@ export interface PublicSettings {
   doc_url: string
   home_content: string
   hide_ccs_import_button: boolean
-  payment_enabled: boolean
   risk_control_enabled: boolean
   table_default_page_size: number
   table_page_size_options: number[]
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
-  linuxdo_oauth_enabled: boolean
-  dingtalk_oauth_enabled?: boolean
-  wechat_oauth_enabled: boolean
-  wechat_oauth_open_enabled?: boolean
-  wechat_oauth_mp_enabled?: boolean
-  wechat_oauth_mobile_enabled?: boolean
   oidc_oauth_enabled: boolean
   oidc_oauth_provider_name: string
-  github_oauth_enabled: boolean
-  google_oauth_enabled: boolean
   backend_mode_enabled: boolean
   version: string
-  balance_low_notify_enabled: boolean
   account_quota_notify_enabled: boolean
-  balance_low_notify_threshold: number
   channel_monitor_enabled: boolean
   channel_monitor_default_interval_seconds: number
   available_channels_enabled: boolean
   service_quota_enabled: boolean
-  affiliate_enabled: boolean
   allow_user_view_error_requests?: boolean
 }
 
@@ -248,177 +189,6 @@ export interface AuthResponse {
 
 export interface CurrentUserResponse extends User {
   run_mode?: 'standard' | 'simple'
-}
-
-// ==================== Subscription Types ====================
-
-export interface Subscription {
-  id: number
-  user_id: number
-  name: string
-  url: string
-  type: 'clash' | 'v2ray' | 'surge' | 'quantumult' | 'shadowrocket'
-  update_interval: number // in hours
-  last_updated: string | null
-  node_count: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateSubscriptionRequest {
-  name: string
-  url: string
-  type: Subscription['type']
-  update_interval?: number
-}
-
-export interface UpdateSubscriptionRequest {
-  name?: string
-  url?: string
-  type?: Subscription['type']
-  update_interval?: number
-  is_active?: boolean
-}
-
-// ==================== Announcement Types ====================
-
-export type AnnouncementStatus = 'draft' | 'active' | 'archived'
-export type AnnouncementNotifyMode = 'silent' | 'popup'
-
-export type AnnouncementConditionType = 'subscription' | 'balance'
-
-export type AnnouncementOperator = 'in' | 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
-
-export interface AnnouncementCondition {
-  type: AnnouncementConditionType
-  operator: AnnouncementOperator
-  group_ids?: number[]
-  value?: number
-}
-
-export interface AnnouncementConditionGroup {
-  all_of?: AnnouncementCondition[]
-}
-
-export interface AnnouncementTargeting {
-  any_of?: AnnouncementConditionGroup[]
-}
-
-export interface Announcement {
-  id: number
-  title: string
-  content: string
-  status: AnnouncementStatus
-  notify_mode: AnnouncementNotifyMode
-  targeting: AnnouncementTargeting
-  starts_at?: string
-  ends_at?: string
-  created_by?: number
-  updated_by?: number
-  created_at: string
-  updated_at: string
-}
-
-export interface UserAnnouncement {
-  id: number
-  title: string
-  content: string
-  notify_mode: AnnouncementNotifyMode
-  starts_at?: string
-  ends_at?: string
-  read_at?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateAnnouncementRequest {
-  title: string
-  content: string
-  status?: AnnouncementStatus
-  notify_mode?: AnnouncementNotifyMode
-  targeting: AnnouncementTargeting
-  starts_at?: number
-  ends_at?: number
-}
-
-export interface UpdateAnnouncementRequest {
-  title?: string
-  content?: string
-  status?: AnnouncementStatus
-  notify_mode?: AnnouncementNotifyMode
-  targeting?: AnnouncementTargeting
-  starts_at?: number
-  ends_at?: number
-}
-
-export interface AnnouncementUserReadStatus {
-  user_id: number
-  email: string
-  username: string
-  balance: number
-  eligible: boolean
-  read_at?: string
-}
-
-// ==================== Proxy Node Types ====================
-
-export interface ProxyNode {
-  id: number
-  subscription_id: number
-  name: string
-  type: 'ss' | 'ssr' | 'vmess' | 'vless' | 'trojan' | 'hysteria' | 'hysteria2'
-  server: string
-  port: number
-  config: Record<string, unknown> // JSON configuration specific to proxy type
-  latency: number | null // in milliseconds
-  last_checked: string | null
-  is_available: boolean
-  created_at: string
-  updated_at: string
-}
-
-// ==================== Conversion Types ====================
-
-export interface ConversionRequest {
-  subscription_ids: number[]
-  target_type: 'clash' | 'v2ray' | 'surge' | 'quantumult' | 'shadowrocket'
-  filter?: {
-    name_pattern?: string
-    types?: ProxyNode['type'][]
-    min_latency?: number
-    max_latency?: number
-    available_only?: boolean
-  }
-  sort?: {
-    by: 'name' | 'latency' | 'type'
-    order: 'asc' | 'desc'
-  }
-}
-
-export interface ConversionResult {
-  url: string // URL to download the converted subscription
-  expires_at: string
-  node_count: number
-}
-
-// ==================== Statistics Types ====================
-
-export interface SubscriptionStats {
-  subscription_id: number
-  total_nodes: number
-  available_nodes: number
-  avg_latency: number | null
-  by_type: Record<ProxyNode['type'], number>
-  last_update: string
-}
-
-export interface UserStats {
-  total_subscriptions: number
-  total_nodes: number
-  active_subscriptions: number
-  total_conversions: number
-  last_conversion: string | null
 }
 
 // ==================== API Response Types ====================
@@ -489,8 +259,6 @@ export interface PaginationConfig {
 
 export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 
-export type SubscriptionType = 'standard' | 'subscription'
-
 export interface OpenAIMessagesDispatchModelConfig {
   opus_mapped_model?: string
   sonnet_mapped_model?: string
@@ -507,7 +275,6 @@ export interface Group {
   rpm_limit?: number // Group-level RPM cap (0 = unlimited); overrides user-level rpm_limit when set
   is_exclusive: boolean
   status: 'active' | 'inactive'
-  subscription_type: SubscriptionType
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
@@ -626,7 +393,6 @@ export interface CreateGroupRequest {
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
-  subscription_type?: SubscriptionType
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
@@ -661,7 +427,6 @@ export interface UpdateGroupRequest {
   rate_multiplier?: number
   is_exclusive?: boolean
   status?: 'active' | 'inactive'
-  subscription_type?: SubscriptionType
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
@@ -960,7 +725,7 @@ export interface AccountUsageInfo {
   ai_credits?: Array<{
     credit_type?: string
     amount?: number
-    minimum_balance?: number
+    minimum_credit?: number
   }> | null
   // Antigravity 403 forbidden 状态
   is_forbidden?: boolean
@@ -1200,9 +965,8 @@ export interface CodexSessionImportResult {
   errors?: CodexSessionImportMessage[]
 }
 
-// ==================== Usage & Redeem Types ====================
+// ==================== Usage Types ====================
 
-export type RedeemCodeType = 'balance' | 'concurrency' | 'subscription' | 'invitation'
 export type UsageRequestType = 'unknown' | 'sync' | 'stream' | 'ws_v2' | 'cyber'
 export type ImageSizeSource = 'output' | 'input' | 'default' | 'legacy'
 export type ImageSizeBreakdown = Record<string, number>
@@ -1220,7 +984,6 @@ export interface UsageLog {
   upstream_endpoint?: string | null
 
   group_id: number | null
-  subscription_id: number | null
 
   input_tokens: number
   output_tokens: number
@@ -1236,7 +999,6 @@ export interface UsageLog {
   total_cost: number
   actual_cost: number
   rate_multiplier: number
-  billing_type: number
 
   request_type?: UsageRequestType
   stream: boolean
@@ -1268,7 +1030,6 @@ export interface UsageLog {
   user?: User
   api_key?: ApiKey
   group?: Group
-  subscription?: UserSubscription
 }
 
 export interface UsageLogAccountSummary {
@@ -1306,7 +1067,6 @@ export interface UsageCleanupFilters {
   model?: string | null
   request_type?: UsageRequestType | null
   stream?: boolean | null
-  billing_type?: number | null
 }
 
 export interface UsageCleanupTask {
@@ -1322,50 +1082,6 @@ export interface UsageCleanupTask {
   finished_at?: string | null
   created_at: string
   updated_at: string
-}
-
-export interface RedeemCode {
-  id: number
-  code: string
-  type: RedeemCodeType
-  value: number
-  status: 'active' | 'used' | 'expired' | 'unused' | 'disabled'
-  used_by: number | null
-  used_at: string | null
-  created_at: string
-  expires_at?: string | null
-  updated_at?: string
-  notes?: string
-  group_id?: number | null // 订阅类型专用
-  validity_days?: number // 订阅类型专用
-  user?: User
-  group?: Group // 关联的分组
-}
-
-export interface GenerateRedeemCodesRequest {
-  count: number
-  type: RedeemCodeType
-  value: number
-  group_id?: number | null // 订阅类型专用
-  validity_days?: number // 订阅类型专用
-  expires_at?: string | null
-  expires_in_days?: number
-}
-
-export interface BatchUpdateRedeemCodeFields {
-  status?: 'unused' | 'disabled'
-  expires_at?: string | null
-  notes?: string
-  group_id?: number | null
-}
-
-export interface BatchUpdateRedeemCodesRequest {
-  ids: number[]
-  fields: BatchUpdateRedeemCodeFields
-}
-
-export interface RedeemCodeRequest {
-  code: string
 }
 
 // ==================== Dashboard & Statistics ====================
@@ -1535,7 +1251,6 @@ export interface UpdateUserRequest {
   username?: string
   notes?: string
   role?: 'admin' | 'user'
-  balance?: number
   concurrency?: number
   status?: 'active' | 'disabled'
   allowed_groups?: number[] | null
@@ -1547,67 +1262,6 @@ export interface UpdateUserRequest {
 export interface ChangePasswordRequest {
   old_password: string
   new_password: string
-}
-
-// ==================== User Subscription Types ====================
-
-export interface UserSubscription {
-  id: number
-  user_id: number
-  group_id: number
-  status: 'active' | 'expired' | 'revoked'
-  starts_at: string
-  daily_usage_usd: number
-  weekly_usage_usd: number
-  monthly_usage_usd: number
-  daily_window_start: string | null
-  weekly_window_start: string | null
-  monthly_window_start: string | null
-  created_at: string
-  updated_at: string
-  expires_at: string | null
-  user?: User
-  group?: Group
-}
-
-export interface SubscriptionProgress {
-  subscription_id: number
-  daily: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  weekly: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  monthly: {
-    used: number
-    limit: number | null
-    percentage: number
-    reset_in_seconds: number | null
-  } | null
-  expires_at: string | null
-  days_remaining: number | null
-}
-
-export interface AssignSubscriptionRequest {
-  user_id: number
-  group_id: number
-  validity_days?: number
-}
-
-export interface BulkAssignSubscriptionRequest {
-  user_ids: number[]
-  group_id: number
-  validity_days?: number
-}
-
-export interface ExtendSubscriptionRequest {
-  days: number
 }
 
 // ==================== Query Parameters ====================
@@ -1652,7 +1306,6 @@ export interface UsageQueryParams {
   model?: string
   request_type?: UsageRequestType
   stream?: boolean
-  billing_type?: number | null
   start_date?: string
   end_date?: string
   sort_by?: string
@@ -1789,47 +1442,6 @@ export interface UserAttributeValuesMap {
   [attributeId: number]: string
 }
 
-// ==================== Promo Code Types ====================
-
-export interface PromoCode {
-  id: number
-  code: string
-  bonus_amount: number
-  max_uses: number
-  used_count: number
-  status: 'active' | 'disabled'
-  expires_at: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface PromoCodeUsage {
-  id: number
-  promo_code_id: number
-  user_id: number
-  bonus_amount: number
-  used_at: string
-  user?: User
-}
-
-export interface CreatePromoCodeRequest {
-  code?: string
-  bonus_amount: number
-  max_uses?: number
-  expires_at?: number | null
-  notes?: string
-}
-
-export interface UpdatePromoCodeRequest {
-  code?: string
-  bonus_amount?: number
-  max_uses?: number
-  status?: 'active' | 'disabled'
-  expires_at?: number | null
-  notes?: string
-}
-
 // ==================== TOTP (2FA) Types ====================
 
 export interface TotpStatus {
@@ -1923,9 +1535,6 @@ export interface UpdateScheduledTestPlanRequest {
   max_results?: number
   auto_recover?: boolean
 }
-
-// Payment types
-export type { SubscriptionPlan, PaymentOrder, CheckoutInfoResponse } from './payment'
 
 export type {
   PlatformQuotaItem,

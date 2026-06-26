@@ -115,11 +115,6 @@ func GroupID(v int64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldGroupID, v))
 }
 
-// SubscriptionID applies equality check predicate on the "subscription_id" field. It's identical to SubscriptionIDEQ.
-func SubscriptionID(v int64) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldEQ(FieldSubscriptionID, v))
-}
-
 // InputTokens applies equality check predicate on the "input_tokens" field. It's identical to InputTokensEQ.
 func InputTokens(v int) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldInputTokens, v))
@@ -188,11 +183,6 @@ func RateMultiplier(v float64) predicate.UsageLog {
 // AccountRateMultiplier applies equality check predicate on the "account_rate_multiplier" field. It's identical to AccountRateMultiplierEQ.
 func AccountRateMultiplier(v float64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldAccountRateMultiplier, v))
-}
-
-// BillingType applies equality check predicate on the "billing_type" field. It's identical to BillingTypeEQ.
-func BillingType(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldEQ(FieldBillingType, v))
 }
 
 // Stream applies equality check predicate on the "stream" field. It's identical to StreamEQ.
@@ -900,36 +890,6 @@ func GroupIDNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldGroupID))
 }
 
-// SubscriptionIDEQ applies the EQ predicate on the "subscription_id" field.
-func SubscriptionIDEQ(v int64) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldEQ(FieldSubscriptionID, v))
-}
-
-// SubscriptionIDNEQ applies the NEQ predicate on the "subscription_id" field.
-func SubscriptionIDNEQ(v int64) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldNEQ(FieldSubscriptionID, v))
-}
-
-// SubscriptionIDIn applies the In predicate on the "subscription_id" field.
-func SubscriptionIDIn(vs ...int64) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldIn(FieldSubscriptionID, vs...))
-}
-
-// SubscriptionIDNotIn applies the NotIn predicate on the "subscription_id" field.
-func SubscriptionIDNotIn(vs ...int64) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldNotIn(FieldSubscriptionID, vs...))
-}
-
-// SubscriptionIDIsNil applies the IsNil predicate on the "subscription_id" field.
-func SubscriptionIDIsNil() predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldIsNull(FieldSubscriptionID))
-}
-
-// SubscriptionIDNotNil applies the NotNil predicate on the "subscription_id" field.
-func SubscriptionIDNotNil() predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldNotNull(FieldSubscriptionID))
-}
-
 // InputTokensEQ applies the EQ predicate on the "input_tokens" field.
 func InputTokensEQ(v int) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldInputTokens, v))
@@ -1498,46 +1458,6 @@ func AccountRateMultiplierIsNil() predicate.UsageLog {
 // AccountRateMultiplierNotNil applies the NotNil predicate on the "account_rate_multiplier" field.
 func AccountRateMultiplierNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldAccountRateMultiplier))
-}
-
-// BillingTypeEQ applies the EQ predicate on the "billing_type" field.
-func BillingTypeEQ(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldEQ(FieldBillingType, v))
-}
-
-// BillingTypeNEQ applies the NEQ predicate on the "billing_type" field.
-func BillingTypeNEQ(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldNEQ(FieldBillingType, v))
-}
-
-// BillingTypeIn applies the In predicate on the "billing_type" field.
-func BillingTypeIn(vs ...int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldIn(FieldBillingType, vs...))
-}
-
-// BillingTypeNotIn applies the NotIn predicate on the "billing_type" field.
-func BillingTypeNotIn(vs ...int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldNotIn(FieldBillingType, vs...))
-}
-
-// BillingTypeGT applies the GT predicate on the "billing_type" field.
-func BillingTypeGT(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldGT(FieldBillingType, v))
-}
-
-// BillingTypeGTE applies the GTE predicate on the "billing_type" field.
-func BillingTypeGTE(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldGTE(FieldBillingType, v))
-}
-
-// BillingTypeLT applies the LT predicate on the "billing_type" field.
-func BillingTypeLT(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldLT(FieldBillingType, v))
-}
-
-// BillingTypeLTE applies the LTE predicate on the "billing_type" field.
-func BillingTypeLTE(v int8) predicate.UsageLog {
-	return predicate.UsageLog(sql.FieldLTE(FieldBillingType, v))
 }
 
 // StreamEQ applies the EQ predicate on the "stream" field.
@@ -2284,29 +2204,6 @@ func HasGroup() predicate.UsageLog {
 func HasGroupWith(preds ...predicate.Group) predicate.UsageLog {
 	return predicate.UsageLog(func(s *sql.Selector) {
 		step := newGroupStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasSubscription applies the HasEdge predicate on the "subscription" edge.
-func HasSubscription() predicate.UsageLog {
-	return predicate.UsageLog(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SubscriptionTable, SubscriptionColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasSubscriptionWith applies the HasEdge predicate on the "subscription" edge with a given conditions (other predicates).
-func HasSubscriptionWith(preds ...predicate.UserSubscription) predicate.UsageLog {
-	return predicate.UsageLog(func(s *sql.Selector) {
-		step := newSubscriptionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 )
@@ -114,21 +113,6 @@ func (_c *AuthIdentityCreate) SetMetadata(v map[string]interface{}) *AuthIdentit
 // SetUser sets the "user" edge to the User entity.
 func (_c *AuthIdentityCreate) SetUser(v *User) *AuthIdentityCreate {
 	return _c.SetUserID(v.ID)
-}
-
-// AddChannelIDs adds the "channels" edge to the AuthIdentityChannel entity by IDs.
-func (_c *AuthIdentityCreate) AddChannelIDs(ids ...int64) *AuthIdentityCreate {
-	_c.mutation.AddChannelIDs(ids...)
-	return _c
-}
-
-// AddChannels adds the "channels" edges to the AuthIdentityChannel entity.
-func (_c *AuthIdentityCreate) AddChannels(v ...*AuthIdentityChannel) *AuthIdentityCreate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddChannelIDs(ids...)
 }
 
 // AddAdoptionDecisionIDs adds the "adoption_decisions" edge to the IdentityAdoptionDecision entity by IDs.
@@ -310,22 +294,6 @@ func (_c *AuthIdentityCreate) createSpec() (*AuthIdentity, *sqlgraph.CreateSpec)
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.UserID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.ChannelsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   authidentity.ChannelsTable,
-			Columns: []string{authidentity.ChannelsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(authidentitychannel.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.AdoptionDecisionsIDs(); len(nodes) > 0 {

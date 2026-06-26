@@ -387,7 +387,7 @@ func TestBuildUsageInfo_AICredits(t *testing.T) {
 	require.Len(t, info.AICredits, 1)
 	require.Equal(t, "GOOGLE_ONE_AI", info.AICredits[0].CreditType)
 	require.Equal(t, 25.0, info.AICredits[0].Amount)
-	require.Equal(t, 5.0, info.AICredits[0].MinimumBalance)
+	require.Equal(t, 5.0, info.AICredits[0].MinimumCredit)
 }
 
 func TestFetchQuota_ForbiddenReturnsIsForbidden(t *testing.T) {

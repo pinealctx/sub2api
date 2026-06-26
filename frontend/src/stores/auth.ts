@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, readonly } from 'vue'
 import { authAPI, isTotp2FARequired, type LoginResponse } from '@/api'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types'
+import type { User, LoginRequest, AuthResponse } from '@/types'
 
 const AUTH_TOKEN_KEY = 'auth_token'
 const AUTH_USER_KEY = 'auth_user'
@@ -312,27 +312,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * User registration
-   * @param userData - Registration data (username, email, password)
-   * @returns Promise resolving to the newly registered and authenticated user
-   * @throws Error if registration fails
-   */
-  async function register(userData: RegisterRequest): Promise<User> {
-    try {
-      const response = await authAPI.register(userData)
-
-      // Use the common helper to set auth state
-      setAuthFromResponse(response)
-
-      return user.value!
-    } catch (error) {
-      // Clear any partial state on error
-      clearAuth({ preservePendingAuthSession: pendingAuthSession.value !== null })
-      throw error
-    }
-  }
-
-  /**
    * 直接设置 token（用于 OAuth/SSO 回调），并加载当前用户信息。
    * 会自动读取 localStorage 中已设置的 refresh_token 和 token_expires_in
    * @param newToken - 后端签发的 JWT access token
@@ -482,7 +461,6 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     login,
     login2FA,
-    register,
     setToken,
     logout,
     checkAuth,

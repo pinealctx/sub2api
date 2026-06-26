@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -58,81 +57,62 @@ func (s *authSourceDefaultsRepoStub) Delete(ctx context.Context, key string) err
 	panic("unexpected Delete call")
 }
 
-func TestSettingService_GetAuthSourceDefaultSettings_ParsesValuesAndDefaults(t *testing.T) {
+func TestSettingService_GetAuthSourceDefaultSettings_ParsesInternalProviders(t *testing.T) {
 	repo := &authSourceDefaultsRepoStub{
 		values: map[string]string{
-			SettingKeyAuthSourceDefaultEmailBalance:            "12.5",
-			SettingKeyAuthSourceDefaultEmailConcurrency:        "7",
-			SettingKeyAuthSourceDefaultEmailSubscriptions:      `[{"group_id":11,"validity_days":30}]`,
-			SettingKeyAuthSourceDefaultEmailGrantOnSignup:      "false",
-			SettingKeyAuthSourceDefaultLinuxDoGrantOnFirstBind: "true",
-			SettingKeyForceEmailOnThirdPartySignup:             "true",
+			SettingKeyAuthSourceDefaultEmailConcurrency:      "7",
+			SettingKeyAuthSourceDefaultEmailGrantOnSignup:    "false",
+			SettingKeyAuthSourceDefaultEmailGrantOnFirstBind: "true",
+			SettingKeyAuthSourceDefaultOIDCConcurrency:       "9",
+			SettingKeyAuthSourceDefaultOIDCGrantOnSignup:     "true",
+			SettingKeyAuthSourceDefaultOIDCGrantOnFirstBind:  "false",
+			SettingKeyAuthSourcePlatformQuotas("oidc"):       `{"anthropic":{"daily":12.5}}`,
+			SettingKeyForceEmailOnOIDCAccountCreation:        "true",
 		},
 	}
 	svc := NewSettingService(repo, &config.Config{})
 
 	got, err := svc.GetAuthSourceDefaultSettings(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, 12.5, got.Email.Balance)
 	require.Equal(t, 7, got.Email.Concurrency)
-	require.Equal(t, []DefaultSubscriptionSetting{{GroupID: 11, ValidityDays: 30}}, got.Email.Subscriptions)
 	require.False(t, got.Email.GrantOnSignup)
-	require.False(t, got.Email.GrantOnFirstBind)
-	require.Equal(t, 0.0, got.LinuxDo.Balance)
-	require.Equal(t, 5, got.LinuxDo.Concurrency)
-	require.Equal(t, []DefaultSubscriptionSetting{}, got.LinuxDo.Subscriptions)
-	require.False(t, got.LinuxDo.GrantOnSignup)
-	require.True(t, got.LinuxDo.GrantOnFirstBind)
-	require.Equal(t, 5, got.OIDC.Concurrency)
-	require.Equal(t, 5, got.WeChat.Concurrency)
-	require.False(t, got.OIDC.GrantOnSignup)
-	require.False(t, got.WeChat.GrantOnSignup)
-	require.True(t, got.ForceEmailOnThirdPartySignup)
+	require.True(t, got.Email.GrantOnFirstBind)
+	require.Equal(t, 9, got.OIDC.Concurrency)
+	require.True(t, got.OIDC.GrantOnSignup)
+	require.False(t, got.OIDC.GrantOnFirstBind)
+	require.True(t, got.ForceEmailOnOIDCAccountCreation)
+	require.NotNil(t, got.OIDC.PlatformQuotas["anthropic"])
+	require.NotNil(t, got.OIDC.PlatformQuotas["anthropic"].DailyLimitUSD)
+	require.InDelta(t, 12.5, *got.OIDC.PlatformQuotas["anthropic"].DailyLimitUSD, 0.000001)
 }
 
-func TestSettingService_UpdateAuthSourceDefaultSettings_PersistsAllKeys(t *testing.T) {
+func TestSettingService_UpdateAuthSourceDefaultSettings_PersistsInternalProviders(t *testing.T) {
+	daily := 3.5
 	repo := &authSourceDefaultsRepoStub{}
 	svc := NewSettingService(repo, &config.Config{})
 
 	err := svc.UpdateAuthSourceDefaultSettings(context.Background(), &AuthSourceDefaultSettings{
 		Email: ProviderDefaultGrantSettings{
-			Balance:          1.25,
 			Concurrency:      3,
-			Subscriptions:    []DefaultSubscriptionSetting{{GroupID: 21, ValidityDays: 14}},
 			GrantOnSignup:    false,
 			GrantOnFirstBind: true,
-		},
-		LinuxDo: ProviderDefaultGrantSettings{
-			Balance:          2,
-			Concurrency:      4,
-			Subscriptions:    []DefaultSubscriptionSetting{{GroupID: 22, ValidityDays: 30}},
-			GrantOnSignup:    true,
-			GrantOnFirstBind: false,
 		},
 		OIDC: ProviderDefaultGrantSettings{
-			Balance:          3,
 			Concurrency:      5,
-			Subscriptions:    []DefaultSubscriptionSetting{{GroupID: 23, ValidityDays: 60}},
 			GrantOnSignup:    true,
-			GrantOnFirstBind: true,
-		},
-		WeChat: ProviderDefaultGrantSettings{
-			Balance:          4,
-			Concurrency:      6,
-			Subscriptions:    []DefaultSubscriptionSetting{{GroupID: 24, ValidityDays: 90}},
-			GrantOnSignup:    false,
 			GrantOnFirstBind: false,
+			PlatformQuotas: map[string]*DefaultPlatformQuotaSetting{
+				"anthropic": {DailyLimitUSD: &daily},
+			},
 		},
-		ForceEmailOnThirdPartySignup: true,
 	})
+
 	require.NoError(t, err)
-	require.Equal(t, "1.25000000", repo.updates[SettingKeyAuthSourceDefaultEmailBalance])
 	require.Equal(t, "3", repo.updates[SettingKeyAuthSourceDefaultEmailConcurrency])
 	require.Equal(t, "false", repo.updates[SettingKeyAuthSourceDefaultEmailGrantOnSignup])
 	require.Equal(t, "true", repo.updates[SettingKeyAuthSourceDefaultEmailGrantOnFirstBind])
-	require.Equal(t, "true", repo.updates[SettingKeyForceEmailOnThirdPartySignup])
-
-	var got []DefaultSubscriptionSetting
-	require.NoError(t, json.Unmarshal([]byte(repo.updates[SettingKeyAuthSourceDefaultWeChatSubscriptions]), &got))
-	require.Equal(t, []DefaultSubscriptionSetting{{GroupID: 24, ValidityDays: 90}}, got)
+	require.Equal(t, "5", repo.updates[SettingKeyAuthSourceDefaultOIDCConcurrency])
+	require.Equal(t, "true", repo.updates[SettingKeyAuthSourceDefaultOIDCGrantOnSignup])
+	require.Equal(t, "false", repo.updates[SettingKeyAuthSourceDefaultOIDCGrantOnFirstBind])
+	require.JSONEq(t, `{"anthropic":{"daily":3.5,"weekly":null,"monthly":null}}`, repo.updates[SettingKeyAuthSourcePlatformQuotas("oidc")])
 }

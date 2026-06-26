@@ -46,9 +46,6 @@ func (User) Fields() []ent.Field {
 		field.String("role").
 			MaxLen(20).
 			Default(domain.RoleUser),
-		field.Float("balance").
-			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
-			Default(0),
 		field.Int("concurrency").
 			Default(5),
 		field.String("status").
@@ -59,8 +56,7 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			MaxLen(100).
 			Default(""),
-		// wechat field migrated to user_attribute_values (see migration 019)
-		field.String("notes").
+			field.String("notes").
 			SchemaType(map[string]string{dialect.Postgres: "text"}).
 			Default(""),
 
@@ -77,10 +73,10 @@ func (User) Fields() []ent.Field {
 		field.String("signup_source").
 			Validate(func(value string) error {
 				switch value {
-				case "email", "linuxdo", "wechat", "oidc", "github", "google", "dingtalk":
+				case "email", "oidc":
 					return nil
 				default:
-					return fmt.Errorf("must be one of email, linuxdo, wechat, oidc, github, google, dingtalk")
+					return fmt.Errorf("must be one of email, oidc")
 				}
 			}).
 			Default("email"),
@@ -92,23 +88,6 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
-
-		// 余额不足通知
-		field.Bool("balance_notify_enabled").
-			Default(true),
-		field.String("balance_notify_threshold_type").
-			Default("fixed"), // "fixed" | "percentage"
-		field.Float("balance_notify_threshold").
-			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
-			Optional().
-			Nillable(),
-		field.String("balance_notify_extra_emails").
-			SchemaType(map[string]string{dialect.Postgres: "text"}).
-			Default("[]"),
-		field.Float("total_recharged").
-			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
-			Default(0),
-
 		// 用户级每分钟请求数上限（0 = 不限制）。仅当所在分组未设置 rpm_limit 时作为兜底生效。
 		field.Int("rpm_limit").
 			Default(0),
@@ -118,16 +97,10 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("api_keys", APIKey.Type),
-		edge.To("redeem_codes", RedeemCode.Type),
-		edge.To("subscriptions", UserSubscription.Type),
-		edge.To("assigned_subscriptions", UserSubscription.Type),
-		edge.To("announcement_reads", AnnouncementRead.Type),
 		edge.To("allowed_groups", Group.Type).
 			Through("user_allowed_groups", UserAllowedGroup.Type),
 		edge.To("usage_logs", UsageLog.Type),
 		edge.To("attribute_values", UserAttributeValue.Type),
-		edge.To("promo_code_usages", PromoCodeUsage.Type),
-		edge.To("payment_orders", PaymentOrder.Type),
 		edge.To("auth_identities", AuthIdentity.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("pending_auth_sessions", PendingAuthSession.Type),

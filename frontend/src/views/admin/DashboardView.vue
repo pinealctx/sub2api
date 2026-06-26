@@ -473,7 +473,7 @@ const userTrendChartData = computed(() => {
       return email
     }
 
-    return t('admin.redeem.userPrefix', { id: point.user_id })
+    return t('admin.users.userPrefix', { id: point.user_id })
   }
 
   // Group by user_id to avoid merging different users with the same display name
@@ -537,15 +537,16 @@ const formatNumber = (value: number): string => {
   return value.toLocaleString()
 }
 
-const formatCost = (value: number): string => {
-  if (value >= 1000) {
-    return (value / 1000).toFixed(2) + 'K'
-  } else if (value >= 1) {
-    return value.toFixed(2)
-  } else if (value >= 0.01) {
-    return value.toFixed(3)
+const formatCost = (value?: number | null): string => {
+  const amount = Number(value ?? 0)
+  if (amount >= 1000) {
+    return (amount / 1000).toFixed(2) + 'K'
+  } else if (amount >= 1) {
+    return amount.toFixed(2)
+  } else if (amount >= 0.01) {
+    return amount.toFixed(3)
   }
-  return value.toFixed(4)
+  return amount.toFixed(4)
 }
 
 const formatDuration = (ms: number): string => {

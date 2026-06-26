@@ -16,7 +16,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // UsageLogCreate is the builder for creating a UsageLog entity.
@@ -151,20 +150,6 @@ func (_c *UsageLogCreate) SetGroupID(v int64) *UsageLogCreate {
 func (_c *UsageLogCreate) SetNillableGroupID(v *int64) *UsageLogCreate {
 	if v != nil {
 		_c.SetGroupID(*v)
-	}
-	return _c
-}
-
-// SetSubscriptionID sets the "subscription_id" field.
-func (_c *UsageLogCreate) SetSubscriptionID(v int64) *UsageLogCreate {
-	_c.mutation.SetSubscriptionID(v)
-	return _c
-}
-
-// SetNillableSubscriptionID sets the "subscription_id" field if the given value is not nil.
-func (_c *UsageLogCreate) SetNillableSubscriptionID(v *int64) *UsageLogCreate {
-	if v != nil {
-		_c.SetSubscriptionID(*v)
 	}
 	return _c
 }
@@ -365,20 +350,6 @@ func (_c *UsageLogCreate) SetNillableAccountRateMultiplier(v *float64) *UsageLog
 	return _c
 }
 
-// SetBillingType sets the "billing_type" field.
-func (_c *UsageLogCreate) SetBillingType(v int8) *UsageLogCreate {
-	_c.mutation.SetBillingType(v)
-	return _c
-}
-
-// SetNillableBillingType sets the "billing_type" field if the given value is not nil.
-func (_c *UsageLogCreate) SetNillableBillingType(v *int8) *UsageLogCreate {
-	if v != nil {
-		_c.SetBillingType(*v)
-	}
-	return _c
-}
-
 // SetStream sets the "stream" field.
 func (_c *UsageLogCreate) SetStream(v bool) *UsageLogCreate {
 	_c.mutation.SetStream(v)
@@ -573,11 +544,6 @@ func (_c *UsageLogCreate) SetGroup(v *Group) *UsageLogCreate {
 	return _c.SetGroupID(v.ID)
 }
 
-// SetSubscription sets the "subscription" edge to the UserSubscription entity.
-func (_c *UsageLogCreate) SetSubscription(v *UserSubscription) *UsageLogCreate {
-	return _c.SetSubscriptionID(v.ID)
-}
-
 // Mutation returns the UsageLogMutation object of the builder.
 func (_c *UsageLogCreate) Mutation() *UsageLogMutation {
 	return _c.mutation
@@ -664,10 +630,6 @@ func (_c *UsageLogCreate) defaults() {
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		v := usagelog.DefaultRateMultiplier
 		_c.mutation.SetRateMultiplier(v)
-	}
-	if _, ok := _c.mutation.BillingType(); !ok {
-		v := usagelog.DefaultBillingType
-		_c.mutation.SetBillingType(v)
 	}
 	if _, ok := _c.mutation.Stream(); !ok {
 		v := usagelog.DefaultStream
@@ -777,9 +739,6 @@ func (_c *UsageLogCreate) check() error {
 	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		return &ValidationError{Name: "rate_multiplier", err: errors.New(`ent: missing required field "UsageLog.rate_multiplier"`)}
-	}
-	if _, ok := _c.mutation.BillingType(); !ok {
-		return &ValidationError{Name: "billing_type", err: errors.New(`ent: missing required field "UsageLog.billing_type"`)}
 	}
 	if _, ok := _c.mutation.Stream(); !ok {
 		return &ValidationError{Name: "stream", err: errors.New(`ent: missing required field "UsageLog.stream"`)}
@@ -947,10 +906,6 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 		_spec.SetField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64, value)
 		_node.AccountRateMultiplier = &value
 	}
-	if value, ok := _c.mutation.BillingType(); ok {
-		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
-		_node.BillingType = value
-	}
 	if value, ok := _c.mutation.Stream(); ok {
 		_spec.SetField(usagelog.FieldStream, field.TypeBool, value)
 		_node.Stream = value
@@ -1069,23 +1024,6 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.GroupID = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.SubscriptionIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   usagelog.SubscriptionTable,
-			Columns: []string{usagelog.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.SubscriptionID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -1329,24 +1267,6 @@ func (u *UsageLogUpsert) UpdateGroupID() *UsageLogUpsert {
 // ClearGroupID clears the value of the "group_id" field.
 func (u *UsageLogUpsert) ClearGroupID() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldGroupID)
-	return u
-}
-
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *UsageLogUpsert) SetSubscriptionID(v int64) *UsageLogUpsert {
-	u.Set(usagelog.FieldSubscriptionID, v)
-	return u
-}
-
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *UsageLogUpsert) UpdateSubscriptionID() *UsageLogUpsert {
-	u.SetExcluded(usagelog.FieldSubscriptionID)
-	return u
-}
-
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *UsageLogUpsert) ClearSubscriptionID() *UsageLogUpsert {
-	u.SetNull(usagelog.FieldSubscriptionID)
 	return u
 }
 
@@ -1605,24 +1525,6 @@ func (u *UsageLogUpsert) AddAccountRateMultiplier(v float64) *UsageLogUpsert {
 // ClearAccountRateMultiplier clears the value of the "account_rate_multiplier" field.
 func (u *UsageLogUpsert) ClearAccountRateMultiplier() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldAccountRateMultiplier)
-	return u
-}
-
-// SetBillingType sets the "billing_type" field.
-func (u *UsageLogUpsert) SetBillingType(v int8) *UsageLogUpsert {
-	u.Set(usagelog.FieldBillingType, v)
-	return u
-}
-
-// UpdateBillingType sets the "billing_type" field to the value that was provided on create.
-func (u *UsageLogUpsert) UpdateBillingType() *UsageLogUpsert {
-	u.SetExcluded(usagelog.FieldBillingType)
-	return u
-}
-
-// AddBillingType adds v to the "billing_type" field.
-func (u *UsageLogUpsert) AddBillingType(v int8) *UsageLogUpsert {
-	u.Add(usagelog.FieldBillingType, v)
 	return u
 }
 
@@ -2111,27 +2013,6 @@ func (u *UsageLogUpsertOne) ClearGroupID() *UsageLogUpsertOne {
 	})
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *UsageLogUpsertOne) SetSubscriptionID(v int64) *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.SetSubscriptionID(v)
-	})
-}
-
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *UsageLogUpsertOne) UpdateSubscriptionID() *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.UpdateSubscriptionID()
-	})
-}
-
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *UsageLogUpsertOne) ClearSubscriptionID() *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.ClearSubscriptionID()
-	})
-}
-
 // SetInputTokens sets the "input_tokens" field.
 func (u *UsageLogUpsertOne) SetInputTokens(v int) *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
@@ -2430,27 +2311,6 @@ func (u *UsageLogUpsertOne) UpdateAccountRateMultiplier() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearAccountRateMultiplier() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearAccountRateMultiplier()
-	})
-}
-
-// SetBillingType sets the "billing_type" field.
-func (u *UsageLogUpsertOne) SetBillingType(v int8) *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.SetBillingType(v)
-	})
-}
-
-// AddBillingType adds v to the "billing_type" field.
-func (u *UsageLogUpsertOne) AddBillingType(v int8) *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.AddBillingType(v)
-	})
-}
-
-// UpdateBillingType sets the "billing_type" field to the value that was provided on create.
-func (u *UsageLogUpsertOne) UpdateBillingType() *UsageLogUpsertOne {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.UpdateBillingType()
 	})
 }
 
@@ -3141,27 +3001,6 @@ func (u *UsageLogUpsertBulk) ClearGroupID() *UsageLogUpsertBulk {
 	})
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *UsageLogUpsertBulk) SetSubscriptionID(v int64) *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.SetSubscriptionID(v)
-	})
-}
-
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *UsageLogUpsertBulk) UpdateSubscriptionID() *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.UpdateSubscriptionID()
-	})
-}
-
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *UsageLogUpsertBulk) ClearSubscriptionID() *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.ClearSubscriptionID()
-	})
-}
-
 // SetInputTokens sets the "input_tokens" field.
 func (u *UsageLogUpsertBulk) SetInputTokens(v int) *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
@@ -3460,27 +3299,6 @@ func (u *UsageLogUpsertBulk) UpdateAccountRateMultiplier() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearAccountRateMultiplier() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearAccountRateMultiplier()
-	})
-}
-
-// SetBillingType sets the "billing_type" field.
-func (u *UsageLogUpsertBulk) SetBillingType(v int8) *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.SetBillingType(v)
-	})
-}
-
-// AddBillingType adds v to the "billing_type" field.
-func (u *UsageLogUpsertBulk) AddBillingType(v int8) *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.AddBillingType(v)
-	})
-}
-
-// UpdateBillingType sets the "billing_type" field to the value that was provided on create.
-func (u *UsageLogUpsertBulk) UpdateBillingType() *UsageLogUpsertBulk {
-	return u.Update(func(s *UsageLogUpsert) {
-		s.UpdateBillingType()
 	})
 }
 

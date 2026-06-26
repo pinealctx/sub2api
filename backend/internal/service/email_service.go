@@ -29,6 +29,10 @@ var (
 	ErrInvalidResetToken = infraerrors.BadRequest("INVALID_RESET_TOKEN", "invalid or expired password reset token")
 )
 
+func sanitizeEmailHeader(value string) string {
+	return strings.TrimSpace(strings.NewReplacer("\r", " ", "\n", " ").Replace(value))
+}
+
 // EmailCache defines cache operations for email service
 type EmailCache interface {
 	GetVerificationCode(ctx context.Context, email string) (*VerificationCodeData, error)

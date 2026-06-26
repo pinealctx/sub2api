@@ -100,11 +100,6 @@ func Platform(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldPlatform, v))
 }
 
-// SubscriptionType applies equality check predicate on the "subscription_type" field. It's identical to SubscriptionTypeEQ.
-func SubscriptionType(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldSubscriptionType, v))
-}
-
 // DailyLimitUsd applies equality check predicate on the "daily_limit_usd" field. It's identical to DailyLimitUsdEQ.
 func DailyLimitUsd(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDailyLimitUsd, v))
@@ -118,11 +113,6 @@ func WeeklyLimitUsd(v float64) predicate.Group {
 // MonthlyLimitUsd applies equality check predicate on the "monthly_limit_usd" field. It's identical to MonthlyLimitUsdEQ.
 func MonthlyLimitUsd(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldMonthlyLimitUsd, v))
-}
-
-// DefaultValidityDays applies equality check predicate on the "default_validity_days" field. It's identical to DefaultValidityDaysEQ.
-func DefaultValidityDays(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldDefaultValidityDays, v))
 }
 
 // AllowImageGeneration applies equality check predicate on the "allow_image_generation" field. It's identical to AllowImageGenerationEQ.
@@ -660,71 +650,6 @@ func PlatformContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldPlatform, v))
 }
 
-// SubscriptionTypeEQ applies the EQ predicate on the "subscription_type" field.
-func SubscriptionTypeEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeNEQ applies the NEQ predicate on the "subscription_type" field.
-func SubscriptionTypeNEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeIn applies the In predicate on the "subscription_type" field.
-func SubscriptionTypeIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldSubscriptionType, vs...))
-}
-
-// SubscriptionTypeNotIn applies the NotIn predicate on the "subscription_type" field.
-func SubscriptionTypeNotIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldSubscriptionType, vs...))
-}
-
-// SubscriptionTypeGT applies the GT predicate on the "subscription_type" field.
-func SubscriptionTypeGT(v string) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeGTE applies the GTE predicate on the "subscription_type" field.
-func SubscriptionTypeGTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeLT applies the LT predicate on the "subscription_type" field.
-func SubscriptionTypeLT(v string) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeLTE applies the LTE predicate on the "subscription_type" field.
-func SubscriptionTypeLTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeContains applies the Contains predicate on the "subscription_type" field.
-func SubscriptionTypeContains(v string) predicate.Group {
-	return predicate.Group(sql.FieldContains(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeHasPrefix applies the HasPrefix predicate on the "subscription_type" field.
-func SubscriptionTypeHasPrefix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasPrefix(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeHasSuffix applies the HasSuffix predicate on the "subscription_type" field.
-func SubscriptionTypeHasSuffix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasSuffix(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeEqualFold applies the EqualFold predicate on the "subscription_type" field.
-func SubscriptionTypeEqualFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldEqualFold(FieldSubscriptionType, v))
-}
-
-// SubscriptionTypeContainsFold applies the ContainsFold predicate on the "subscription_type" field.
-func SubscriptionTypeContainsFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldContainsFold(FieldSubscriptionType, v))
-}
-
 // DailyLimitUsdEQ applies the EQ predicate on the "daily_limit_usd" field.
 func DailyLimitUsdEQ(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDailyLimitUsd, v))
@@ -873,46 +798,6 @@ func MonthlyLimitUsdIsNil() predicate.Group {
 // MonthlyLimitUsdNotNil applies the NotNil predicate on the "monthly_limit_usd" field.
 func MonthlyLimitUsdNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldMonthlyLimitUsd))
-}
-
-// DefaultValidityDaysEQ applies the EQ predicate on the "default_validity_days" field.
-func DefaultValidityDaysEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldDefaultValidityDays, v))
-}
-
-// DefaultValidityDaysNEQ applies the NEQ predicate on the "default_validity_days" field.
-func DefaultValidityDaysNEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldDefaultValidityDays, v))
-}
-
-// DefaultValidityDaysIn applies the In predicate on the "default_validity_days" field.
-func DefaultValidityDaysIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldDefaultValidityDays, vs...))
-}
-
-// DefaultValidityDaysNotIn applies the NotIn predicate on the "default_validity_days" field.
-func DefaultValidityDaysNotIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldDefaultValidityDays, vs...))
-}
-
-// DefaultValidityDaysGT applies the GT predicate on the "default_validity_days" field.
-func DefaultValidityDaysGT(v int) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldDefaultValidityDays, v))
-}
-
-// DefaultValidityDaysGTE applies the GTE predicate on the "default_validity_days" field.
-func DefaultValidityDaysGTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldDefaultValidityDays, v))
-}
-
-// DefaultValidityDaysLT applies the LT predicate on the "default_validity_days" field.
-func DefaultValidityDaysLT(v int) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldDefaultValidityDays, v))
-}
-
-// DefaultValidityDaysLTE applies the LTE predicate on the "default_validity_days" field.
-func DefaultValidityDaysLTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldDefaultValidityDays, v))
 }
 
 // AllowImageGenerationEQ applies the EQ predicate on the "allow_image_generation" field.
@@ -1455,52 +1340,6 @@ func HasAPIKeys() predicate.Group {
 func HasAPIKeysWith(preds ...predicate.APIKey) predicate.Group {
 	return predicate.Group(func(s *sql.Selector) {
 		step := newAPIKeysStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasRedeemCodes applies the HasEdge predicate on the "redeem_codes" edge.
-func HasRedeemCodes() predicate.Group {
-	return predicate.Group(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, RedeemCodesTable, RedeemCodesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasRedeemCodesWith applies the HasEdge predicate on the "redeem_codes" edge with a given conditions (other predicates).
-func HasRedeemCodesWith(preds ...predicate.RedeemCode) predicate.Group {
-	return predicate.Group(func(s *sql.Selector) {
-		step := newRedeemCodesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasSubscriptions applies the HasEdge predicate on the "subscriptions" edge.
-func HasSubscriptions() predicate.Group {
-	return predicate.Group(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, SubscriptionsTable, SubscriptionsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasSubscriptionsWith applies the HasEdge predicate on the "subscriptions" edge with a given conditions (other predicates).
-func HasSubscriptionsWith(preds ...predicate.UserSubscription) predicate.Group {
-	return predicate.Group(func(s *sql.Selector) {
-		step := newSubscriptionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

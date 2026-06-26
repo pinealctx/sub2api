@@ -44,7 +44,6 @@ type dashboardSnapshotV2Filters struct {
 	Model       string
 	RequestType *int16
 	Stream      *bool
-	BillingType *int8
 }
 
 type dashboardSnapshotV2CacheKey struct {
@@ -58,7 +57,6 @@ type dashboardSnapshotV2CacheKey struct {
 	Model             string `json:"model"`
 	RequestType       *int16 `json:"request_type"`
 	Stream            *bool  `json:"stream"`
-	BillingType       *int8  `json:"billing_type"`
 	IncludeStats      bool   `json:"include_stats"`
 	IncludeTrend      bool   `json:"include_trend"`
 	IncludeModels     bool   `json:"include_models"`
@@ -103,7 +101,6 @@ func (h *DashboardHandler) GetSnapshotV2(c *gin.Context) {
 		Model:             filters.Model,
 		RequestType:       filters.RequestType,
 		Stream:            filters.Stream,
-		BillingType:       filters.BillingType,
 		IncludeStats:      includeStats,
 		IncludeTrend:      includeTrend,
 		IncludeModels:     includeModels,
@@ -183,7 +180,6 @@ func (h *DashboardHandler) buildSnapshotV2Response(
 			filters.Model,
 			filters.RequestType,
 			filters.Stream,
-			filters.BillingType,
 		)
 		if err != nil {
 			return nil, errors.New("failed to get usage trend")
@@ -203,7 +199,6 @@ func (h *DashboardHandler) buildSnapshotV2Response(
 			usagestats.ModelSourceRequested,
 			filters.RequestType,
 			filters.Stream,
-			filters.BillingType,
 		)
 		if err != nil {
 			return nil, errors.New("failed to get model statistics")
@@ -222,7 +217,6 @@ func (h *DashboardHandler) buildSnapshotV2Response(
 			filters.GroupID,
 			filters.RequestType,
 			filters.Stream,
-			filters.BillingType,
 		)
 		if err != nil {
 			return nil, errors.New("failed to get group statistics")
@@ -288,15 +282,6 @@ func parseDashboardSnapshotV2Filters(c *gin.Context) (*dashboardSnapshotV2Filter
 			return nil, err
 		}
 		filters.Stream = &streamVal
-	}
-
-	if billingTypeStr := strings.TrimSpace(c.Query("billing_type")); billingTypeStr != "" {
-		v, err := strconv.ParseInt(billingTypeStr, 10, 8)
-		if err != nil {
-			return nil, err
-		}
-		bt := int8(v)
-		filters.BillingType = &bt
 	}
 
 	return filters, nil

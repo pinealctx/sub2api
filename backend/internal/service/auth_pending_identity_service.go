@@ -45,17 +45,17 @@ type PendingAuthIdentityKey struct {
 }
 
 type CreatePendingAuthSessionInput struct {
-	SessionToken             string
-	Intent                   string
-	Identity                 PendingAuthIdentityKey
-	TargetUserID             *int64
-	RedirectTo               string
-	ResolvedEmail            string
-	RegistrationPasswordHash string
-	BrowserSessionKey        string
-	UpstreamIdentityClaims   map[string]any
-	LocalFlowState           map[string]any
-	ExpiresAt                time.Time
+	SessionToken                string
+	Intent                      string
+	Identity                    PendingAuthIdentityKey
+	TargetUserID                *int64
+	RedirectTo                  string
+	ResolvedEmail               string
+	AccountCreationPasswordHash string
+	BrowserSessionKey           string
+	UpstreamIdentityClaims      map[string]any
+	LocalFlowState              map[string]any
+	ExpiresAt                   time.Time
 }
 
 type IssuePendingAuthCompletionCodeInput struct {
@@ -227,7 +227,7 @@ func (s *AuthPendingIdentityService) CreatePendingSession(ctx context.Context, i
 		SetProviderSubject(strings.TrimSpace(input.Identity.ProviderSubject)).
 		SetRedirectTo(strings.TrimSpace(input.RedirectTo)).
 		SetResolvedEmail(strings.TrimSpace(input.ResolvedEmail)).
-		SetRegistrationPasswordHash(strings.TrimSpace(input.RegistrationPasswordHash)).
+		SetAccountCreationPasswordHash(strings.TrimSpace(input.AccountCreationPasswordHash)).
 		SetBrowserSessionKey(strings.TrimSpace(input.BrowserSessionKey)).
 		SetUpstreamIdentityClaims(copyPendingMap(input.UpstreamIdentityClaims)).
 		SetLocalFlowState(copyPendingMap(input.LocalFlowState)).

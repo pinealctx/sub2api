@@ -21,13 +21,13 @@ import (
 
 // ProviderConfig holds the configuration for a single search provider.
 type ProviderConfig struct {
-	Type         string `json:"type"`                    // ProviderTypeBrave | ProviderTypeTavily
-	APIKey       string `json:"api_key"`                 // secret
-	QuotaLimit   int64  `json:"quota_limit"`             // 0 = unlimited
-	SubscribedAt *int64 `json:"subscribed_at,omitempty"` // subscription start (unix seconds); quota resets monthly from this date
-	ProxyURL     string `json:"-"`                       // resolved proxy URL (not persisted)
-	ProxyID      int64  `json:"-"`                       // resolved proxy ID for unavailability tracking
-	ExpiresAt    *int64 `json:"expires_at,omitempty"`    // optional expiration (unix seconds)
+	Type               string `json:"type"`                            // ProviderTypeBrave | ProviderTypeTavily
+	APIKey             string `json:"api_key"`                         // secret
+	QuotaLimit         int64  `json:"quota_limit"`                     // 0 = unlimited
+	QuotaResetAnchorAt *int64 `json:"quota_reset_anchor_at,omitempty"` // monthly quota reset anchor (unix seconds)
+	ProxyURL           string `json:"-"`                               // resolved proxy URL (not persisted)
+	ProxyID            int64  `json:"-"`                               // resolved proxy ID for unavailability tracking
+	ExpiresAt          *int64 `json:"expires_at,omitempty"`            // optional expiration (unix seconds)
 }
 
 // Manager selects providers by quota-weighted load balancing and tracks quota via Redis.
@@ -50,7 +50,7 @@ const (
 	proxyUnavailableKey = "websearch:proxy_unavailable:%d"
 	proxyUnavailableTTL = 5 * time.Minute
 	quotaTTLBuffer      = 24 * time.Hour
-	defaultQuotaTTL     = 31*24*time.Hour + quotaTTLBuffer // fallback when no subscription date
+	defaultQuotaTTL     = 31*24*time.Hour + quotaTTLBuffer // fallback when no reset anchor is configured
 	maxCachedClients    = 100
 )
 
@@ -317,7 +317,7 @@ func (m *Manager) tryReserveQuota(ctx context.Context, cfg ProviderConfig) (bool
 		return true, false
 	}
 	key := quotaRedisKey(cfg.Type)
-	ttlSec := int(quotaTTLFromSubscription(cfg.SubscribedAt).Seconds())
+	ttlSec := int(quotaTTLFromAnchor(cfg.QuotaResetAnchorAt).Seconds())
 	newVal, err := quotaIncrScript.Run(ctx, m.redis, []string{key}, ttlSec).Int64()
 	if err != nil {
 		slog.Warn("websearch: quota Lua INCR failed, allowing request",
@@ -477,14 +477,14 @@ func quotaRedisKey(providerType string) string {
 	return quotaKeyPrefix + providerType
 }
 
-// quotaTTLFromSubscription calculates the TTL for the quota counter based on
-// the provider's subscription start date. Quota resets monthly from that date.
+// quotaTTLFromAnchor calculates the TTL for the quota counter based on
+// the provider's monthly reset anchor. Quota resets monthly from that date.
 // When the Redis key expires naturally, the next INCR creates a fresh counter (lazy refresh).
-func quotaTTLFromSubscription(subscribedAt *int64) time.Duration {
-	if subscribedAt == nil || *subscribedAt == 0 {
+func quotaTTLFromAnchor(anchorAt *int64) time.Duration {
+	if anchorAt == nil || *anchorAt == 0 {
 		return defaultQuotaTTL
 	}
-	next := nextMonthlyReset(time.Unix(*subscribedAt, 0).UTC())
+	next := nextMonthlyReset(time.Unix(*anchorAt, 0).UTC())
 	ttl := time.Until(next) + quotaTTLBuffer
 	if ttl <= quotaTTLBuffer {
 		// Already past the reset — next cycle
@@ -493,23 +493,23 @@ func quotaTTLFromSubscription(subscribedAt *int64) time.Duration {
 	return ttl
 }
 
-// nextMonthlyReset returns the next monthly reset time based on the subscription start date.
-// E.g., subscribed on Jan 15 → resets on Feb 15, Mar 15, etc.
+// nextMonthlyReset returns the next monthly reset time based on the reset anchor date.
+// E.g., anchored on Jan 15 -> resets on Feb 15, Mar 15, etc.
 // Handles day-of-month overflow: Jan 31 → Feb 28 (not Mar 3).
-func nextMonthlyReset(subscribedAt time.Time) time.Time {
+func nextMonthlyReset(anchorAt time.Time) time.Time {
 	now := time.Now().UTC()
-	if subscribedAt.IsZero() {
+	if anchorAt.IsZero() {
 		return now.AddDate(0, 1, 0)
 	}
-	months := (now.Year()-subscribedAt.Year())*12 + int(now.Month()-subscribedAt.Month())
+	months := (now.Year()-anchorAt.Year())*12 + int(now.Month()-anchorAt.Month())
 	if months < 0 {
 		months = 0
 	}
-	candidate := addMonthsClamped(subscribedAt, months)
+	candidate := addMonthsClamped(anchorAt, months)
 	if candidate.After(now) {
 		return candidate
 	}
-	return addMonthsClamped(subscribedAt, months+1)
+	return addMonthsClamped(anchorAt, months+1)
 }
 
 // addMonthsClamped adds N months to a date, clamping the day to the last day of the target month.

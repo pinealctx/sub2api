@@ -2,7 +2,7 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import type { Virtualizer } from '@tanstack/vue-virtual'
 
 /**
- * WeChat-style swipe/drag to select rows in a DataTable,
+ * Swipe/drag to select rows in a DataTable,
  * with a semi-transparent marquee overlay showing the selection area.
  *
  * Features:

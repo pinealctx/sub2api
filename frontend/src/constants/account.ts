@@ -4,7 +4,7 @@ export const WEB_SEARCH_MODE_ENABLED = 'enabled' as const
 export const WEB_SEARCH_MODE_DISABLED = 'disabled' as const
 export type WebSearchMode = typeof WEB_SEARCH_MODE_DEFAULT | typeof WEB_SEARCH_MODE_ENABLED | typeof WEB_SEARCH_MODE_DISABLED
 
-/** Quota notification threshold type values (must match thresholdType* constants in balance_notify_service.go) */
+/** Account quota notification threshold type values (must match backend thresholdType* constants) */
 export const QUOTA_THRESHOLD_TYPE_FIXED = 'fixed' as const
 export const QUOTA_THRESHOLD_TYPE_PERCENTAGE = 'percentage' as const
 export type QuotaThresholdType = typeof QUOTA_THRESHOLD_TYPE_FIXED | typeof QUOTA_THRESHOLD_TYPE_PERCENTAGE

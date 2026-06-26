@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
-	"github.com/Wei-Shaw/sub2api/ent/intercept"
 )
 
 // SoftDeleteMixin 实现基于 deleted_at 时间戳的软删除功能。
@@ -81,14 +80,12 @@ func SkipSoftDelete(parent context.Context) context.Context {
 // 确保软删除的记录不会出现在普通查询结果中。
 func (d SoftDeleteMixin) Interceptors() []ent.Interceptor {
 	return []ent.Interceptor{
-		intercept.TraverseFunc(func(ctx context.Context, q intercept.Query) error {
+		ent.TraverseFunc(func(ctx context.Context, q ent.Query) error {
 			// 检查是否需要跳过软删除过滤
 			if skip, _ := ctx.Value(softDeleteKey{}).(bool); skip {
 				return nil
 			}
-			// 为查询添加 deleted_at IS NULL 条件
-			d.applyPredicate(q)
-			return nil
+			return d.applyQueryPredicate(q)
 		}),
 	}
 }
@@ -135,6 +132,37 @@ func (d SoftDeleteMixin) applyPredicate(w interface{ WhereP(...func(*sql.Selecto
 	w.WhereP(
 		sql.FieldIsNull(d.Fields()[0].Descriptor().Name),
 	)
+}
+
+func (d SoftDeleteMixin) applyQueryPredicate(q ent.Query) error {
+	where := reflect.ValueOf(q).MethodByName("Where")
+	if !where.IsValid() {
+		return fmt.Errorf("soft delete: query where method not found for %T", q)
+	}
+	whereType := where.Type()
+	if whereType.NumIn() != 1 || !whereType.IsVariadic() {
+		return fmt.Errorf("soft delete: query where signature mismatch for %T", q)
+	}
+	predicatesType := whereType.In(0)
+	if predicatesType.Kind() != reflect.Slice {
+		return fmt.Errorf("soft delete: query where predicate type mismatch for %T", q)
+	}
+	predicateType := predicatesType.Elem()
+	if predicateType.Kind() != reflect.Func || predicateType.NumIn() != 1 || predicateType.NumOut() != 0 {
+		return fmt.Errorf("soft delete: query where predicate func mismatch for %T", q)
+	}
+	deletedAtField := d.Fields()[0].Descriptor().Name
+	predicate := reflect.MakeFunc(predicateType, func(args []reflect.Value) []reflect.Value {
+		selector, ok := args[0].Interface().(*sql.Selector)
+		if ok {
+			sql.FieldIsNull(deletedAtField)(selector)
+		}
+		return nil
+	})
+	predicates := reflect.MakeSlice(predicatesType, 1, 1)
+	predicates.Index(0).Set(predicate)
+	where.CallSlice([]reflect.Value{predicates})
+	return nil
 }
 
 func mutateWithClient(ctx context.Context, m ent.Mutation, fallback ent.Mutator) (ent.Value, error) {

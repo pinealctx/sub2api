@@ -13,14 +13,16 @@ import (
 
 // APIKeyAuthGoogle is a Google-style error wrapper for API key auth.
 func APIKeyAuthGoogle(apiKeyService *service.APIKeyService, cfg *config.Config) gin.HandlerFunc {
-	return APIKeyAuthWithSubscriptionGoogle(apiKeyService, nil, cfg)
+	return APIKeyAuthInternalGoogle(apiKeyService, cfg)
 }
 
-// APIKeyAuthWithSubscriptionGoogle behaves like ApiKeyAuthWithSubscription but returns Google-style errors:
+// APIKeyAuthInternalGoogle behaves like API key auth but returns Google-style errors:
 // {"error":{"code":401,"message":"...","status":"UNAUTHENTICATED"}}
 //
 // It is intended for Gemini native endpoints (/v1beta) to match Gemini SDK expectations.
-func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) gin.HandlerFunc {
+func APIKeyAuthInternalGoogle(apiKeyService *service.APIKeyService, cfg *config.Config) gin.HandlerFunc {
+	_ = cfg
+
 	return func(c *gin.Context) {
 		if v := strings.TrimSpace(c.Query("api_key")); v != "" {
 			abortWithGoogleError(c, 400, "Query parameter api_key is deprecated. Use Authorization header or key instead.")
@@ -62,57 +64,6 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 			abortWithGoogleError(c, 403, message)
 			return
-		}
-
-		// 简易模式：跳过余额和订阅检查
-		if cfg.RunMode == config.RunModeSimple {
-			c.Set(string(ContextKeyAPIKey), apiKey)
-			c.Set(string(ContextKeyUser), AuthSubject{
-				UserID:      apiKey.User.ID,
-				Concurrency: apiKey.User.Concurrency,
-			})
-			c.Set(string(ContextKeyUserRole), apiKey.User.Role)
-			setGroupContext(c, apiKey.Group)
-			_ = apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
-			c.Next()
-			return
-		}
-
-		isSubscriptionType := apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
-		if isSubscriptionType && subscriptionService != nil {
-			subscription, err := subscriptionService.GetActiveSubscription(
-				c.Request.Context(),
-				apiKey.User.ID,
-				apiKey.Group.ID,
-			)
-			if err != nil {
-				abortWithGoogleError(c, 403, "No active subscription found for this group")
-				return
-			}
-
-			needsMaintenance, err := subscriptionService.ValidateAndCheckLimits(subscription, apiKey.Group)
-			if err != nil {
-				status := 403
-				if errors.Is(err, service.ErrDailyLimitExceeded) ||
-					errors.Is(err, service.ErrWeeklyLimitExceeded) ||
-					errors.Is(err, service.ErrMonthlyLimitExceeded) {
-					status = 429
-				}
-				abortWithGoogleError(c, status, err.Error())
-				return
-			}
-
-			c.Set(string(ContextKeySubscription), subscription)
-
-			if needsMaintenance {
-				maintenanceCopy := *subscription
-				subscriptionService.DoWindowMaintenance(&maintenanceCopy)
-			}
-		} else {
-			if apiKey.User.Balance <= 0 {
-				abortWithGoogleError(c, 403, "Insufficient account balance")
-				return
-			}
 		}
 
 		c.Set(string(ContextKeyAPIKey), apiKey)

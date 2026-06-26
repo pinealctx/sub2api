@@ -336,7 +336,6 @@ type OpenAIGatewayService struct {
 	usageLogRepo          UsageLogRepository
 	usageBillingRepo      UsageBillingRepository
 	userRepo              UserRepository
-	userSubRepo           UserSubscriptionRepository
 	cache                 GatewayCache
 	cfg                   *config.Config
 	codexDetector         CodexClientRestrictionDetector
@@ -353,7 +352,6 @@ type OpenAIGatewayService struct {
 	openaiWSResolver      OpenAIWSProtocolResolver
 	resolver              *ModelPricingResolver
 	channelService        *ChannelService
-	balanceNotifyService  *BalanceNotifyService
 	settingService        *SettingService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
 
@@ -384,7 +382,6 @@ func NewOpenAIGatewayService(
 	usageLogRepo UsageLogRepository,
 	usageBillingRepo UsageBillingRepository,
 	userRepo UserRepository,
-	userSubRepo UserSubscriptionRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	cache GatewayCache,
 	cfg *config.Config,
@@ -398,7 +395,6 @@ func NewOpenAIGatewayService(
 	openAITokenProvider *OpenAITokenProvider,
 	resolver *ModelPricingResolver,
 	channelService *ChannelService,
-	balanceNotifyService *BalanceNotifyService,
 	settingService *SettingService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
 ) *OpenAIGatewayService {
@@ -407,7 +403,6 @@ func NewOpenAIGatewayService(
 		usageLogRepo:        usageLogRepo,
 		usageBillingRepo:    usageBillingRepo,
 		userRepo:            userRepo,
-		userSubRepo:         userSubRepo,
 		cache:               cache,
 		cfg:                 cfg,
 		codexDetector:       NewOpenAICodexClientRestrictionDetector(cfg),
@@ -430,7 +425,6 @@ func NewOpenAIGatewayService(
 		openaiWSResolver:      NewOpenAIWSProtocolResolver(cfg),
 		resolver:              resolver,
 		channelService:        channelService,
-		balanceNotifyService:  balanceNotifyService,
 		settingService:        settingService,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
 		responseHeaderFilter:  compileResponseHeaderFilter(cfg),
@@ -540,10 +534,8 @@ func (s *OpenAIGatewayService) billingDeps() *billingDeps {
 	return &billingDeps{
 		accountRepo:           s.accountRepo,
 		userRepo:              s.userRepo,
-		userSubRepo:           s.userSubRepo,
 		billingCacheService:   s.billingCacheService,
 		deferredService:       s.deferredService,
-		balanceNotifyService:  s.balanceNotifyService,
 		userPlatformQuotaRepo: s.userPlatformQuotaRepo,
 	}
 }
@@ -5829,7 +5821,6 @@ type OpenAIRecordUsageInput struct {
 	APIKey             *APIKey
 	User               *User
 	Account            *Account
-	Subscription       *UserSubscription
 	InboundEndpoint    string
 	UpstreamEndpoint   string
 	UserAgent          string // 请求的 User-Agent
@@ -5847,7 +5838,6 @@ type OpenAIRecordUsageInput struct {
 type CyberPolicyUsageInput struct {
 	APIKey       *APIKey
 	Account      *Account
-	Subscription *UserSubscription
 	RequestID    string
 	Model        string
 	Stream       bool
@@ -5888,7 +5878,6 @@ func (s *OpenAIGatewayService) RecordCyberPolicyUsageLog(ctx context.Context, in
 		APIKey:             in.APIKey,
 		User:               in.APIKey.User,
 		Account:            in.Account,
-		Subscription:       in.Subscription,
 		InboundEndpoint:    in.InboundEndpoint,
 		UpstreamEndpoint:   in.UpstreamEndpoint,
 		UserAgent:          in.UserAgent,
@@ -5918,7 +5907,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	apiKey := input.APIKey
 	user := input.User
 	account := input.Account
-	subscription := input.Subscription
 	ApplyOpenAIImageBillingResolution(result)
 
 	// 计算实际的新输入token（减去缓存读取的token）
@@ -5993,13 +5981,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		cost = &CostBreakdown{BillingMode: string(BillingModeToken)}
 	}
 
-	// Determine billing type
-	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
-	billingType := BillingTypeBalance
-	if isSubscriptionBilling {
-		billingType = BillingTypeSubscription
-	}
-
 	// Create usage log
 	durationMs := int(result.Duration.Milliseconds())
 	accountRateMultiplier := account.BillingRateMultiplier()
@@ -6055,7 +6036,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		usageLog.RateMultiplier = multiplier
 	}
 	usageLog.AccountRateMultiplier = &accountRateMultiplier
-	usageLog.BillingType = billingType
 	usageLog.Stream = result.Stream
 	if input.CyberBlocked {
 		usageLog.RequestType = RequestTypeCyberBlocked
@@ -6091,9 +6071,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if apiKey.GroupID != nil {
 		usageLog.GroupID = apiKey.GroupID
 	}
-	if subscription != nil {
-		usageLog.SubscriptionID = &subscription.ID
-	}
 
 	// 计算账号统计定价费用（使用最终上游模型匹配自定义规则）
 	if apiKey.GroupID != nil {
@@ -6116,9 +6093,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			User:                  user,
 			APIKey:                apiKey,
 			Account:               account,
-			Subscription:          subscription,
 			RequestPayloadHash:    resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
-			IsSubscriptionBill:    isSubscriptionBilling,
 			AccountRateMultiplier: accountRateMultiplier,
 			APIKeyService:         input.APIKeyService,
 			Platform:              PlatformFromAPIKey(apiKey),

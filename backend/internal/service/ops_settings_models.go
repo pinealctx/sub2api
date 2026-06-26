@@ -99,7 +99,7 @@ type OpsAdvancedSettings struct {
 	IgnoreContextCanceled           bool                                   `json:"ignore_context_canceled"`
 	IgnoreNoAvailableAccounts       bool                                   `json:"ignore_no_available_accounts"`
 	IgnoreInvalidApiKeyErrors       bool                                   `json:"ignore_invalid_api_key_errors"`
-	IgnoreInsufficientBalanceErrors bool                                   `json:"ignore_insufficient_balance_errors"`
+	IgnoreUpstreamCreditErrors bool                                   `json:"ignore_upstream_credit_errors"`
 	DisplayOpenAITokenStats         bool                                   `json:"display_openai_token_stats"`
 	DisplayAlertEvents              bool                                   `json:"display_alert_events"`
 	AutoRefreshEnabled              bool                                   `json:"auto_refresh_enabled"`

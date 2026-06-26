@@ -24,7 +24,7 @@ interface ApiErrorLike {
 /**
  * Extract the error code from an API error object.
  *
- * Prefers the string `reason` (e.g. "PAYMENT_PROVIDER_MISCONFIGURED") over the
+ * Prefers the string `reason` (e.g. "OAUTH_PROVIDER_MISCONFIGURED") over the
  * numeric HTTP `code`, because reason is granular enough to drive i18n lookup
  * while HTTP code is not.
  */
@@ -50,7 +50,7 @@ type TranslateWithExistsFn = TranslateFn & { te?: (key: string) => boolean }
 
 /**
  * Translate a value via i18n if a matching key exists, otherwise return the original.
- * Example: "certSerial" → t('admin.settings.payment.field_certSerial') → "证书序列号".
+ * Example: "clientId" -> t('<namespace>.field_clientId') -> localized label.
  */
 function tryTranslate(t: TranslateFn, key: string, fallback: string): string {
   const translated = t(key)
@@ -65,15 +65,19 @@ function tryTranslate(t: TranslateFn, key: string, fallback: string): string {
  * localized UI labels (e.g. "证书序列号"), using the provider-config field i18n namespace.
  * Handles both single `key` and `/`-joined `keys` patterns used by wxpay errors.
  */
-function localizeMetadata(metadata: Record<string, unknown>, t: TranslateFn): Record<string, unknown> {
+function localizeMetadata(
+  metadata: Record<string, unknown>,
+  t: TranslateFn,
+  namespace: string
+): Record<string, unknown> {
   const out: Record<string, unknown> = { ...metadata }
   if (typeof out.key === 'string') {
-    out.key = tryTranslate(t, `admin.settings.payment.field_${out.key}`, out.key)
+    out.key = tryTranslate(t, `${namespace}.field_${out.key}`, out.key)
   }
   if (typeof out.keys === 'string') {
     out.keys = out.keys
       .split('/')
-      .map(k => tryTranslate(t, `admin.settings.payment.field_${k}`, k))
+      .map(k => tryTranslate(t, `${namespace}.field_${k}`, k))
       .join(' / ')
   }
   return out
@@ -89,7 +93,7 @@ function localizeMetadata(metadata: Record<string, unknown>, t: TranslateFn): Re
  *
  * @param err      - The caught error
  * @param t        - Vue i18n translate function
- * @param namespace- i18n key prefix, e.g. "payment.errors"
+ * @param namespace- i18n key prefix, e.g. "auth.errors"
  * @param fallback - Fallback key or plain string if no localized mapping exists
  */
 export function extractI18nErrorMessage(
@@ -102,7 +106,7 @@ export function extractI18nErrorMessage(
   if (code) {
     const key = `${namespace}.${code}`
     const rawMetadata = extractApiErrorMetadata(err) ?? {}
-    const metadata = localizeMetadata(rawMetadata, t)
+    const metadata = localizeMetadata(rawMetadata, t, namespace)
     const translated = t(key, metadata)
     // Vue i18n returns the key itself when missing; detect that and fall back.
     if (translated !== key) return translated

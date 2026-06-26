@@ -77,6 +77,15 @@ const (
 
 const openAIEndpointCapabilitiesCredentialKey = "openai_capabilities"
 
+const (
+	thresholdTypeFixed      = "fixed"
+	thresholdTypePercentage = "percentage"
+
+	quotaDimDaily  = "daily"
+	quotaDimWeekly = "weekly"
+	quotaDimTotal  = "total"
+)
+
 type TempUnschedulableRule struct {
 	ErrorCode       int      `json:"error_code"`
 	Keywords        []string `json:"keywords"`

@@ -15,13 +15,8 @@ import (
 )
 
 var authProviderTypes = map[string]struct{}{
-	"email":    {},
-	"github":   {},
-	"google":   {},
-	"linuxdo":  {},
-	"oidc":     {},
-	"wechat":   {},
-	"dingtalk": {},
+	"email": {},
+	"oidc":  {},
 }
 
 func validateAuthProviderType(value string) error {
@@ -82,8 +77,6 @@ func (AuthIdentity) Edges() []ent.Edge {
 			Field("user_id").
 			Required().
 			Unique(),
-		edge.To("channels", AuthIdentityChannel.Type).
-			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("adoption_decisions", IdentityAdoptionDecision.Type),
 	}
 }

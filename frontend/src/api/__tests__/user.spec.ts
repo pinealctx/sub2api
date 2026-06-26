@@ -10,23 +10,12 @@ describe('user api oauth binding urls', () => {
     vi.unstubAllEnvs()
   })
 
-  it('builds third-party bind urls against the bind start endpoint', async () => {
+  it('builds only the OIDC bind url against the bind start endpoint', async () => {
     const { buildOAuthBindingStartURL } = await import('@/api/user')
 
-    expect(buildOAuthBindingStartURL('linuxdo', { redirectTo: '/settings/profile' })).toBe(
-      'https://api.example.com/api/v1/auth/oauth/linuxdo/bind/start?redirect=%2Fsettings%2Fprofile&intent=bind_current_user'
+    expect(buildOAuthBindingStartURL('oidc', { redirectTo: '/settings/profile' })).toBe(
+      'https://api.example.com/api/v1/auth/oauth/oidc/bind/start?redirect=%2Fsettings%2Fprofile&intent=bind_current_user'
     )
-    expect(
-      buildOAuthBindingStartURL('wechat', {
-        redirectTo: '/settings/profile',
-        wechatOAuthSettings: {
-          wechat_oauth_open_enabled: true,
-          wechat_oauth_mp_enabled: false,
-          wechat_oauth_mobile_enabled: false
-        }
-      })
-    ).toBe(
-      'https://api.example.com/api/v1/auth/oauth/wechat/bind/start?redirect=%2Fsettings%2Fprofile&intent=bind_current_user&mode=open'
-    )
+    expect(buildOAuthBindingStartURL('legacy' as never, { redirectTo: '/settings/profile' })).toBeNull()
   })
 })

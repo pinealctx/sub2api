@@ -13,7 +13,6 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
@@ -32,12 +31,10 @@ const (
 	oauthPendingBrowserCookieName = "oauth_pending_browser_session"
 	oauthPendingSessionCookiePath = "/api/v1/auth/oauth"
 	oauthPendingSessionCookieName = "oauth_pending_session"
-	oauthPromoCodeCookieName      = "oauth_promo_code"
 	oauthPendingCookieMaxAgeSec   = 10 * 60
 	oauthPendingChoiceStep        = "choose_account_action_required"
 
 	oauthCompletionResponseKey = "completion_response"
-	oauthPromoCodeStateKey     = "promo_code"
 )
 
 var pendingOAuthCreateAccountPreCommitHook func(context.Context, *dbent.PendingAuthSession) error
@@ -69,8 +66,6 @@ type createPendingOAuthAccountRequest struct {
 	Email            string `json:"email" binding:"required,email"`
 	VerifyCode       string `json:"verify_code,omitempty"`
 	Password         string `json:"password" binding:"required,min=6"`
-	InvitationCode   string `json:"invitation_code,omitempty"`
-	AffCode          string `json:"aff_code,omitempty"`
 	AdoptDisplayName *bool  `json:"adopt_display_name,omitempty"`
 	AdoptAvatar      *bool  `json:"adopt_avatar,omitempty"`
 }
@@ -80,6 +75,11 @@ type sendPendingOAuthVerifyCodeRequest struct {
 	TurnstileToken    string `json:"turnstile_token,omitempty"`
 	PendingAuthToken  string `json:"pending_auth_token,omitempty"`
 	PendingOAuthToken string `json:"pending_oauth_token,omitempty"`
+}
+
+type sendPendingOAuthVerifyCodeResponse struct {
+	Message   string `json:"message"`
+	Countdown int    `json:"countdown"`
 }
 
 func (r bindPendingOAuthLoginRequest) adoptionDecision() oauthAdoptionDecisionRequest {
@@ -163,61 +163,14 @@ func readOAuthPendingSessionCookie(c *gin.Context) (string, error) {
 	return readCookieDecoded(c, oauthPendingSessionCookieName)
 }
 
-func captureOAuthPromoCode(c *gin.Context, secure bool) {
-	promoCode := strings.TrimSpace(c.Query("promo_code"))
-	if promoCode == "" {
-		clearOAuthPromoCodeCookie(c, secure)
-		return
-	}
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     oauthPromoCodeCookieName,
-		Value:    encodeCookieValue(promoCode),
-		Path:     oauthPendingBrowserCookiePath,
-		MaxAge:   oauthPendingCookieMaxAgeSec,
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-func clearOAuthPromoCodeCookie(c *gin.Context, secure bool) {
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     oauthPromoCodeCookieName,
-		Value:    "",
-		Path:     oauthPendingBrowserCookiePath,
-		MaxAge:   -1,
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-func readOAuthPromoCode(c *gin.Context) string {
-	if c == nil {
-		return ""
-	}
-	promoCode, err := readCookieDecoded(c, oauthPromoCodeCookieName)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(promoCode)
-}
-
-func pendingOAuthPromoCode(session *dbent.PendingAuthSession) string {
-	if session == nil {
-		return ""
-	}
-	return pendingSessionStringValue(session.LocalFlowState, oauthPromoCodeStateKey)
-}
-
 func redirectToFrontendCallback(c *gin.Context, frontendCallback string) {
 	u, err := url.Parse(frontendCallback)
 	if err != nil {
-		c.Redirect(http.StatusFound, linuxDoOAuthDefaultRedirectTo)
+		c.Redirect(http.StatusFound, oauthDefaultRedirectTo)
 		return
 	}
 	if u.Scheme != "" && !strings.EqualFold(u.Scheme, "http") && !strings.EqualFold(u.Scheme, "https") {
-		c.Redirect(http.StatusFound, linuxDoOAuthDefaultRedirectTo)
+		c.Redirect(http.StatusFound, oauthDefaultRedirectTo)
 		return
 	}
 	u.Fragment = ""
@@ -232,12 +185,7 @@ func (h *AuthHandler) createOAuthPendingSession(c *gin.Context, payload oauthPen
 		return err
 	}
 
-	localFlowState := map[string]any{
-		oauthCompletionResponseKey: payload.CompletionResponse,
-	}
-	if promoCode := readOAuthPromoCode(c); promoCode != "" {
-		localFlowState[oauthPromoCodeStateKey] = promoCode
-	}
+	localFlowState := map[string]any{oauthCompletionResponseKey: payload.CompletionResponse}
 
 	session, err := svc.CreatePendingSession(c.Request.Context(), service.CreatePendingAuthSessionInput{
 		Intent:                 strings.TrimSpace(payload.Intent),
@@ -330,7 +278,7 @@ func pendingSessionWantsInvitation(payload map[string]any) bool {
 }
 
 // pendingSessionRequiresEmailCompletion 判断 callback 写入的 completion payload 是否处于"补邮箱"状态。
-// 钉钉跨组织/staff 邮箱缺失时进入此状态：前端跳到补邮箱页，exchange 不应走 adoption apply。
+// OIDC 上游未返回可用邮箱时进入此状态：前端跳到补邮箱页，exchange 不应走 adoption apply。
 func pendingSessionRequiresEmailCompletion(payload map[string]any) bool {
 	if v, ok := payload["requires_email_completion"].(bool); ok && v {
 		return true
@@ -339,7 +287,7 @@ func pendingSessionRequiresEmailCompletion(payload map[string]any) bool {
 }
 
 // pendingSessionRequiresBindLogin 判断 callback 写入的 completion payload 是否处于"必须绑定已有账户"状态。
-// 钉钉 signupBlocked=true（注册关 + 钉钉企业豁免关）时进入此状态：前端渲染 bind_login 表单，
+// OIDC 不允许直接创建新账号时进入此状态：前端渲染 bind_login 表单，
 // exchange 不应消费 session，否则后续 /pending/bind-login 找不到 session。
 func pendingSessionRequiresBindLogin(payload map[string]any) bool {
 	return strings.EqualFold(strings.TrimSpace(pendingSessionStringValue(payload, "step")), "bind_login_required")
@@ -361,33 +309,33 @@ func pendingOAuthCompletionCanIssueTokenPair(session *dbent.PendingAuthSession, 
 	return strings.TrimSpace(pendingSessionStringValue(payload, "step")) == ""
 }
 
-func ensurePendingOAuthCompleteRegistrationSession(session *dbent.PendingAuthSession) error {
+func ensurePendingOAuthAccountCreationSession(session *dbent.PendingAuthSession) error {
 	if session == nil {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 	if strings.TrimSpace(session.Intent) != oauthIntentLogin {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 	if session.TargetUserID != nil && *session.TargetUserID > 0 {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 	payload, _ := readCompletionResponse(session.LocalFlowState)
 	if strings.EqualFold(strings.TrimSpace(pendingSessionStringValue(payload, "step")), "bind_login_required") {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 	return nil
 }
 
-func buildLegacyCompleteRegistrationPendingResponse(
+func buildLegacyAccountCreationPendingResponse(
 	session *dbent.PendingAuthSession,
-	forceEmailOnSignup bool,
+	forceEmailOnAccountCreation bool,
 	emailVerificationRequired bool,
 ) map[string]any {
 	completionResponse := normalizePendingOAuthCompletionResponse(mergePendingCompletionResponse(session, map[string]any{
-		"step":                   oauthPendingChoiceStep,
-		"adoption_required":      true,
-		"create_account_allowed": true,
-		"force_email_on_signup":  forceEmailOnSignup,
+		"step":                            oauthPendingChoiceStep,
+		"adoption_required":               true,
+		"create_account_allowed":          true,
+		"force_email_on_account_creation": forceEmailOnAccountCreation,
 	}))
 
 	if email := strings.TrimSpace(session.ResolvedEmail); email != "" {
@@ -400,23 +348,23 @@ func buildLegacyCompleteRegistrationPendingResponse(
 	}
 	if _, exists := completionResponse["choice_reason"]; !exists {
 		switch {
-		case forceEmailOnSignup:
-			completionResponse["choice_reason"] = "force_email_on_signup"
+		case forceEmailOnAccountCreation:
+			completionResponse["choice_reason"] = "force_email_on_account_creation"
 		case emailVerificationRequired:
 			completionResponse["choice_reason"] = "email_verification_required"
 		default:
-			completionResponse["choice_reason"] = "third_party_signup"
+			completionResponse["choice_reason"] = "oidc_account_creation"
 		}
 	}
 	return completionResponse
 }
 
-func (h *AuthHandler) legacyCompleteRegistrationSessionStatus(
+func (h *AuthHandler) legacyAccountCreationSessionStatus(
 	c *gin.Context,
 	session *dbent.PendingAuthSession,
 ) (*dbent.PendingAuthSession, bool, error) {
 	if session == nil {
-		return nil, false, infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return nil, false, infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 
 	payload := normalizePendingOAuthCompletionResponse(mergePendingCompletionResponse(session, nil))
@@ -425,8 +373,8 @@ func (h *AuthHandler) legacyCompleteRegistrationSessionStatus(
 	}
 
 	emailVerificationRequired := h != nil && h.authService != nil && h.authService.IsEmailVerifyEnabled(c.Request.Context())
-	forceEmailOnSignup := h.isForceEmailOnThirdPartySignup(c.Request.Context())
-	if !emailVerificationRequired && !forceEmailOnSignup {
+	forceEmailOnAccountCreation := h.isForceEmailOnOIDCAccountCreation(c.Request.Context())
+	if !emailVerificationRequired && !forceEmailOnAccountCreation {
 		return session, false, nil
 	}
 
@@ -442,7 +390,7 @@ func (h *AuthHandler) legacyCompleteRegistrationSessionStatus(
 		strings.TrimSpace(session.Intent),
 		strings.TrimSpace(session.ResolvedEmail),
 		nil,
-		buildLegacyCompleteRegistrationPendingResponse(session, forceEmailOnSignup, emailVerificationRequired),
+		buildLegacyAccountCreationPendingResponse(session, forceEmailOnAccountCreation, emailVerificationRequired),
 	)
 	if err != nil {
 		return nil, false, infraerrors.InternalServer("PENDING_AUTH_SESSION_UPDATE_FAILED", "failed to update pending oauth session").WithCause(err)
@@ -502,7 +450,7 @@ func (h *AuthHandler) entClient() *dbent.Client {
 	return h.authService.EntClient()
 }
 
-func (h *AuthHandler) isForceEmailOnThirdPartySignup(ctx context.Context) bool {
+func (h *AuthHandler) isForceEmailOnOIDCAccountCreation(ctx context.Context) bool {
 	if h == nil || h.settingSvc == nil {
 		return false
 	}
@@ -510,7 +458,7 @@ func (h *AuthHandler) isForceEmailOnThirdPartySignup(ctx context.Context) bool {
 	if err != nil || defaults == nil {
 		return false
 	}
-	return defaults.ForceEmailOnThirdPartySignup
+	return defaults.ForceEmailOnOIDCAccountCreation
 }
 
 func (h *AuthHandler) findOAuthIdentityUser(ctx context.Context, identity service.PendingAuthIdentityKey) (*dbent.User, error) {
@@ -535,20 +483,10 @@ func (h *AuthHandler) findOAuthIdentityUser(ctx context.Context, identity servic
 	return findActiveUserByID(ctx, client, record.UserID)
 }
 
-func (h *AuthHandler) BindLinuxDoOAuthLogin(c *gin.Context) { h.bindPendingOAuthLogin(c, "linuxdo") }
 func (h *AuthHandler) BindOIDCOAuthLogin(c *gin.Context)    { h.bindPendingOAuthLogin(c, "oidc") }
-func (h *AuthHandler) BindWeChatOAuthLogin(c *gin.Context)  { h.bindPendingOAuthLogin(c, "wechat") }
 func (h *AuthHandler) BindPendingOAuthLogin(c *gin.Context) { h.bindPendingOAuthLogin(c, "") }
 
-func (h *AuthHandler) CreateLinuxDoOAuthAccount(c *gin.Context) {
-	h.createPendingOAuthAccount(c, "linuxdo")
-}
-
 func (h *AuthHandler) CreateOIDCOAuthAccount(c *gin.Context) { h.createPendingOAuthAccount(c, "oidc") }
-
-func (h *AuthHandler) CreateWeChatOAuthAccount(c *gin.Context) {
-	h.createPendingOAuthAccount(c, "wechat")
-}
 
 func (h *AuthHandler) CreatePendingOAuthAccount(c *gin.Context) {
 	h.createPendingOAuthAccount(c, "")
@@ -574,7 +512,7 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	if err := ensurePendingOAuthCompleteRegistrationSession(session); err != nil {
+	if err := ensurePendingOAuthAccountCreationSession(session); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -605,7 +543,7 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, SendVerifyCodeResponse{
+	response.Success(c, sendPendingOAuthVerifyCodeResponse{
 		Message:   "Verification code sent successfully",
 		Countdown: result.Countdown,
 	})
@@ -772,9 +710,9 @@ func findUserByNormalizedEmail(ctx context.Context, client *dbent.Client, email 
 	return matches[0], nil
 }
 
-func ensurePendingOAuthRegistrationIdentityAvailable(ctx context.Context, client *dbent.Client, session *dbent.PendingAuthSession) error {
+func ensurePendingOAuthAccountCreationIdentityAvailable(ctx context.Context, client *dbent.Client, session *dbent.PendingAuthSession) error {
 	if client == nil || session == nil {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 
 	identity, err := client.AuthIdentity.Query().
@@ -828,10 +766,6 @@ func oauthIdentityIssuer(session *dbent.PendingAuthSession) *string {
 }
 
 func ensurePendingOAuthIdentityForUser(ctx context.Context, tx *dbent.Tx, session *dbent.PendingAuthSession, userID int64) (*dbent.AuthIdentity, error) {
-	if session != nil && strings.EqualFold(strings.TrimSpace(session.ProviderType), "wechat") {
-		return ensurePendingWeChatOAuthIdentityForUser(ctx, tx, session, userID)
-	}
-
 	client := tx.Client()
 	identity, err := client.AuthIdentity.Query().
 		Where(
@@ -871,214 +805,6 @@ func ensurePendingOAuthIdentityForUser(ctx context.Context, tx *dbent.Tx, sessio
 	return create.Save(ctx)
 }
 
-func ensurePendingWeChatOAuthIdentityForUser(ctx context.Context, tx *dbent.Tx, session *dbent.PendingAuthSession, userID int64) (*dbent.AuthIdentity, error) {
-	client := tx.Client()
-	providerType := strings.TrimSpace(session.ProviderType)
-	providerKey := strings.TrimSpace(session.ProviderKey)
-	providerSubject := strings.TrimSpace(session.ProviderSubject)
-	providerKeys := wechatCompatibleProviderKeys(providerKey)
-	channel := strings.TrimSpace(pendingSessionStringValue(session.UpstreamIdentityClaims, "channel"))
-	channelAppID := strings.TrimSpace(pendingSessionStringValue(session.UpstreamIdentityClaims, "channel_app_id"))
-	channelSubject := strings.TrimSpace(pendingSessionStringValue(session.UpstreamIdentityClaims, "channel_subject"))
-	metadata := cloneOAuthMetadata(session.UpstreamIdentityClaims)
-
-	identityRecords, err := client.AuthIdentity.Query().
-		Where(
-			authidentity.ProviderTypeEQ(providerType),
-			authidentity.ProviderKeyIn(providerKeys...),
-			authidentity.ProviderSubjectEQ(providerSubject),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	identity, hasCanonicalKey, err := chooseWeChatIdentityForUser(ctx, client, identityRecords, userID, providerKey)
-	if err != nil {
-		return nil, err
-	}
-
-	var legacyOpenIDIdentity *dbent.AuthIdentity
-	if channelSubject != "" && channelSubject != providerSubject {
-		legacyOpenIDRecords, err := client.AuthIdentity.Query().
-			Where(
-				authidentity.ProviderTypeEQ(providerType),
-				authidentity.ProviderKeyIn(providerKeys...),
-				authidentity.ProviderSubjectEQ(channelSubject),
-			).
-			All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		legacyOpenIDIdentity, _, err = chooseWeChatIdentityForUser(ctx, client, legacyOpenIDRecords, userID, providerKey)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	switch {
-	case identity != nil:
-		update := client.AuthIdentity.UpdateOneID(identity.ID).
-			SetMetadata(mergeOAuthMetadata(identity.Metadata, metadata))
-		if identity.UserID != userID {
-			update = update.SetUserID(userID)
-		}
-		if !strings.EqualFold(strings.TrimSpace(identity.ProviderKey), providerKey) && !hasCanonicalKey {
-			update = update.SetProviderKey(providerKey)
-		}
-		if issuer := oauthIdentityIssuer(session); issuer != nil {
-			update = update.SetIssuer(strings.TrimSpace(*issuer))
-		}
-		identity, err = update.Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-	case legacyOpenIDIdentity != nil:
-		update := client.AuthIdentity.UpdateOneID(legacyOpenIDIdentity.ID).
-			SetProviderKey(providerKey).
-			SetProviderSubject(providerSubject).
-			SetMetadata(mergeOAuthMetadata(legacyOpenIDIdentity.Metadata, metadata))
-		if issuer := oauthIdentityIssuer(session); issuer != nil {
-			update = update.SetIssuer(strings.TrimSpace(*issuer))
-		}
-		identity, err = update.Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		create := client.AuthIdentity.Create().
-			SetUserID(userID).
-			SetProviderType(providerType).
-			SetProviderKey(providerKey).
-			SetProviderSubject(providerSubject).
-			SetMetadata(metadata)
-		if issuer := oauthIdentityIssuer(session); issuer != nil {
-			create = create.SetIssuer(strings.TrimSpace(*issuer))
-		}
-		identity, err = create.Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if channel == "" || channelAppID == "" || channelSubject == "" {
-		return identity, nil
-	}
-
-	channelRecords, err := client.AuthIdentityChannel.Query().
-		Where(
-			authidentitychannel.ProviderTypeEQ(providerType),
-			authidentitychannel.ProviderKeyIn(providerKeys...),
-			authidentitychannel.ChannelEQ(channel),
-			authidentitychannel.ChannelAppIDEQ(channelAppID),
-			authidentitychannel.ChannelSubjectEQ(channelSubject),
-		).
-		WithIdentity().
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	channelRecord, hasCanonicalChannelKey, err := chooseWeChatChannelForUser(ctx, client, channelRecords, userID, providerKey)
-	if err != nil {
-		return nil, err
-	}
-
-	channelMetadata := mergeOAuthMetadata(channelRecordMetadata(channelRecord), metadata)
-	if channelRecord == nil {
-		if _, err := client.AuthIdentityChannel.Create().
-			SetIdentityID(identity.ID).
-			SetProviderType(providerType).
-			SetProviderKey(providerKey).
-			SetChannel(channel).
-			SetChannelAppID(channelAppID).
-			SetChannelSubject(channelSubject).
-			SetMetadata(channelMetadata).
-			Save(ctx); err != nil {
-			return nil, err
-		}
-		return identity, nil
-	}
-
-	updateChannel := client.AuthIdentityChannel.UpdateOneID(channelRecord.ID).
-		SetIdentityID(identity.ID).
-		SetMetadata(channelMetadata)
-	if !strings.EqualFold(strings.TrimSpace(channelRecord.ProviderKey), providerKey) && !hasCanonicalChannelKey {
-		updateChannel = updateChannel.SetProviderKey(providerKey)
-	}
-	_, err = updateChannel.Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return identity, nil
-}
-
-func chooseWeChatIdentityForUser(ctx context.Context, client *dbent.Client, records []*dbent.AuthIdentity, userID int64, preferredProviderKey string) (*dbent.AuthIdentity, bool, error) {
-	var preferred *dbent.AuthIdentity
-	var fallback *dbent.AuthIdentity
-	hasCanonicalKey := false
-	for _, record := range records {
-		if record == nil {
-			continue
-		}
-		if record.UserID != userID {
-			activeOwner, err := findActiveUserByID(ctx, client, record.UserID)
-			if err != nil {
-				return nil, false, err
-			}
-			if activeOwner != nil {
-				return nil, false, infraerrors.Conflict("AUTH_IDENTITY_OWNERSHIP_CONFLICT", "auth identity already belongs to another user")
-			}
-		}
-		if strings.EqualFold(strings.TrimSpace(record.ProviderKey), preferredProviderKey) {
-			hasCanonicalKey = true
-			if preferred == nil {
-				preferred = record
-			}
-			continue
-		}
-		if fallback == nil {
-			fallback = record
-		}
-	}
-	if preferred != nil {
-		return preferred, hasCanonicalKey, nil
-	}
-	return fallback, hasCanonicalKey, nil
-}
-
-func chooseWeChatChannelForUser(ctx context.Context, client *dbent.Client, records []*dbent.AuthIdentityChannel, userID int64, preferredProviderKey string) (*dbent.AuthIdentityChannel, bool, error) {
-	var preferred *dbent.AuthIdentityChannel
-	var fallback *dbent.AuthIdentityChannel
-	hasCanonicalKey := false
-	for _, record := range records {
-		if record == nil {
-			continue
-		}
-		if record.Edges.Identity != nil && record.Edges.Identity.UserID != userID {
-			activeOwner, err := findActiveUserByID(ctx, client, record.Edges.Identity.UserID)
-			if err != nil {
-				return nil, false, err
-			}
-			if activeOwner != nil {
-				return nil, false, infraerrors.Conflict("AUTH_IDENTITY_CHANNEL_OWNERSHIP_CONFLICT", "auth identity channel already belongs to another user")
-			}
-		}
-		if strings.EqualFold(strings.TrimSpace(record.ProviderKey), preferredProviderKey) {
-			hasCanonicalKey = true
-			if preferred == nil {
-				preferred = record
-			}
-			continue
-		}
-		if fallback == nil {
-			fallback = record
-		}
-	}
-	if preferred != nil {
-		return preferred, hasCanonicalKey, nil
-	}
-	return fallback, hasCanonicalKey, nil
-}
-
 func findActiveUserByID(ctx context.Context, client *dbent.Client, userID int64) (*dbent.User, error) {
 	if client == nil || userID <= 0 {
 		return nil, nil
@@ -1094,13 +820,6 @@ func findActiveUserByID(ctx context.Context, client *dbent.Client, userID int64)
 		return nil, service.ErrUserNotActive
 	}
 	return userEntity, nil
-}
-
-func channelRecordMetadata(channel *dbent.AuthIdentityChannel) map[string]any {
-	if channel == nil {
-		return map[string]any{}
-	}
-	return cloneOAuthMetadata(channel.Metadata)
 }
 
 func shouldBindPendingOAuthIdentity(session *dbent.PendingAuthSession, decision *dbent.IdentityAdoptionDecision) bool {
@@ -1319,7 +1038,7 @@ func applyPendingOAuthAdoptionAndConsumeSession(
 		return infraerrors.ServiceUnavailable("PENDING_AUTH_NOT_READY", "pending auth service is not ready")
 	}
 	if session == nil || userID <= 0 {
-		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth registration context is invalid")
+		return infraerrors.BadRequest("PENDING_AUTH_SESSION_INVALID", "pending auth account creation context is invalid")
 	}
 
 	tx, err := client.Tx(ctx)
@@ -1406,9 +1125,7 @@ func pendingOAuthIdentityExistsForUser(
 			authidentity.ProviderSubjectEQ(providerSubject),
 			authidentity.UserIDEQ(userID),
 		)
-	if strings.EqualFold(providerType, "wechat") {
-		query = query.Where(authidentity.ProviderKeyIn(wechatCompatibleProviderKeys(providerKey)...))
-	} else if providerKey != "" {
+	if providerKey != "" {
 		query = query.Where(authidentity.ProviderKeyEQ(providerKey))
 	}
 
@@ -1499,29 +1216,12 @@ func clearOAuthLogoutCookies(c *gin.Context) {
 	clearOAuthPendingBrowserCookie(c, secureCookie)
 	clearOAuthBindAccessTokenCookie(c, secureCookie)
 
-	clearCookie(c, linuxDoOAuthStateCookieName, secureCookie)
-	clearCookie(c, linuxDoOAuthVerifierCookie, secureCookie)
-	clearCookie(c, linuxDoOAuthRedirectCookie, secureCookie)
-	clearCookie(c, linuxDoOAuthIntentCookieName, secureCookie)
-	clearCookie(c, linuxDoOAuthBindUserCookieName, secureCookie)
-
 	oidcClearCookie(c, oidcOAuthStateCookieName, secureCookie)
 	oidcClearCookie(c, oidcOAuthVerifierCookie, secureCookie)
 	oidcClearCookie(c, oidcOAuthRedirectCookie, secureCookie)
 	oidcClearCookie(c, oidcOAuthNonceCookie, secureCookie)
 	oidcClearCookie(c, oidcOAuthIntentCookieName, secureCookie)
 	oidcClearCookie(c, oidcOAuthBindUserCookieName, secureCookie)
-
-	wechatClearCookie(c, wechatOAuthStateCookieName, secureCookie)
-	wechatClearCookie(c, wechatOAuthRedirectCookieName, secureCookie)
-	wechatClearCookie(c, wechatOAuthIntentCookieName, secureCookie)
-	wechatClearCookie(c, wechatOAuthModeCookieName, secureCookie)
-	wechatClearCookie(c, wechatOAuthBindUserCookieName, secureCookie)
-
-	wechatPaymentClearCookie(c, wechatPaymentOAuthStateName, secureCookie)
-	wechatPaymentClearCookie(c, wechatPaymentOAuthRedirect, secureCookie)
-	wechatPaymentClearCookie(c, wechatPaymentOAuthContextName, secureCookie)
-	wechatPaymentClearCookie(c, wechatPaymentOAuthScope, secureCookie)
 }
 
 func buildPendingOAuthSessionStatusPayload(session *dbent.PendingAuthSession) gin.H {
@@ -1565,11 +1265,11 @@ func normalizePendingOAuthCompletionResponse(payload map[string]any) map[string]
 
 func pendingOAuthChoiceCompletionResponse(session *dbent.PendingAuthSession, email string) map[string]any {
 	response := mergePendingCompletionResponse(session, map[string]any{
-		"step":                      oauthPendingChoiceStep,
-		"adoption_required":         true,
-		"force_email_on_signup":     true,
-		"email_binding_required":    true,
-		"existing_account_bindable": true,
+		"step":                            oauthPendingChoiceStep,
+		"adoption_required":               true,
+		"force_email_on_account_creation": true,
+		"email_binding_required":          true,
+		"existing_account_bindable":       true,
 	})
 	if email = strings.TrimSpace(email); email != "" {
 		response["email"] = email
@@ -1675,8 +1375,6 @@ func (h *AuthHandler) bindPendingOAuthLogin(c *gin.Context, provider string) {
 	}
 
 	h.authService.RecordSuccessfulLogin(c.Request.Context(), user.ID)
-	// bindPendingOAuthLogin = 绑定已有账户登录，不动 users.username（用户已有自己的名字）
-	h.maybeSyncDingTalkAfterLogin(c.Request.Context(), session, user.ID)
 	tokenPair, err := h.authService.GenerateTokenPair(c.Request.Context(), user, "")
 	if err != nil {
 		response.InternalError(c, "Failed to generate token pair")
@@ -1712,7 +1410,7 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 		response.ErrorFrom(c, err)
 		return
 	}
-	if err := ensurePendingOAuthCompleteRegistrationSession(session); err != nil {
+	if err := ensurePendingOAuthAccountCreationSession(session); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -1755,12 +1453,11 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 		return
 	}
 
-	tokenPair, user, err := h.authService.RegisterOAuthEmailAccount(
+	tokenPair, user, err := h.authService.CreateOAuthEmailAccount(
 		c.Request.Context(),
 		email,
 		req.Password,
 		strings.TrimSpace(req.VerifyCode),
-		strings.TrimSpace(req.InvitationCode),
 		strings.TrimSpace(session.ProviderType),
 	)
 	if err != nil {
@@ -1786,11 +1483,7 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 		if user == nil || user.ID <= 0 {
 			return false
 		}
-		if rollbackErr := h.authService.RollbackOAuthEmailAccountCreation(
-			c.Request.Context(),
-			user.ID,
-			strings.TrimSpace(req.InvitationCode),
-		); rollbackErr != nil {
+		if rollbackErr := h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID); rollbackErr != nil {
 			response.ErrorFrom(c, infraerrors.InternalServer(
 				"PENDING_AUTH_ACCOUNT_ROLLBACK_FAILED",
 				"failed to rollback pending oauth account creation",
@@ -1833,9 +1526,7 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 	if err := h.authService.FinalizeOAuthEmailAccount(
 		txCtx,
 		user,
-		strings.TrimSpace(req.InvitationCode),
 		strings.TrimSpace(session.ProviderType),
-		strings.TrimSpace(req.AffCode),
 	); err != nil {
 		_ = tx.Rollback()
 		if rollbackCreatedUser(err) {
@@ -1874,15 +1565,12 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 		return
 	}
 
-	h.authService.ApplyOAuthSignupPromoCode(c.Request.Context(), user.ID, pendingOAuthPromoCode(session))
 	h.authService.RecordSuccessfulLogin(c.Request.Context(), user.ID)
-	// createPendingOAuthAccount = 注册新账户，需要把钉钉昵称同步到 users.username 作为初始值
-	h.maybeSyncDingTalkAfterRegistration(c.Request.Context(), session, user.ID)
 	clearCookies()
 	writeOAuthTokenPairResponse(c, tokenPair)
 }
 
-// ExchangePendingOAuthCompletion redeems a pending OAuth browser session into a frontend-safe payload.
+// ExchangePendingOAuthCompletion converts a pending OAuth browser session into a frontend-safe payload.
 // POST /api/v1/auth/oauth/pending/exchange
 func (h *AuthHandler) ExchangePendingOAuthCompletion(c *gin.Context) {
 	secureCookie := isRequestHTTPS(c)

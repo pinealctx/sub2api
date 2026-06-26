@@ -58,18 +58,7 @@
               </div>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-3">
-              <div
-                data-testid="profile-overview-metric-balance"
-                class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-white/70 dark:bg-dark-900/60 dark:ring-dark-700"
-              >
-                <p class="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">
-                  {{ t('profile.accountBalance') }}
-                </p>
-                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ formatCurrency(user?.balance || 0) }}
-                </p>
-              </div>
+            <div class="grid gap-3 sm:grid-cols-2">
               <div
                 data-testid="profile-overview-metric-concurrency"
                 class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-white/70 dark:bg-dark-900/60 dark:ring-dark-700"
@@ -138,13 +127,8 @@
         >
           <ProfileIdentityBindingsSection
             :user="user"
-            :linuxdo-enabled="linuxdoEnabled"
-            :dingtalk-enabled="dingtalkEnabled"
             :oidc-enabled="oidcEnabled"
             :oidc-provider-name="oidcProviderName"
-            :wechat-enabled="wechatEnabled"
-            :wechat-open-enabled="wechatOpenEnabled"
-            :wechat-mp-enabled="wechatMpEnabled"
             embedded
             compact
           />
@@ -190,21 +174,11 @@ import type { User, UserAuthBindingStatus, UserAuthProvider, UserProfileSourceCo
 
 const props = withDefaults(defineProps<{
   user: User | null
-  linuxdoEnabled?: boolean
-  dingtalkEnabled?: boolean
   oidcEnabled?: boolean
   oidcProviderName?: string
-  wechatEnabled?: boolean
-  wechatOpenEnabled?: boolean
-  wechatMpEnabled?: boolean
 }>(), {
-  linuxdoEnabled: false,
-  dingtalkEnabled: false,
   oidcEnabled: false,
   oidcProviderName: 'OIDC',
-  wechatEnabled: false,
-  wechatOpenEnabled: undefined,
-  wechatMpEnabled: undefined,
 })
 
 const { t } = useI18n()
@@ -264,27 +238,12 @@ const memberSinceLabel = computed(() => {
 
 const providerLabels = computed<Record<UserAuthProvider, string>>(() => ({
   email: t('profile.authBindings.providers.email'),
-  linuxdo: t('profile.authBindings.providers.linuxdo'),
-  dingtalk: t('profile.authBindings.providers.dingtalk'),
   oidc: t('profile.authBindings.providers.oidc', { providerName: props.oidcProviderName }),
-  wechat: t('profile.authBindings.providers.wechat'),
-  github: 'GitHub',
-  google: 'Google'
 }))
-
-function formatCurrency(value: number): string {
-  return `$${value.toFixed(2)}`
-}
 
 function normalizeProvider(value: string): UserAuthProvider | null {
   const normalized = value.trim().toLowerCase()
-  if (
-    normalized === 'email' ||
-    normalized === 'linuxdo' ||
-    normalized === 'wechat' ||
-    normalized === 'github' ||
-    normalized === 'google'
-  ) {
+  if (normalized === 'email') {
     return normalized
   }
   if (normalized === 'oidc' || normalized.startsWith('oidc:') || normalized.startsWith('oidc/')) {

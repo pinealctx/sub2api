@@ -538,29 +538,6 @@ func HasUserWith(preds ...predicate.User) predicate.AuthIdentity {
 	})
 }
 
-// HasChannels applies the HasEdge predicate on the "channels" edge.
-func HasChannels() predicate.AuthIdentity {
-	return predicate.AuthIdentity(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ChannelsTable, ChannelsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasChannelsWith applies the HasEdge predicate on the "channels" edge with a given conditions (other predicates).
-func HasChannelsWith(preds ...predicate.AuthIdentityChannel) predicate.AuthIdentity {
-	return predicate.AuthIdentity(func(s *sql.Selector) {
-		step := newChannelsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasAdoptionDecisions applies the HasEdge predicate on the "adoption_decisions" edge.
 func HasAdoptionDecisions() predicate.AuthIdentity {
 	return predicate.AuthIdentity(func(s *sql.Selector) {

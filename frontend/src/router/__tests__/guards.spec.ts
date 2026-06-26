@@ -74,29 +74,18 @@ function simulateGuard(
 
   // 不需要认证的路由
   if (!requiresAuth) {
-    if (
-      authState.isAuthenticated &&
-      (toPath === '/login' || toPath === '/register')
-    ) {
+    if (authState.isAuthenticated && toPath === '/login') {
       if (authState.backendModeEnabled && !authState.isAdmin) {
         return null
       }
       return authState.isAdmin ? '/admin/dashboard' : '/dashboard'
     }
     if (authState.backendModeEnabled && !authState.isAuthenticated) {
-      const allowed = ['/login', '/key-usage', '/setup', '/payment/result']
-      const callbackPaths = [
-        '/auth/callback',
-        '/auth/linuxdo/callback',
-        '/auth/oidc/callback',
-        '/auth/wechat/callback',
-        '/auth/wechat/payment/callback',
-      ]
-      const pendingAuthPaths = ['/register', '/email-verify']
+      const allowed = ['/login', '/key-usage', '/setup', '/legal']
+      const callbackPaths = ['/auth/oidc/callback']
       const isAllowed =
         allowed.some((path) => toPath === path || toPath.startsWith(path)) ||
-        callbackPaths.includes(toPath) ||
-        (authState.hasPendingAuthSession && pendingAuthPaths.includes(toPath))
+        callbackPaths.includes(toPath)
       if (!isAllowed) {
         return '/login'
       }
@@ -114,38 +103,16 @@ function simulateGuard(
     return '/dashboard'
   }
 
-  // 简易模式限制
-  if (authState.isSimpleMode) {
-    const restrictedPaths = [
-      '/admin/groups',
-      '/admin/subscriptions',
-      '/admin/redeem',
-      '/subscriptions',
-      '/redeem',
-    ]
-    if (restrictedPaths.some((path) => toPath.startsWith(path))) {
-      return authState.isAdmin ? '/admin/dashboard' : '/dashboard'
-    }
-  }
-
   // Backend mode: admin gets full access, non-admin blocked
   if (authState.backendModeEnabled) {
     if (authState.isAuthenticated && authState.isAdmin) {
       return null
     }
-    const allowed = ['/login', '/key-usage', '/setup', '/payment/result']
-    const callbackPaths = [
-      '/auth/callback',
-      '/auth/linuxdo/callback',
-      '/auth/oidc/callback',
-      '/auth/wechat/callback',
-      '/auth/wechat/payment/callback',
-    ]
-    const pendingAuthPaths = ['/register', '/email-verify']
+    const allowed = ['/login', '/key-usage', '/setup', '/legal']
+    const callbackPaths = ['/auth/oidc/callback']
     const isAllowed =
       allowed.some((path) => toPath === path || toPath.startsWith(path)) ||
-      callbackPaths.includes(toPath) ||
-      (authState.hasPendingAuthSession && pendingAuthPaths.includes(toPath))
+      callbackPaths.includes(toPath)
     if (!isAllowed) {
       return '/login'
     }
@@ -185,9 +152,9 @@ describe('路由守卫逻辑', () => {
       expect(redirect).toBeNull()
     })
 
-    it('访问 /home 公开页面允许通过', () => {
-      const redirect = simulateGuard('/home', { requiresAuth: false }, authState)
-      expect(redirect).toBeNull()
+    it('访问已移除的公开首页会按 404 认证默认策略重定向到 /login', () => {
+      const redirect = simulateGuard('/home', {}, authState)
+      expect(redirect).toBe('/login')
     })
   })
 
@@ -204,11 +171,6 @@ describe('路由守卫逻辑', () => {
 
     it('访问 /login 重定向到 /dashboard', () => {
       const redirect = simulateGuard('/login', { requiresAuth: false }, authState)
-      expect(redirect).toBe('/dashboard')
-    })
-
-    it('访问 /register 重定向到 /dashboard', () => {
-      const redirect = simulateGuard('/register', { requiresAuth: false }, authState)
       expect(redirect).toBe('/dashboard')
     })
 
@@ -258,7 +220,7 @@ describe('路由守卫逻辑', () => {
   // --- 简易模式 ---
 
   describe('简易模式受限路由', () => {
-    it('普通用户简易模式访问 /subscriptions 重定向到 /dashboard', () => {
+    it('普通用户简易模式访问保留页面正常通过', () => {
       const authState: MockAuthState = {
         isAuthenticated: true,
         isAdmin: false,
@@ -266,23 +228,11 @@ describe('路由守卫逻辑', () => {
         backendModeEnabled: false,
         hasPendingAuthSession: false,
       }
-      const redirect = simulateGuard('/subscriptions', {}, authState)
-      expect(redirect).toBe('/dashboard')
+      const redirect = simulateGuard('/dashboard', {}, authState)
+      expect(redirect).toBeNull()
     })
 
-    it('普通用户简易模式访问 /redeem 重定向到 /dashboard', () => {
-      const authState: MockAuthState = {
-        isAuthenticated: true,
-        isAdmin: false,
-        isSimpleMode: true,
-        backendModeEnabled: false,
-        hasPendingAuthSession: false,
-      }
-      const redirect = simulateGuard('/redeem', {}, authState)
-      expect(redirect).toBe('/dashboard')
-    })
-
-    it('管理员简易模式访问 /admin/groups 重定向到 /admin/dashboard', () => {
+    it('管理员简易模式访问保留管理页面正常通过', () => {
       const authState: MockAuthState = {
         isAuthenticated: true,
         isAdmin: true,
@@ -291,23 +241,7 @@ describe('路由守卫逻辑', () => {
         hasPendingAuthSession: false,
       }
       const redirect = simulateGuard('/admin/groups', { requiresAdmin: true }, authState)
-      expect(redirect).toBe('/admin/dashboard')
-    })
-
-    it('管理员简易模式访问 /admin/subscriptions 重定向', () => {
-      const authState: MockAuthState = {
-        isAuthenticated: true,
-        isAdmin: true,
-        isSimpleMode: true,
-        backendModeEnabled: false,
-        hasPendingAuthSession: false,
-      }
-      const redirect = simulateGuard(
-        '/admin/subscriptions',
-        { requiresAdmin: true },
-        authState
-      )
-      expect(redirect).toBe('/admin/dashboard')
+      expect(redirect).toBeNull()
     })
 
     it('简易模式下非受限页面正常访问', () => {
@@ -470,7 +404,7 @@ describe('路由守卫逻辑', () => {
       expect(redirect).toBeNull()
     })
 
-    it('unauthenticated: callback routes are allowed', () => {
+    it('unauthenticated: OIDC callback route is allowed', () => {
       const authState: MockAuthState = {
         isAuthenticated: false,
         isAdmin: false,
@@ -478,11 +412,11 @@ describe('路由守卫逻辑', () => {
         backendModeEnabled: true,
         hasPendingAuthSession: false,
       }
-      const redirect = simulateGuard('/auth/wechat/callback', { requiresAuth: false }, authState)
+      const redirect = simulateGuard('/auth/oidc/callback', { requiresAuth: false }, authState)
       expect(redirect).toBeNull()
     })
 
-    it('unauthenticated: WeChat payment callback route is allowed', () => {
+    it('unauthenticated: removed legacy callback route is blocked', () => {
       const authState: MockAuthState = {
         isAuthenticated: false,
         isAdmin: false,
@@ -490,11 +424,11 @@ describe('路由守卫逻辑', () => {
         backendModeEnabled: true,
         hasPendingAuthSession: false,
       }
-      const redirect = simulateGuard('/auth/wechat/payment/callback', { requiresAuth: false }, authState)
-      expect(redirect).toBeNull()
+      const redirect = simulateGuard('/auth/legacy/callback', { requiresAuth: false }, authState)
+      expect(redirect).toBe('/login')
     })
 
-    it('unauthenticated: /payment/result is allowed', () => {
+    it('unauthenticated: removed public result route is blocked', () => {
       const authState: MockAuthState = {
         isAuthenticated: false,
         isAdmin: false,
@@ -502,11 +436,11 @@ describe('路由守卫逻辑', () => {
         backendModeEnabled: true,
         hasPendingAuthSession: false,
       }
-      const redirect = simulateGuard('/payment/result', { requiresAuth: false }, authState)
-      expect(redirect).toBeNull()
+      const redirect = simulateGuard('/public/result', { requiresAuth: false }, authState)
+      expect(redirect).toBe('/login')
     })
 
-    it('unauthenticated: /register is allowed when a pending auth session exists', () => {
+    it('unauthenticated: legacy public path is blocked even when a pending auth session exists', () => {
       const authState: MockAuthState = {
         isAuthenticated: false,
         isAdmin: false,
@@ -514,8 +448,8 @@ describe('路由守卫逻辑', () => {
         backendModeEnabled: true,
         hasPendingAuthSession: true,
       }
-      const redirect = simulateGuard('/register', { requiresAuth: false }, authState)
-      expect(redirect).toBeNull()
+      const redirect = simulateGuard('/legacy/signup', { requiresAuth: false }, authState)
+      expect(redirect).toBe('/login')
     })
 
     it('unauthenticated: /email-verify is blocked without a pending auth session', () => {

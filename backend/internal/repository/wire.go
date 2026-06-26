@@ -71,10 +71,6 @@ var ProviderSet = wire.NewSet(
 	NewScheduledTestPlanRepository,   // 定时测试计划仓储
 	NewScheduledTestResultRepository, // 定时测试结果仓储
 	NewProxyRepository,
-	NewRedeemCodeRepository,
-	NewPromoCodeRepository,
-	NewAnnouncementRepository,
-	NewAnnouncementReadRepository,
 	NewUsageLogRepository,
 	NewUsageBillingRepository,
 	NewIdempotencyRepository,
@@ -82,7 +78,6 @@ var ProviderSet = wire.NewSet(
 	NewDashboardAggregationRepository,
 	NewSettingRepository,
 	NewOpsRepository,
-	NewUserSubscriptionRepository,
 	NewUserAttributeDefinitionRepository,
 	NewUserAttributeValueRepository,
 	NewUserGroupRateRepository,
@@ -92,7 +87,6 @@ var ProviderSet = wire.NewSet(
 	NewChannelMonitorRepository,
 	NewChannelMonitorRequestTemplateRepository,
 	NewContentModerationRepository,
-	NewAffiliateRepository,
 	NewUserPlatformQuotaRepository,     // T14: user × platform quota
 	NewUserPlatformQuotaServiceAdapter, // T14: adapter → service.UserPlatformQuotaRepository
 
@@ -112,7 +106,6 @@ var ProviderSet = wire.NewSet(
 	NewDashboardCache,
 	NewEmailCache,
 	NewIdentityCache,
-	NewRedeemCache,
 	NewUpdateCache,
 	NewGeminiTokenCache,
 	NewLeaderLockCache,

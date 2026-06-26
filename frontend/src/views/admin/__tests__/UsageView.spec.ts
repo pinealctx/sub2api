@@ -160,7 +160,7 @@ describe('admin UsageView distribution metric toggles', () => {
       global: { stubs: {
         AppLayout: AppLayoutStub, UsageStatsCards: true, UsageFilters: UsageFiltersStub,
         UsageTable: true, UsageExportProgress: true, UsageCleanupDialog: true,
-        UserBalanceHistoryModal: true, AuditLogModal: true, Pagination: true, Select: true,
+        AuditLogModal: true, Pagination: true, Select: true,
         DateRangePicker: true, Icon: true, TokenUsageTrend: true,
         ModelDistributionChart: ModelDistributionChartStub, GroupDistributionChart: GroupDistributionChartStub,
         EndpointDistributionChart: true,
@@ -193,7 +193,6 @@ describe('admin UsageView distribution metric toggles', () => {
           UsageTable: true,
           UsageExportProgress: true,
           UsageCleanupDialog: true,
-          UserBalanceHistoryModal: true,
           Pagination: true,
           Select: true,
           DateRangePicker: true,
@@ -239,7 +238,7 @@ describe('admin UsageView distribution metric toggles', () => {
   })
 })
 
-describe('admin UsageView handleUserClick', () => {
+describe('admin UsageView user row click', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     list.mockReset()
@@ -259,9 +258,7 @@ describe('admin UsageView handleUserClick', () => {
     vi.useRealTimers()
   })
 
-  it('opens user via include_deleted when clicking a usage row user', async () => {
-    getById.mockResolvedValue({ id: 2, email: 'd@test.com', deleted_at: '2026-05-28T00:00:00Z' })
-
+  it('does not request user details when clicking a usage row user', async () => {
     const wrapper = mount(UsageView, {
       global: {
         stubs: {
@@ -271,7 +268,6 @@ describe('admin UsageView handleUserClick', () => {
           UsageTable: UsageTableStub,
           UsageExportProgress: true,
           UsageCleanupDialog: true,
-          UserBalanceHistoryModal: true,
           AuditLogModal: true,
           Pagination: true,
           Select: true,
@@ -291,7 +287,7 @@ describe('admin UsageView handleUserClick', () => {
     await wrapper.find('[data-test="usage-table"] .user-click').trigger('click')
     await flushPromises()
 
-    expect(getById).toHaveBeenCalledWith(2, true)
+    expect(getById).not.toHaveBeenCalled()
   })
 })
 
@@ -323,7 +319,7 @@ describe('admin UsageView errors tab filter forwarding', () => {
       global: { stubs: {
         AppLayout: AppLayoutStub, UsageStatsCards: true, UsageFilters: UsageFiltersStub,
         UsageTable: true, UsageExportProgress: true, UsageCleanupDialog: true,
-        UserBalanceHistoryModal: true, AuditLogModal: true, Pagination: true, Select: true,
+        AuditLogModal: true, Pagination: true, Select: true,
         DateRangePicker: true, Icon: true, TokenUsageTrend: true,
         ModelDistributionChart: true, GroupDistributionChart: true, EndpointDistributionChart: true,
         OpsErrorLogTable: true, OpsErrorDetailModal: true,

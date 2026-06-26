@@ -127,12 +127,6 @@
           <Select v-model="filters.request_type" :options="requestTypeOptions" @change="emitChange" />
         </div>
 
-        <!-- Billing Type Filter -->
-        <div class="w-full sm:w-auto sm:min-w-[200px]">
-          <label class="input-label">{{ t('admin.usage.billingType') }}</label>
-          <Select v-model="filters.billing_type" :options="billingTypeOptions" @change="emitChange" />
-        </div>
-
         <!-- Billing Mode Filter -->
         <div class="w-full sm:w-auto sm:min-w-[200px]">
           <label class="input-label">{{ t('admin.usage.billingMode') }}</label>
@@ -235,12 +229,6 @@ const requestTypeOptions = ref<SelectOption[]>([
   { value: 'stream', label: t('usage.stream') },
   { value: 'sync', label: t('usage.sync') },
   { value: 'cyber', label: t('usage.cyber') }
-])
-
-const billingTypeOptions = ref<SelectOption[]>([
-  { value: null, label: t('admin.usage.allBillingTypes') },
-  { value: 0, label: t('admin.usage.billingTypeBalance') },
-  { value: 1, label: t('admin.usage.billingTypeSubscription') }
 ])
 
 const billingModeOptions = ref<SelectOption[]>([

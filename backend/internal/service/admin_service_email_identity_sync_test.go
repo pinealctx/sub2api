@@ -101,10 +101,6 @@ func (s *emailSyncRepoStub) UpdateUserLastActiveAt(context.Context, int64, time.
 	return nil
 }
 
-func (s *emailSyncRepoStub) UpdateBalance(context.Context, int64, float64) error { return nil }
-
-func (s *emailSyncRepoStub) DeductBalance(context.Context, int64, float64) error { return nil }
-
 func (s *emailSyncRepoStub) UpdateConcurrency(context.Context, int64, int) error { return nil }
 
 func (s *emailSyncRepoStub) ExistsByEmail(context.Context, string) (bool, error) { return false, nil }

@@ -77,26 +77,9 @@ ON CONFLICT (user_id, provider_type, grant_reason) DO NOTHING`,
 		return nil
 	}
 
-	if providerDefaults.Balance != 0 {
-		if err := client.User.UpdateOneID(userID).AddBalance(providerDefaults.Balance).Exec(ctx); err != nil {
-			return fmt.Errorf("apply first bind balance default: %w", err)
-		}
-	}
 	if providerDefaults.Concurrency != 0 {
 		if err := client.User.UpdateOneID(userID).AddConcurrency(providerDefaults.Concurrency).Exec(ctx); err != nil {
 			return fmt.Errorf("apply first bind concurrency default: %w", err)
-		}
-	}
-	if s.defaultSubAssigner != nil {
-		for _, item := range providerDefaults.Subscriptions {
-			if _, _, err := s.defaultSubAssigner.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
-				UserID:       userID,
-				GroupID:      item.GroupID,
-				ValidityDays: item.ValidityDays,
-				Notes:        "auto assigned by first bind defaults",
-			}); err != nil {
-				return fmt.Errorf("apply first bind subscription default: %w", err)
-			}
 		}
 	}
 

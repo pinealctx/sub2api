@@ -155,9 +155,7 @@ func (s *AntigravityOAuthService) ExchangeCode(ctx context.Context, input *Antig
 	}
 	if loadResult != nil {
 		result.ProjectID = loadResult.ProjectID
-		if loadResult.Subscription != nil {
-			result.PlanType = loadResult.Subscription.PlanType
-		}
+		result.PlanType = loadResult.PlanType
 	}
 
 	// 令牌刚获取，立即设置隐私（不依赖后续账号创建流程）
@@ -247,9 +245,7 @@ func (s *AntigravityOAuthService) ValidateRefreshToken(ctx context.Context, refr
 	}
 	if loadResult != nil {
 		tokenInfo.ProjectID = loadResult.ProjectID
-		if loadResult.Subscription != nil {
-			tokenInfo.PlanType = loadResult.Subscription.PlanType
-		}
+		tokenInfo.PlanType = loadResult.PlanType
 	}
 
 	// 令牌刚获取，立即设置隐私
@@ -318,25 +314,23 @@ func (s *AntigravityOAuthService) RefreshAccountToken(ctx context.Context, accou
 		if loadResult.ProjectID != "" {
 			tokenInfo.ProjectID = loadResult.ProjectID
 		}
-		if loadResult.Subscription != nil {
-			tokenInfo.PlanType = loadResult.Subscription.PlanType
-		}
+		tokenInfo.PlanType = loadResult.PlanType
 	}
 
 	return tokenInfo, nil
 }
 
 // loadCodeAssistResult 封装 loadProjectIDWithRetry 的返回结果，
-// 同时携带从 LoadCodeAssist 响应中提取的 plan_type 信息。
+// 同时携带从 LoadCodeAssist 响应中提取的上游账号 plan_type 信息。
 type loadCodeAssistResult struct {
-	ProjectID    string
-	Subscription *AntigravitySubscriptionResult
+	ProjectID string
+	PlanType  string
 }
 
 // loadProjectIDWithRetry 带重试机制获取 project_id，同时从响应中提取 plan_type。
 func (s *AntigravityOAuthService) loadProjectIDWithRetry(ctx context.Context, accessToken, proxyURL string, maxRetries int) (*loadCodeAssistResult, error) {
 	var lastErr error
-	var lastSubscription *AntigravitySubscriptionResult
+	var lastPlanType string
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
@@ -354,22 +348,21 @@ func (s *AntigravityOAuthService) loadProjectIDWithRetry(ctx context.Context, ac
 		loadResp, loadRaw, err := client.LoadCodeAssist(ctx, accessToken)
 
 		if loadResp != nil {
-			sub := NormalizeAntigravitySubscription(loadResp)
-			lastSubscription = &sub
+			lastPlanType = antigravity.TierIDToPlanType(loadResp.GetTier())
 		}
 
 		if err == nil && loadResp != nil && loadResp.CloudAICompanionProject != "" {
 			return &loadCodeAssistResult{
-				ProjectID:    loadResp.CloudAICompanionProject,
-				Subscription: lastSubscription,
+				ProjectID: loadResp.CloudAICompanionProject,
+				PlanType:  lastPlanType,
 			}, nil
 		}
 
 		if err == nil {
 			if projectID, onboardErr := tryOnboardProjectID(ctx, client, accessToken, loadRaw); onboardErr == nil && projectID != "" {
 				return &loadCodeAssistResult{
-					ProjectID:    projectID,
-					Subscription: lastSubscription,
+					ProjectID: projectID,
+					PlanType:  lastPlanType,
 				}, nil
 			} else if onboardErr != nil {
 				lastErr = onboardErr
@@ -386,8 +379,8 @@ func (s *AntigravityOAuthService) loadProjectIDWithRetry(ctx context.Context, ac
 		}
 	}
 
-	if lastSubscription != nil {
-		return &loadCodeAssistResult{Subscription: lastSubscription}, fmt.Errorf("获取 project_id 失败 (重试 %d 次后): %w", maxRetries, lastErr)
+	if lastPlanType != "" {
+		return &loadCodeAssistResult{PlanType: lastPlanType}, fmt.Errorf("获取 project_id 失败 (重试 %d 次后): %w", maxRetries, lastErr)
 	}
 	return nil, fmt.Errorf("获取 project_id 失败 (重试 %d 次后): %w", maxRetries, lastErr)
 }

@@ -212,24 +212,17 @@
                     </defs>
                   </svg>
                   <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <template v-if="ring.isBalance">
-                      <span class="text-2xl font-bold tabular-nums" :style="{ color: RING_GRADIENTS[i % 4].from }">
-                        {{ ring.amount }}
-                      </span>
-                    </template>
-                    <template v-else>
-                      <span class="text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
-                        {{ displayPcts[i] ?? 0 }}%
-                      </span>
-                      <span class="text-xs text-gray-500 dark:text-dark-400 mt-0.5">{{ t('keyUsage.used') }}</span>
-                      <span
-                        class="text-sm font-semibold mt-1 tabular-nums"
-                        :style="{ color: RING_GRADIENTS[i % 4].from }"
-                      >{{ ring.amount }}</span>
-                      <p v-if="ring.resetAt && formatResetTime(ring.resetAt)" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 tabular-nums">
-                        ⟳ {{ formatResetTime(ring.resetAt) }}
-                      </p>
-                    </template>
+                    <span class="text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
+                      {{ displayPcts[i] ?? 0 }}%
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-dark-400 mt-0.5">{{ t('keyUsage.used') }}</span>
+                    <span
+                      class="text-sm font-semibold mt-1 tabular-nums"
+                      :style="{ color: RING_GRADIENTS[i % 4].from }"
+                    >{{ ring.amount }}</span>
+                    <p v-if="ring.resetAt && formatResetTime(ring.resetAt)" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 tabular-nums">
+                      ⟳ {{ formatResetTime(ring.resetAt) }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -396,20 +389,13 @@
         <p class="text-sm text-gray-500 dark:text-dark-400">
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
-        <div class="flex items-center gap-4">
+        <div v-if="docUrl" class="flex items-center gap-4">
           <a
-            v-if="docUrl"
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
             class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
           >{{ t('home.docs') }}</a>
-          <a
-            :href="githubUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >GitHub</a>
         </div>
       </div>
     </footer>
@@ -431,7 +417,6 @@ const appStore = useAppStore()
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
-const githubUrl = 'https://github.com/Wei-Shaw/sub2api'
 
 // ==================== Theme (same as HomeView) ====================
 
@@ -540,14 +525,12 @@ interface RingItem {
   title: string
   pct: number
   amount: string
-  isBalance?: boolean
   iconType: 'clock' | 'calendar' | 'dollar'
   resetAt?: string | null
 }
 
 function getRingOffset(ring: RingItem): number {
   if (!ringAnimated.value) return CIRCUMFERENCE
-  if (ring.isBalance) return 0
   return CIRCUMFERENCE - (Math.min(ring.pct, 100) / 100) * CIRCUMFERENCE
 }
 
@@ -563,7 +546,7 @@ function triggerRingAnimation(items: RingItem[]) {
         // Animate percentage numbers
         const duration = 1000
         const startTime = performance.now()
-        const targets = items.map(item => item.isBalance ? 0 : item.pct)
+        const targets = items.map(item => item.pct)
 
         function tick() {
           const elapsed = performance.now() - startTime
@@ -599,7 +582,7 @@ const statusInfo = computed(() => {
   }
 
   return {
-    label: data.planName || t('keyUsage.walletBalance'),
+    label: data.planName || t('keys.apiKey'),
     statusText: 'Active',
     isActive: true,
   }
@@ -630,24 +613,8 @@ const ringItems = computed<RingItem[]>(() => {
         })
       }
     }
-  } else {
-    if (data.subscription) {
-      const sub = data.subscription
-      const limits = [
-        { label: t('keyUsage.limitDaily'), usage: sub.daily_usage_usd, limit: sub.daily_limit_usd },
-        { label: t('keyUsage.limitWeekly'), usage: sub.weekly_usage_usd, limit: sub.weekly_limit_usd },
-        { label: t('keyUsage.limitMonthly'), usage: sub.monthly_usage_usd, limit: sub.monthly_limit_usd },
-      ]
-      for (const l of limits) {
-        if (l.limit != null && l.limit > 0) {
-          const pct = Math.min(Math.round((l.usage / l.limit) * 100), 100)
-          items.push({ title: l.label, pct, amount: `${usd(l.usage)} / ${usd(l.limit)}`, iconType: 'calendar' })
-        }
-      }
-    }
-    if (!data.subscription && data.balance != null) {
-      items.push({ title: t('keyUsage.walletBalance'), pct: 0, amount: usd(data.balance), isBalance: true, iconType: 'dollar' })
-    }
+  } else if (data.remaining != null) {
+    items.push({ title: t('keyUsage.remainingQuota'), pct: 0, amount: usd(data.remaining), iconType: 'dollar' })
   }
 
   return items
@@ -726,39 +693,8 @@ const detailRows = computed<DetailRow[]>(() => {
   } else {
     rows.push({
       iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_CHECK,
-      label: t('keyUsage.subscriptionType'), value: data.planName || t('keyUsage.walletBalance'), valueClass: '',
+      label: t('keys.apiKey'), value: data.planName || t('keyUsage.quotaMode'), valueClass: '',
     })
-
-    if (data.subscription) {
-      const sub = data.subscription
-      if (sub.daily_limit_usd > 0) {
-        const pct = (sub.daily_usage_usd / sub.daily_limit_usd) * 100
-        rows.push({
-          iconBg: 'bg-primary-500/10', iconColor: 'text-primary-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '日' : 'D'})`, value: `${usd(sub.daily_usage_usd)} / ${usd(sub.daily_limit_usd)}`, valueClass: getUsageColor(pct),
-        })
-      }
-      if (sub.weekly_limit_usd > 0) {
-        const pct = (sub.weekly_usage_usd / sub.weekly_limit_usd) * 100
-        rows.push({
-          iconBg: 'bg-indigo-500/10', iconColor: 'text-indigo-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '周' : 'W'})`, value: `${usd(sub.weekly_usage_usd)} / ${usd(sub.weekly_limit_usd)}`, valueClass: getUsageColor(pct),
-        })
-      }
-      if (sub.monthly_limit_usd > 0) {
-        const pct = (sub.monthly_usage_usd / sub.monthly_limit_usd) * 100
-        rows.push({
-          iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '月' : 'M'})`, value: `${usd(sub.monthly_usage_usd)} / ${usd(sub.monthly_limit_usd)}`, valueClass: getUsageColor(pct),
-        })
-      }
-      if (sub.expires_at) {
-        rows.push({
-          iconBg: 'bg-amber-500/10', iconColor: 'text-amber-500', iconSvg: ICON_CALENDAR,
-          label: t('keyUsage.subscriptionExpires'), value: formatDate(sub.expires_at), valueClass: '',
-        })
-      }
-    }
 
     const remainColor = data.remaining != null
       ? (data.remaining <= 0 ? 'text-rose-500' : data.remaining < 10 ? 'text-amber-500' : 'text-emerald-500')

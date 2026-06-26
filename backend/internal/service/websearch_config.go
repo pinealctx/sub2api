@@ -21,14 +21,14 @@ type WebSearchEmulationConfig struct {
 
 // WebSearchProviderConfig describes a single search provider (Brave or Tavily).
 type WebSearchProviderConfig struct {
-	Type             string `json:"type"`                    // websearch.ProviderTypeBrave | Tavily
-	APIKey           string `json:"api_key,omitempty"`       // secret — omitted in API responses
-	APIKeyConfigured bool   `json:"api_key_configured"`      // read-only mask
-	QuotaLimit       *int64 `json:"quota_limit"`             // nil = unlimited, >0 = limited
-	SubscribedAt     *int64 `json:"subscribed_at,omitempty"` // subscription start (unix seconds); quota resets monthly
-	QuotaUsed        int64  `json:"quota_used,omitempty"`    // read-only: current usage from Redis
-	ProxyID          *int64 `json:"proxy_id"`                // optional proxy association
-	ExpiresAt        *int64 `json:"expires_at,omitempty"`    // optional expiration timestamp
+	Type               string `json:"type"`                            // websearch.ProviderTypeBrave | Tavily
+	APIKey             string `json:"api_key,omitempty"`               // secret — omitted in API responses
+	APIKeyConfigured   bool   `json:"api_key_configured"`              // read-only mask
+	QuotaLimit         *int64 `json:"quota_limit"`                     // nil = unlimited, >0 = limited
+	QuotaResetAnchorAt *int64 `json:"quota_reset_anchor_at,omitempty"` // monthly quota reset anchor
+	QuotaUsed          int64  `json:"quota_used,omitempty"`            // read-only: current usage from Redis
+	ProxyID            *int64 `json:"proxy_id"`                        // optional proxy association
+	ExpiresAt          *int64 `json:"expires_at,omitempty"`            // optional expiration timestamp
 }
 
 // --- Validation ---

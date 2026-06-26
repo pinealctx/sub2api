@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-const (
-	BillingTypeBalance      int8 = 0 // 钱包余额
-	BillingTypeSubscription int8 = 1 // 订阅套餐
-)
-
 type RequestType int16
 
 const (
@@ -128,8 +123,7 @@ type UsageLog struct {
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
 	UpstreamEndpoint *string
 
-	GroupID        *int64
-	SubscriptionID *int64
+	GroupID *int64
 
 	InputTokens         int
 	OutputTokens        int
@@ -154,7 +148,6 @@ type UsageLog struct {
 	// AccountStatsCost 账号统计定价预计算费用（nil = 使用默认公式 total_cost × account_rate_multiplier）
 	AccountStatsCost *float64
 
-	BillingType  int8
 	RequestType  RequestType
 	Stream       bool
 	OpenAIWSMode bool
@@ -177,11 +170,10 @@ type UsageLog struct {
 
 	CreatedAt time.Time
 
-	User         *User
-	APIKey       *APIKey
-	Account      *Account
-	Group        *Group
-	Subscription *UserSubscription
+	User    *User
+	APIKey  *APIKey
+	Account *Account
+	Group   *Group
 }
 
 func (u *UsageLog) TotalTokens() int {

@@ -12,14 +12,12 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
 	dbgroup "github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
@@ -88,7 +86,6 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetNotes(userIn.Notes).
 		SetPasswordHash(userIn.PasswordHash).
 		SetRole(userIn.Role).
-		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
 		SetSignupSource(userSignupSourceOrDefault(userIn.SignupSource)).
@@ -231,14 +228,8 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetNotes(userIn.Notes).
 		SetPasswordHash(userIn.PasswordHash).
 		SetRole(userIn.Role).
-		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		SetBalanceNotifyEnabled(userIn.BalanceNotifyEnabled).
-		SetBalanceNotifyThresholdType(userIn.BalanceNotifyThresholdType).
-		SetNillableBalanceNotifyThreshold(userIn.BalanceNotifyThreshold).
-		SetBalanceNotifyExtraEmails(marshalExtraEmails(userIn.BalanceNotifyExtraEmails)).
-		SetTotalRecharged(userIn.TotalRecharged).
 		SetRpmLimit(userIn.RPMLimit)
 	if userIn.SignupSource != "" {
 		updateOp = updateOp.SetSignupSource(userIn.SignupSource)
@@ -248,9 +239,6 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 	}
 	if userIn.LastActiveAt != nil {
 		updateOp = updateOp.SetLastActiveAt(*userIn.LastActiveAt)
-	}
-	if userIn.BalanceNotifyThreshold == nil {
-		updateOp = updateOp.ClearBalanceNotifyThreshold()
 	}
 	updated, err := updateOp.Save(txCtx)
 	if err != nil {
@@ -350,10 +338,7 @@ func normalizeEmailAuthIdentitySubject(email string) string {
 	if normalized == "" {
 		return ""
 	}
-	if strings.HasSuffix(normalized, service.LinuxDoConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(normalized, service.OIDCConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(normalized, service.WeChatConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(normalized, service.DingTalkConnectSyntheticEmailDomain) {
+	if strings.HasSuffix(normalized, service.OIDCConnectSyntheticEmailDomain) {
 		return ""
 	}
 	return normalized
@@ -402,11 +387,6 @@ func (r *userRepository) deleteUser(ctx context.Context, exec *dbent.Client, id 
 			Where(identityadoptiondecision.IdentityIDIn(identityIDs...)).
 			ClearIdentityID().
 			Save(ctx); err != nil {
-			return translatePersistenceError(err, service.ErrUserNotFound, nil)
-		}
-		if _, err := exec.AuthIdentityChannel.Delete().
-			Where(authidentitychannel.IdentityIDIn(identityIDs...)).
-			Exec(ctx); err != nil {
 			return translatePersistenceError(err, service.ErrUserNotFound, nil)
 		}
 		if _, err := exec.AuthIdentity.Delete().
@@ -519,27 +499,6 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		userMap[u.ID] = &outUsers[len(outUsers)-1]
 	}
 
-	shouldLoadSubscriptions := filters.IncludeSubscriptions == nil || *filters.IncludeSubscriptions
-	if shouldLoadSubscriptions {
-		// Batch load active subscriptions with groups to avoid N+1.
-		subs, err := r.client.UserSubscription.Query().
-			Where(
-				usersubscription.UserIDIn(userIDs...),
-				usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			).
-			WithGroup().
-			All(ctx)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		for i := range subs {
-			if u, ok := userMap[subs[i].UserID]; ok {
-				u.Subscriptions = append(u.Subscriptions, *userSubscriptionEntityToService(subs[i]))
-			}
-		}
-	}
-
 	allowedGroupsByUser, err := r.loadAllowedGroups(ctx, userIDs)
 	if err != nil {
 		return nil, nil, err
@@ -573,9 +532,6 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 		defaultField = false
 	case "role":
 		field = dbuser.FieldRole
-		defaultField = false
-	case "balance":
-		field = dbuser.FieldBalance
 		defaultField = false
 	case "concurrency":
 		field = dbuser.FieldConcurrency
@@ -732,41 +688,6 @@ func (r *userRepository) filterUsersByAttributes(ctx context.Context, attrs map[
 		return nil, err
 	}
 	return result, nil
-}
-
-func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount float64) error {
-	client := clientFromContext(ctx, r.client)
-	update := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount)
-	// Track cumulative recharge amount for percentage-based notifications
-	if amount > 0 {
-		update = update.AddTotalRecharged(amount)
-	}
-	n, err := update.Save(ctx)
-	if err != nil {
-		return translatePersistenceError(err, service.ErrUserNotFound, nil)
-	}
-	if n == 0 {
-		return service.ErrUserNotFound
-	}
-	return nil
-}
-
-// DeductBalance 扣除用户余额
-// 透支策略：允许余额变为负数，确保当前请求能够完成
-// 中间件会阻止余额 <= 0 的用户发起后续请求
-func (r *userRepository) DeductBalance(ctx context.Context, id int64, amount float64) error {
-	client := clientFromContext(ctx, r.client)
-	n, err := client.User.Update().
-		Where(dbuser.IDEQ(id)).
-		AddBalance(-amount).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return service.ErrUserNotFound
-	}
-	return nil
 }
 
 func (r *userRepository) UpdateConcurrency(ctx context.Context, id int64, amount int) error {
@@ -1000,7 +921,7 @@ func userSignupSourceOrDefault(signupSource string) string {
 	switch strings.TrimSpace(strings.ToLower(signupSource)) {
 	case "", "email":
 		return "email"
-	case "linuxdo", "wechat", "oidc", "dingtalk":
+	case "oidc":
 		return strings.TrimSpace(strings.ToLower(signupSource))
 	default:
 		return "email"

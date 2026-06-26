@@ -40,8 +40,8 @@ type PendingAuthSession struct {
 	RedirectTo string `json:"redirect_to,omitempty"`
 	// ResolvedEmail holds the value of the "resolved_email" field.
 	ResolvedEmail string `json:"resolved_email,omitempty"`
-	// RegistrationPasswordHash holds the value of the "registration_password_hash" field.
-	RegistrationPasswordHash string `json:"registration_password_hash,omitempty"`
+	// AccountCreationPasswordHash holds the value of the "account_creation_password_hash" field.
+	AccountCreationPasswordHash string `json:"account_creation_password_hash,omitempty"`
 	// UpstreamIdentityClaims holds the value of the "upstream_identity_claims" field.
 	UpstreamIdentityClaims map[string]interface{} `json:"upstream_identity_claims,omitempty"`
 	// LocalFlowState holds the value of the "local_flow_state" field.
@@ -110,7 +110,7 @@ func (*PendingAuthSession) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case pendingauthsession.FieldID, pendingauthsession.FieldTargetUserID:
 			values[i] = new(sql.NullInt64)
-		case pendingauthsession.FieldSessionToken, pendingauthsession.FieldIntent, pendingauthsession.FieldProviderType, pendingauthsession.FieldProviderKey, pendingauthsession.FieldProviderSubject, pendingauthsession.FieldRedirectTo, pendingauthsession.FieldResolvedEmail, pendingauthsession.FieldRegistrationPasswordHash, pendingauthsession.FieldBrowserSessionKey, pendingauthsession.FieldCompletionCodeHash:
+		case pendingauthsession.FieldSessionToken, pendingauthsession.FieldIntent, pendingauthsession.FieldProviderType, pendingauthsession.FieldProviderKey, pendingauthsession.FieldProviderSubject, pendingauthsession.FieldRedirectTo, pendingauthsession.FieldResolvedEmail, pendingauthsession.FieldAccountCreationPasswordHash, pendingauthsession.FieldBrowserSessionKey, pendingauthsession.FieldCompletionCodeHash:
 			values[i] = new(sql.NullString)
 		case pendingauthsession.FieldCreatedAt, pendingauthsession.FieldUpdatedAt, pendingauthsession.FieldCompletionCodeExpiresAt, pendingauthsession.FieldEmailVerifiedAt, pendingauthsession.FieldPasswordVerifiedAt, pendingauthsession.FieldTotpVerifiedAt, pendingauthsession.FieldExpiresAt, pendingauthsession.FieldConsumedAt:
 			values[i] = new(sql.NullTime)
@@ -196,11 +196,11 @@ func (_m *PendingAuthSession) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.ResolvedEmail = value.String
 			}
-		case pendingauthsession.FieldRegistrationPasswordHash:
+		case pendingauthsession.FieldAccountCreationPasswordHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field registration_password_hash", values[i])
+				return fmt.Errorf("unexpected type %T for field account_creation_password_hash", values[i])
 			} else if value.Valid {
-				_m.RegistrationPasswordHash = value.String
+				_m.AccountCreationPasswordHash = value.String
 			}
 		case pendingauthsession.FieldUpstreamIdentityClaims:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -349,8 +349,8 @@ func (_m *PendingAuthSession) String() string {
 	builder.WriteString("resolved_email=")
 	builder.WriteString(_m.ResolvedEmail)
 	builder.WriteString(", ")
-	builder.WriteString("registration_password_hash=")
-	builder.WriteString(_m.RegistrationPasswordHash)
+	builder.WriteString("account_creation_password_hash=")
+	builder.WriteString(_m.AccountCreationPasswordHash)
 	builder.WriteString(", ")
 	builder.WriteString("upstream_identity_claims=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpstreamIdentityClaims))

@@ -112,19 +112,19 @@ type OpenAIExchangeCodeInput struct {
 
 // OpenAITokenInfo represents the token information for OpenAI
 type OpenAITokenInfo struct {
-	AccessToken           string `json:"access_token"`
-	RefreshToken          string `json:"refresh_token"`
-	IDToken               string `json:"id_token,omitempty"`
-	ExpiresIn             int64  `json:"expires_in"`
-	ExpiresAt             int64  `json:"expires_at"`
-	ClientID              string `json:"client_id,omitempty"`
-	Email                 string `json:"email,omitempty"`
-	ChatGPTAccountID      string `json:"chatgpt_account_id,omitempty"`
-	ChatGPTUserID         string `json:"chatgpt_user_id,omitempty"`
-	OrganizationID        string `json:"organization_id,omitempty"`
-	PlanType              string `json:"plan_type,omitempty"`
-	SubscriptionExpiresAt string `json:"subscription_expires_at,omitempty"`
-	PrivacyMode           string `json:"privacy_mode,omitempty"`
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	IDToken          string `json:"id_token,omitempty"`
+	ExpiresIn        int64  `json:"expires_in"`
+	ExpiresAt        int64  `json:"expires_at"`
+	ClientID         string `json:"client_id,omitempty"`
+	Email            string `json:"email,omitempty"`
+	ChatGPTAccountID string `json:"chatgpt_account_id,omitempty"`
+	ChatGPTUserID    string `json:"chatgpt_user_id,omitempty"`
+	OrganizationID   string `json:"organization_id,omitempty"`
+	PlanType         string `json:"plan_type,omitempty"`
+	PlanExpiresAt    string `json:"plan_expires_at,omitempty"`
+	PrivacyMode      string `json:"privacy_mode,omitempty"`
 }
 
 // ExchangeCode exchanges authorization code for tokens
@@ -253,8 +253,8 @@ func (s *OpenAIOAuthService) RefreshTokenWithClientID(ctx context.Context, refre
 }
 
 // enrichTokenInfo 通过 ChatGPT backend-api 补全 tokenInfo 并设置隐私（best-effort）。
-// 从 accounts/check 获取最新 plan_type、subscription_expires_at、email，
-// 然后尝试关闭训练数据共享。适用于所有获取/刷新 token 的路径。
+// 从 accounts/check 获取最新 plan_type、plan_expires_at、email，然后尝试关闭训练数据共享。
+// 适用于所有获取/刷新 token 的路径。
 func (s *OpenAIOAuthService) enrichTokenInfo(ctx context.Context, tokenInfo *OpenAITokenInfo, proxyURL string) {
 	if tokenInfo.AccessToken == "" || s.privacyClientFactory == nil {
 		return
@@ -271,16 +271,16 @@ func (s *OpenAIOAuthService) enrichTokenInfo(ctx context.Context, tokenInfo *Ope
 		if info.PlanType != "" {
 			tokenInfo.PlanType = info.PlanType
 		}
-		if info.SubscriptionExpiresAt != "" {
-			tokenInfo.SubscriptionExpiresAt = info.SubscriptionExpiresAt
+		if info.PlanExpiresAt != "" {
+			tokenInfo.PlanExpiresAt = info.PlanExpiresAt
 		}
 		if tokenInfo.Email == "" && info.Email != "" {
 			tokenInfo.Email = info.Email
 		}
 	}
-	if strings.TrimSpace(tokenInfo.SubscriptionExpiresAt) == "" {
-		if expiresAt := fetchChatGPTSubscriptionExpiresAt(ctx, s.privacyClientFactory, tokenInfo.AccessToken, proxyURL, resolveChatGPTSubscriptionAccountID(tokenInfo, orgID)); expiresAt != "" {
-			tokenInfo.SubscriptionExpiresAt = expiresAt
+	if strings.TrimSpace(tokenInfo.PlanExpiresAt) == "" {
+		if expiresAt := fetchChatGPTPlanExpiresAt(ctx, s.privacyClientFactory, tokenInfo.AccessToken, proxyURL, resolveChatGPTPlanAccountID(tokenInfo, orgID)); expiresAt != "" {
+			tokenInfo.PlanExpiresAt = expiresAt
 		}
 	}
 
@@ -288,7 +288,7 @@ func (s *OpenAIOAuthService) enrichTokenInfo(ctx context.Context, tokenInfo *Ope
 	tokenInfo.PrivacyMode = disableOpenAITraining(ctx, s.privacyClientFactory, tokenInfo.AccessToken, proxyURL)
 }
 
-func resolveChatGPTSubscriptionAccountID(tokenInfo *OpenAITokenInfo, orgID string) string {
+func resolveChatGPTPlanAccountID(tokenInfo *OpenAITokenInfo, orgID string) string {
 	for _, candidate := range []string{
 		tokenInfo.ChatGPTAccountID,
 		tokenInfo.OrganizationID,
@@ -323,16 +323,16 @@ func (s *OpenAIOAuthService) RefreshAccountToken(ctx context.Context, account *A
 		accessToken := account.GetCredential("access_token")
 		if accessToken != "" {
 			tokenInfo := &OpenAITokenInfo{
-				AccessToken:           accessToken,
-				RefreshToken:          "",
-				IDToken:               account.GetCredential("id_token"),
-				ClientID:              account.GetCredential("client_id"),
-				Email:                 account.GetCredential("email"),
-				ChatGPTAccountID:      account.GetCredential("chatgpt_account_id"),
-				ChatGPTUserID:         account.GetCredential("chatgpt_user_id"),
-				OrganizationID:        account.GetCredential("organization_id"),
-				PlanType:              account.GetCredential("plan_type"),
-				SubscriptionExpiresAt: account.GetCredential("subscription_expires_at"),
+				AccessToken:      accessToken,
+				RefreshToken:     "",
+				IDToken:          account.GetCredential("id_token"),
+				ClientID:         account.GetCredential("client_id"),
+				Email:            account.GetCredential("email"),
+				ChatGPTAccountID: account.GetCredential("chatgpt_account_id"),
+				ChatGPTUserID:    account.GetCredential("chatgpt_user_id"),
+				OrganizationID:   account.GetCredential("organization_id"),
+				PlanType:         account.GetCredential("plan_type"),
+				PlanExpiresAt:    account.GetCredential("plan_expires_at"),
 			}
 			if expiresAt := account.GetCredentialAsTime("expires_at"); expiresAt != nil {
 				tokenInfo.ExpiresAt = expiresAt.Unix()
@@ -379,8 +379,8 @@ func (s *OpenAIOAuthService) BuildAccountCredentials(tokenInfo *OpenAITokenInfo)
 	if tokenInfo.PlanType != "" {
 		creds["plan_type"] = tokenInfo.PlanType
 	}
-	if tokenInfo.SubscriptionExpiresAt != "" {
-		creds["subscription_expires_at"] = tokenInfo.SubscriptionExpiresAt
+	if tokenInfo.PlanExpiresAt != "" {
+		creds["plan_expires_at"] = tokenInfo.PlanExpiresAt
 	}
 	if strings.TrimSpace(tokenInfo.ClientID) != "" {
 		creds["client_id"] = strings.TrimSpace(tokenInfo.ClientID)

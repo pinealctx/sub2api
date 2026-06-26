@@ -9,8 +9,8 @@ import type { Group } from '@/types'
 /**
  * Get available groups that the current user can bind to API keys
  * This returns groups based on user's permissions:
- * - Standard groups: public (non-exclusive) or explicitly allowed
- * - Subscription groups: user has active subscription
+ * - Public groups: active non-exclusive groups
+ * - Allowed groups: groups explicitly granted to the user
  * @returns List of available groups
  */
 export async function getAvailable(): Promise<Group[]> {

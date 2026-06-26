@@ -106,20 +106,6 @@ func (r *usageBillingRepository) claimUsageBillingKey(ctx context.Context, tx *s
 }
 
 func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, tx *sql.Tx, cmd *service.UsageBillingCommand, result *service.UsageBillingApplyResult) error {
-	if cmd.SubscriptionCost > 0 && cmd.SubscriptionID != nil {
-		if err := incrementUsageBillingSubscription(ctx, tx, *cmd.SubscriptionID, cmd.SubscriptionCost); err != nil {
-			return err
-		}
-	}
-
-	if cmd.BalanceCost > 0 {
-		newBalance, err := deductUsageBillingBalance(ctx, tx, cmd.UserID, cmd.BalanceCost)
-		if err != nil {
-			return err
-		}
-		result.NewBalance = &newBalance
-	}
-
 	if cmd.APIKeyQuotaCost > 0 {
 		exhausted, err := incrementUsageBillingAPIKeyQuota(ctx, tx, cmd.APIKeyID, cmd.APIKeyQuotaCost)
 		if err != nil {
@@ -143,52 +129,6 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 	}
 
 	return nil
-}
-
-func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, costUSD float64) error {
-	const updateSQL = `
-		UPDATE user_subscriptions us
-		SET
-			daily_usage_usd = us.daily_usage_usd + $1,
-			weekly_usage_usd = us.weekly_usage_usd + $1,
-			monthly_usage_usd = us.monthly_usage_usd + $1,
-			updated_at = NOW()
-		FROM groups g
-		WHERE us.id = $2
-			AND us.deleted_at IS NULL
-			AND us.group_id = g.id
-			AND g.deleted_at IS NULL
-	`
-	res, err := tx.ExecContext(ctx, updateSQL, costUSD, subscriptionID)
-	if err != nil {
-		return err
-	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected > 0 {
-		return nil
-	}
-	return service.ErrSubscriptionNotFound
-}
-
-func deductUsageBillingBalance(ctx context.Context, tx *sql.Tx, userID int64, amount float64) (float64, error) {
-	var newBalance float64
-	err := tx.QueryRowContext(ctx, `
-		UPDATE users
-		SET balance = balance - $1,
-			updated_at = NOW()
-		WHERE id = $2 AND deleted_at IS NULL
-		RETURNING balance
-	`, amount, userID).Scan(&newBalance)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, service.ErrUserNotFound
-	}
-	if err != nil {
-		return 0, err
-	}
-	return newBalance, nil
 }
 
 func incrementUsageBillingAPIKeyQuota(ctx context.Context, tx *sql.Tx, apiKeyID int64, amount float64) (bool, error) {

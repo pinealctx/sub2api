@@ -88,9 +88,9 @@ func disableOpenAITraining(ctx context.Context, clientFactory PrivacyClientFacto
 
 // ChatGPTAccountInfo 从 chatgpt.com/backend-api/accounts/check 获取的账号信息
 type ChatGPTAccountInfo struct {
-	PlanType              string
-	Email                 string
-	SubscriptionExpiresAt string // entitlement.expires_at (RFC3339)
+	PlanType      string
+	Email         string
+	PlanExpiresAt string // entitlement.expires_at (RFC3339)
 }
 
 const chatGPTAccountsCheckURL = "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27"
@@ -184,11 +184,11 @@ func fetchChatGPTAccountInfo(ctx context.Context, clientFactory PrivacyClientFac
 		// 优先级：default > 非 free > 任意
 		switch {
 		case defaultC.planType != "":
-			info.PlanType, info.SubscriptionExpiresAt = defaultC.planType, defaultC.expiresAt
+			info.PlanType, info.PlanExpiresAt = defaultC.planType, defaultC.expiresAt
 		case paidC.planType != "":
-			info.PlanType, info.SubscriptionExpiresAt = paidC.planType, paidC.expiresAt
+			info.PlanType, info.PlanExpiresAt = paidC.planType, paidC.expiresAt
 		default:
-			info.PlanType, info.SubscriptionExpiresAt = anyC.planType, anyC.expiresAt
+			info.PlanType, info.PlanExpiresAt = anyC.planType, anyC.expiresAt
 		}
 	}
 
@@ -197,14 +197,14 @@ func fetchChatGPTAccountInfo(ctx context.Context, clientFactory PrivacyClientFac
 		return nil
 	}
 
-	slog.Info("chatgpt_account_check_success", "plan_type", info.PlanType, "subscription_expires_at", info.SubscriptionExpiresAt, "org_id", orgID)
+	slog.Info("chatgpt_account_check_success", "plan_type", info.PlanType, "plan_expires_at", info.PlanExpiresAt, "org_id", orgID)
 	return info
 }
 
-// fetchChatGPTSubscriptionExpiresAt reads the lightweight subscription endpoint used by
+// fetchChatGPTPlanExpiresAt reads the lightweight plan endpoint used by
 // ChatGPT/Codex clients. Some Plus accounts no longer expose entitlement.expires_at in
 // accounts/check, but this endpoint still returns active_until.
-func fetchChatGPTSubscriptionExpiresAt(ctx context.Context, clientFactory PrivacyClientFactory, accessToken, proxyURL, accountID string) string {
+func fetchChatGPTPlanExpiresAt(ctx context.Context, clientFactory PrivacyClientFactory, accessToken, proxyURL, accountID string) string {
 	accountID = strings.TrimSpace(accountID)
 	if accessToken == "" || accountID == "" || clientFactory == nil {
 		return ""
@@ -215,7 +215,7 @@ func fetchChatGPTSubscriptionExpiresAt(ctx context.Context, clientFactory Privac
 
 	client, err := clientFactory(proxyURL)
 	if err != nil {
-		slog.Debug("chatgpt_subscription_client_error", "error", err.Error())
+		slog.Debug("chatgpt_plan_client_error", "error", err.Error())
 		return ""
 	}
 
@@ -235,32 +235,32 @@ func fetchChatGPTSubscriptionExpiresAt(ctx context.Context, clientFactory Privac
 		SetQueryParam("account_id", accountID).
 		Get(chatGPTSubscriptionsURL)
 	if err != nil {
-		slog.Debug("chatgpt_subscription_request_error", "error", err.Error())
+		slog.Debug("chatgpt_plan_request_error", "error", err.Error())
 		return ""
 	}
 	if !resp.IsSuccessState() {
-		slog.Debug("chatgpt_subscription_failed", "status", resp.StatusCode, "body", truncate(resp.String(), 200))
+		slog.Debug("chatgpt_plan_failed", "status", resp.StatusCode, "body", truncate(resp.String(), 200))
 		return ""
 	}
 
 	activeUntil := strings.TrimSpace(result.ActiveUntil)
 	if activeUntil == "" {
-		slog.Debug("chatgpt_subscription_no_active_until", "plan_type", result.PlanType, "has_subscription_id", strings.TrimSpace(result.ID) != "", "will_renew", result.WillRenew)
+		slog.Debug("chatgpt_plan_no_active_until", "plan_type", result.PlanType, "has_plan_id", strings.TrimSpace(result.ID) != "", "will_renew", result.WillRenew)
 		return ""
 	}
 	if _, err := time.Parse(time.RFC3339, activeUntil); err != nil {
-		slog.Debug("chatgpt_subscription_bad_active_until", "active_until", activeUntil, "error", err.Error())
+		slog.Debug("chatgpt_plan_bad_active_until", "active_until", activeUntil, "error", err.Error())
 		return ""
 	}
 
-	slog.Info("chatgpt_subscription_success", "plan_type", result.PlanType, "subscription_expires_at", activeUntil, "account_id", accountID)
+	slog.Info("chatgpt_plan_success", "plan_type", result.PlanType, "plan_expires_at", activeUntil, "account_id", accountID)
 	return activeUntil
 }
 
-// fillAccountInfo 从单个 account 对象中提取 plan_type 和 subscription_expires_at
+// fillAccountInfo 从单个 account 对象中提取 plan_type 和 plan_expires_at
 func fillAccountInfo(info *ChatGPTAccountInfo, acct map[string]any) {
 	info.PlanType = extractPlanType(acct)
-	info.SubscriptionExpiresAt = extractEntitlementExpiresAt(acct)
+	info.PlanExpiresAt = extractEntitlementExpiresAt(acct)
 }
 
 // extractPlanType 从单个 account 对象中提取 plan_type

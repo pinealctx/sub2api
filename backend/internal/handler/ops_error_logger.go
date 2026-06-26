@@ -1460,8 +1460,8 @@ func shouldSkipOpsErrorLog(ctx context.Context, ops *service.OpsService, message
 		}
 	}
 
-	// Check if insufficient balance errors should be ignored
-	if settings.IgnoreInsufficientBalanceErrors {
+	// Check if upstream credit/quota exhaustion errors should be ignored.
+	if settings.IgnoreUpstreamCreditErrors {
 		if strings.Contains(bodyLower, opsErrInsufficientBalance) || strings.Contains(bodyLower, opsErrInsufficientAccountBalance) ||
 			strings.Contains(bodyLower, opsErrInsufficientQuota) ||
 			strings.Contains(msgLower, opsErrInsufficientBalance) || strings.Contains(msgLower, opsErrInsufficientAccountBalance) {

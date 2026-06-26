@@ -154,16 +154,16 @@ func (_u *PendingAuthSessionUpdate) SetNillableResolvedEmail(v *string) *Pending
 	return _u
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (_u *PendingAuthSessionUpdate) SetRegistrationPasswordHash(v string) *PendingAuthSessionUpdate {
-	_u.mutation.SetRegistrationPasswordHash(v)
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (_u *PendingAuthSessionUpdate) SetAccountCreationPasswordHash(v string) *PendingAuthSessionUpdate {
+	_u.mutation.SetAccountCreationPasswordHash(v)
 	return _u
 }
 
-// SetNillableRegistrationPasswordHash sets the "registration_password_hash" field if the given value is not nil.
-func (_u *PendingAuthSessionUpdate) SetNillableRegistrationPasswordHash(v *string) *PendingAuthSessionUpdate {
+// SetNillableAccountCreationPasswordHash sets the "account_creation_password_hash" field if the given value is not nil.
+func (_u *PendingAuthSessionUpdate) SetNillableAccountCreationPasswordHash(v *string) *PendingAuthSessionUpdate {
 	if v != nil {
-		_u.SetRegistrationPasswordHash(*v)
+		_u.SetAccountCreationPasswordHash(*v)
 	}
 	return _u
 }
@@ -465,8 +465,8 @@ func (_u *PendingAuthSessionUpdate) sqlSave(ctx context.Context) (_node int, err
 	if value, ok := _u.mutation.ResolvedEmail(); ok {
 		_spec.SetField(pendingauthsession.FieldResolvedEmail, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.RegistrationPasswordHash(); ok {
-		_spec.SetField(pendingauthsession.FieldRegistrationPasswordHash, field.TypeString, value)
+	if value, ok := _u.mutation.AccountCreationPasswordHash(); ok {
+		_spec.SetField(pendingauthsession.FieldAccountCreationPasswordHash, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpstreamIdentityClaims(); ok {
 		_spec.SetField(pendingauthsession.FieldUpstreamIdentityClaims, field.TypeJSON, value)
@@ -715,16 +715,16 @@ func (_u *PendingAuthSessionUpdateOne) SetNillableResolvedEmail(v *string) *Pend
 	return _u
 }
 
-// SetRegistrationPasswordHash sets the "registration_password_hash" field.
-func (_u *PendingAuthSessionUpdateOne) SetRegistrationPasswordHash(v string) *PendingAuthSessionUpdateOne {
-	_u.mutation.SetRegistrationPasswordHash(v)
+// SetAccountCreationPasswordHash sets the "account_creation_password_hash" field.
+func (_u *PendingAuthSessionUpdateOne) SetAccountCreationPasswordHash(v string) *PendingAuthSessionUpdateOne {
+	_u.mutation.SetAccountCreationPasswordHash(v)
 	return _u
 }
 
-// SetNillableRegistrationPasswordHash sets the "registration_password_hash" field if the given value is not nil.
-func (_u *PendingAuthSessionUpdateOne) SetNillableRegistrationPasswordHash(v *string) *PendingAuthSessionUpdateOne {
+// SetNillableAccountCreationPasswordHash sets the "account_creation_password_hash" field if the given value is not nil.
+func (_u *PendingAuthSessionUpdateOne) SetNillableAccountCreationPasswordHash(v *string) *PendingAuthSessionUpdateOne {
 	if v != nil {
-		_u.SetRegistrationPasswordHash(*v)
+		_u.SetAccountCreationPasswordHash(*v)
 	}
 	return _u
 }
@@ -1056,8 +1056,8 @@ func (_u *PendingAuthSessionUpdateOne) sqlSave(ctx context.Context) (_node *Pend
 	if value, ok := _u.mutation.ResolvedEmail(); ok {
 		_spec.SetField(pendingauthsession.FieldResolvedEmail, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.RegistrationPasswordHash(); ok {
-		_spec.SetField(pendingauthsession.FieldRegistrationPasswordHash, field.TypeString, value)
+	if value, ok := _u.mutation.AccountCreationPasswordHash(); ok {
+		_spec.SetField(pendingauthsession.FieldAccountCreationPasswordHash, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpstreamIdentityClaims(); ok {
 		_spec.SetField(pendingauthsession.FieldUpstreamIdentityClaims, field.TypeJSON, value)

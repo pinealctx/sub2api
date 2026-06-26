@@ -20,11 +20,9 @@ type Group struct {
 	Status         string
 	Hydrated       bool // indicates the group was loaded from a trusted repository source
 
-	SubscriptionType    string
-	DailyLimitUSD       *float64
-	WeeklyLimitUSD      *float64
-	MonthlyLimitUSD     *float64
-	DefaultValidityDays int
+	DailyLimitUSD   *float64
+	WeeklyLimitUSD  *float64
+	MonthlyLimitUSD *float64
 
 	// 图片生成计费配置（antigravity 和 gemini 平台使用）
 	AllowImageGeneration bool
@@ -79,10 +77,6 @@ type Group struct {
 
 func (g *Group) IsActive() bool {
 	return g.Status == StatusActive
-}
-
-func (g *Group) IsSubscriptionType() bool {
-	return g.SubscriptionType == SubscriptionTypeSubscription
 }
 
 func (g *Group) HasDailyLimit() bool {

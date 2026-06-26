@@ -74,7 +74,6 @@ func NewUsageService(usageRepo UsageLogRepository, userRepo UserRepository, entC
 
 // Create 创建使用日志
 func (s *UsageService) Create(ctx context.Context, req CreateUsageLogRequest) (*UsageLog, error) {
-	// 使用数据库事务保证「使用日志插入」与「扣费」的原子性，避免重复扣费或漏扣风险。
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil && !errors.Is(err, dbent.ErrTxStarted) {
 		return nil, fmt.Errorf("begin transaction: %w", err)
@@ -116,18 +115,9 @@ func (s *UsageService) Create(ctx context.Context, req CreateUsageLogRequest) (*
 		DurationMs:            req.DurationMs,
 	}
 
-	inserted, err := s.usageRepo.Create(txCtx, usageLog)
+	_, err = s.usageRepo.Create(txCtx, usageLog)
 	if err != nil {
 		return nil, fmt.Errorf("create usage log: %w", err)
-	}
-
-	// 扣除用户余额
-	balanceUpdated := false
-	if inserted && req.ActualCost > 0 {
-		if err := s.userRepo.UpdateBalance(txCtx, req.UserID, -req.ActualCost); err != nil {
-			return nil, fmt.Errorf("update user balance: %w", err)
-		}
-		balanceUpdated = true
 	}
 
 	if tx != nil {
@@ -136,16 +126,7 @@ func (s *UsageService) Create(ctx context.Context, req CreateUsageLogRequest) (*
 		}
 	}
 
-	s.invalidateUsageCaches(ctx, req.UserID, balanceUpdated)
-
 	return usageLog, nil
-}
-
-func (s *UsageService) invalidateUsageCaches(ctx context.Context, userID int64, balanceUpdated bool) {
-	if !balanceUpdated || s.authCacheInvalidator == nil {
-		return
-	}
-	s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 }
 
 // GetByID 根据ID获取使用日志
@@ -327,7 +308,7 @@ func (s *UsageService) GetUserModelStats(ctx context.Context, userID int64, star
 
 // GetAPIKeyModelStats returns per-model usage stats for a specific API Key.
 func (s *UsageService) GetAPIKeyModelStats(ctx context.Context, apiKeyID int64, startTime, endTime time.Time) ([]usagestats.ModelStat, error) {
-	stats, err := s.usageRepo.GetModelStatsWithFilters(ctx, startTime, endTime, 0, apiKeyID, 0, 0, nil, nil, nil)
+	stats, err := s.usageRepo.GetModelStatsWithFilters(ctx, startTime, endTime, 0, apiKeyID, 0, 0, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get api key model stats: %w", err)
 	}
@@ -336,7 +317,7 @@ func (s *UsageService) GetAPIKeyModelStats(ctx context.Context, apiKeyID int64, 
 
 // GetAPIKeyDailyUsage returns daily usage stats for a user's API key.
 func (s *UsageService) GetAPIKeyDailyUsage(ctx context.Context, userID, apiKeyID int64, startTime, endTime time.Time) ([]usagestats.APIKeyDailyUsagePoint, error) {
-	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, "day", userID, apiKeyID, 0, 0, "", nil, nil, nil)
+	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, "day", userID, apiKeyID, 0, 0, "", nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get api key daily usage: %w", err)
 	}

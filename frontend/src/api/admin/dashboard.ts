@@ -55,7 +55,6 @@ export interface TrendParams {
   group_id?: number
   request_type?: UsageRequestType
   stream?: boolean
-  billing_type?: number | null
 }
 
 export interface TrendResponse {
@@ -86,7 +85,6 @@ export interface ModelStatsParams {
   group_id?: number
   request_type?: UsageRequestType
   stream?: boolean
-  billing_type?: number | null
 }
 
 export interface ModelStatsResponse {
@@ -114,7 +112,6 @@ export interface GroupStatsParams {
   group_id?: number
   request_type?: UsageRequestType
   stream?: boolean
-  billing_type?: number | null
 }
 
 export interface GroupStatsResponse {
@@ -173,7 +170,6 @@ export interface UserBreakdownParams {
   account_id?: number
   request_type?: number
   stream?: boolean
-  billing_type?: number | null
 }
 
 export interface UserBreakdownResponse {

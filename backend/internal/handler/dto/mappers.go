@@ -2,7 +2,6 @@
 package dto
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -13,24 +12,18 @@ func UserFromServiceShallow(u *service.User) *User {
 		return nil
 	}
 	return &User{
-		ID:                         u.ID,
-		Email:                      u.Email,
-		Username:                   u.Username,
-		Role:                       u.Role,
-		Balance:                    u.Balance,
-		Concurrency:                u.Concurrency,
-		Status:                     u.Status,
-		AllowedGroups:              u.AllowedGroups,
-		LastActiveAt:               u.LastActiveAt,
-		CreatedAt:                  u.CreatedAt,
-		UpdatedAt:                  u.UpdatedAt,
-		BalanceNotifyEnabled:       u.BalanceNotifyEnabled,
-		BalanceNotifyThresholdType: u.BalanceNotifyThresholdType,
-		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
-		BalanceNotifyExtraEmails:   NotifyEmailEntriesFromService(u.BalanceNotifyExtraEmails),
-		TotalRecharged:             u.TotalRecharged,
-		RPMLimit:                   u.RPMLimit,
-		DeletedAt:                  u.DeletedAt,
+		ID:            u.ID,
+		Email:         u.Email,
+		Username:      u.Username,
+		Role:          u.Role,
+		Concurrency:   u.Concurrency,
+		Status:        u.Status,
+		AllowedGroups: u.AllowedGroups,
+		LastActiveAt:  u.LastActiveAt,
+		CreatedAt:     u.CreatedAt,
+		UpdatedAt:     u.UpdatedAt,
+		RPMLimit:      u.RPMLimit,
+		DeletedAt:     u.DeletedAt,
 	}
 }
 
@@ -44,13 +37,6 @@ func UserFromService(u *service.User) *User {
 		for i := range u.APIKeys {
 			k := u.APIKeys[i]
 			out.APIKeys = append(out.APIKeys, *APIKeyFromService(&k))
-		}
-	}
-	if len(u.Subscriptions) > 0 {
-		out.Subscriptions = make([]UserSubscription, 0, len(u.Subscriptions))
-		for i := range u.Subscriptions {
-			s := u.Subscriptions[i]
-			out.Subscriptions = append(out.Subscriptions, *UserSubscriptionFromService(&s))
 		}
 	}
 	return out
@@ -174,7 +160,6 @@ func groupFromServiceBase(g *service.Group) Group {
 		RateMultiplier:                  g.RateMultiplier,
 		IsExclusive:                     g.IsExclusive,
 		Status:                          g.Status,
-		SubscriptionType:                g.SubscriptionType,
 		DailyLimitUSD:                   g.DailyLimitUSD,
 		WeeklyLimitUSD:                  g.WeeklyLimitUSD,
 		MonthlyLimitUSD:                 g.MonthlyLimitUSD,
@@ -511,55 +496,6 @@ func ProxyAccountSummaryFromService(a *service.ProxyAccountSummary) *ProxyAccoun
 	}
 }
 
-func RedeemCodeFromService(rc *service.RedeemCode) *RedeemCode {
-	if rc == nil {
-		return nil
-	}
-	out := redeemCodeFromServiceBase(rc)
-	return &out
-}
-
-// RedeemCodeFromServiceAdmin converts a service RedeemCode to DTO for admin users.
-// It includes notes - user-facing endpoints must not use this.
-func RedeemCodeFromServiceAdmin(rc *service.RedeemCode) *AdminRedeemCode {
-	if rc == nil {
-		return nil
-	}
-	return &AdminRedeemCode{
-		RedeemCode: redeemCodeFromServiceBase(rc),
-		Notes:      rc.Notes,
-	}
-}
-
-func redeemCodeFromServiceBase(rc *service.RedeemCode) RedeemCode {
-	out := RedeemCode{
-		ID:           rc.ID,
-		Code:         rc.Code,
-		Type:         rc.Type,
-		Value:        rc.Value,
-		Status:       rc.Status,
-		UsedBy:       rc.UsedBy,
-		UsedAt:       rc.UsedAt,
-		CreatedAt:    rc.CreatedAt,
-		ExpiresAt:    rc.ExpiresAt,
-		GroupID:      rc.GroupID,
-		ValidityDays: rc.ValidityDays,
-		User:         UserFromServiceShallow(rc.User),
-		Group:        GroupFromServiceShallow(rc.Group),
-	}
-	if rc.IsExpired() {
-		out.Status = service.StatusExpired
-	}
-
-	// For admin_balance/admin_concurrency types, include notes so users can see
-	// why they were charged or credited by admin
-	if (rc.Type == "admin_balance" || rc.Type == "admin_concurrency") && rc.Notes != "" {
-		out.Notes = &rc.Notes
-	}
-
-	return out
-}
-
 // AccountSummaryFromService returns a minimal AccountSummary for usage log display.
 // Only includes ID and Name - no sensitive fields like Credentials, Proxy, etc.
 func AccountSummaryFromService(a *service.Account) *AccountSummary {
@@ -592,7 +528,6 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		InboundEndpoint:       l.InboundEndpoint,
 		UpstreamEndpoint:      l.UpstreamEndpoint,
 		GroupID:               l.GroupID,
-		SubscriptionID:        l.SubscriptionID,
 		InputTokens:           l.InputTokens,
 		OutputTokens:          l.OutputTokens,
 		CacheCreationTokens:   l.CacheCreationTokens,
@@ -606,7 +541,6 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		TotalCost:             l.TotalCost,
 		ActualCost:            l.ActualCost,
 		RateMultiplier:        l.RateMultiplier,
-		BillingType:           l.BillingType,
 		RequestType:           requestType.String(),
 		Stream:                stream,
 		OpenAIWSMode:          openAIWSMode,
@@ -628,7 +562,6 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		User:                  UserFromServiceShallow(l.User),
 		APIKey:                APIKeyFromService(l.APIKey),
 		Group:                 GroupFromServiceShallow(l.Group),
-		Subscription:          UserSubscriptionFromService(l.Subscription),
 	}
 }
 
@@ -678,7 +611,6 @@ func UsageCleanupTaskFromService(task *service.UsageCleanupTask) *UsageCleanupTa
 			Model:       task.Filters.Model,
 			RequestType: requestTypeStringPtr(task.Filters.RequestType),
 			Stream:      task.Filters.Stream,
-			BillingType: task.Filters.BillingType,
 		},
 		CreatedBy:    task.CreatedBy,
 		DeletedRows:  task.DeletedRows,
@@ -709,104 +641,5 @@ func SettingFromService(s *service.Setting) *Setting {
 		Key:       s.Key,
 		Value:     s.Value,
 		UpdatedAt: s.UpdatedAt,
-	}
-}
-
-func UserSubscriptionFromService(sub *service.UserSubscription) *UserSubscription {
-	if sub == nil {
-		return nil
-	}
-	out := userSubscriptionFromServiceBase(sub)
-	return &out
-}
-
-// UserSubscriptionFromServiceAdmin converts a service UserSubscription to DTO for admin users.
-// It includes assignment metadata and notes.
-func UserSubscriptionFromServiceAdmin(sub *service.UserSubscription) *AdminUserSubscription {
-	if sub == nil {
-		return nil
-	}
-	return &AdminUserSubscription{
-		UserSubscription: userSubscriptionFromServiceBase(sub),
-		AssignedBy:       sub.AssignedBy,
-		AssignedAt:       sub.AssignedAt,
-		Notes:            sub.Notes,
-		AssignedByUser:   UserFromServiceShallow(sub.AssignedByUser),
-	}
-}
-
-func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscription {
-	return UserSubscription{
-		ID:                 sub.ID,
-		UserID:             sub.UserID,
-		GroupID:            sub.GroupID,
-		StartsAt:           sub.StartsAt,
-		ExpiresAt:          sub.ExpiresAt,
-		Status:             sub.Status,
-		DailyWindowStart:   sub.DailyWindowStart,
-		WeeklyWindowStart:  sub.WeeklyWindowStart,
-		MonthlyWindowStart: sub.MonthlyWindowStart,
-		DailyUsageUSD:      sub.DailyUsageUSD,
-		WeeklyUsageUSD:     sub.WeeklyUsageUSD,
-		MonthlyUsageUSD:    sub.MonthlyUsageUSD,
-		CreatedAt:          sub.CreatedAt,
-		UpdatedAt:          sub.UpdatedAt,
-		User:               UserFromServiceShallow(sub.User),
-		Group:              GroupFromServiceShallow(sub.Group),
-	}
-}
-
-func BulkAssignResultFromService(r *service.BulkAssignResult) *BulkAssignResult {
-	if r == nil {
-		return nil
-	}
-	subs := make([]AdminUserSubscription, 0, len(r.Subscriptions))
-	for i := range r.Subscriptions {
-		subs = append(subs, *UserSubscriptionFromServiceAdmin(&r.Subscriptions[i]))
-	}
-	statuses := make(map[string]string, len(r.Statuses))
-	for userID, status := range r.Statuses {
-		statuses[strconv.FormatInt(userID, 10)] = status
-	}
-	return &BulkAssignResult{
-		SuccessCount:  r.SuccessCount,
-		CreatedCount:  r.CreatedCount,
-		ReusedCount:   r.ReusedCount,
-		FailedCount:   r.FailedCount,
-		Subscriptions: subs,
-		Errors:        r.Errors,
-		Statuses:      statuses,
-	}
-}
-
-func PromoCodeFromService(pc *service.PromoCode) *PromoCode {
-	if pc == nil {
-		return nil
-	}
-	return &PromoCode{
-		ID:          pc.ID,
-		Code:        pc.Code,
-		BonusAmount: pc.BonusAmount,
-		MaxUses:     pc.MaxUses,
-		UsedCount:   pc.UsedCount,
-		Status:      pc.Status,
-		ExpiresAt:   pc.ExpiresAt,
-		Notes:       pc.Notes,
-		CreatedAt:   pc.CreatedAt,
-		UpdatedAt:   pc.UpdatedAt,
-	}
-}
-
-func PromoCodeUsageFromService(u *service.PromoCodeUsage) *PromoCodeUsage {
-	if u == nil {
-		return nil
-	}
-	return &PromoCodeUsage{
-		ID:          u.ID,
-		PromoCodeID: u.PromoCodeID,
-		UserID:      u.UserID,
-		BonusAmount: u.BonusAmount,
-		UsedAt:      u.UsedAt,
-		User:        UserFromServiceShallow(u.User),
 	}
 }

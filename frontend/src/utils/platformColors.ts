@@ -78,7 +78,7 @@ const DISCOUNT: Record<Platform, string> = {
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
 
-// ── Header gradient (subscription confirm) ─────────────────────────
+// ── Header gradient ────────────────────────────────────────────────
 const GRADIENT: Record<Platform, string> = {
   anthropic: 'from-orange-500 to-orange-600',
   openai: 'from-emerald-500 to-emerald-600',

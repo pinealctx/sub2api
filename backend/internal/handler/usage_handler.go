@@ -94,18 +94,6 @@ func (h *UsageHandler) List(c *gin.Context) {
 		}
 		stream = &val
 	}
-
-	var billingType *int8
-	if billingTypeStr := c.Query("billing_type"); billingTypeStr != "" {
-		val, err := strconv.ParseInt(billingTypeStr, 10, 8)
-		if err != nil {
-			response.BadRequest(c, "Invalid billing_type")
-			return
-		}
-		bt := int8(val)
-		billingType = &bt
-	}
-
 	// Parse date range
 	var startTime, endTime *time.Time
 	userTZ := c.Query("timezone") // Get user's timezone from request
@@ -141,7 +129,6 @@ func (h *UsageHandler) List(c *gin.Context) {
 		Model:       model,
 		RequestType: requestType,
 		Stream:      stream,
-		BillingType: billingType,
 		StartTime:   startTime,
 		EndTime:     endTime,
 	}

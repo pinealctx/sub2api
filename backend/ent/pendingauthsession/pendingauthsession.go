@@ -34,8 +34,8 @@ const (
 	FieldRedirectTo = "redirect_to"
 	// FieldResolvedEmail holds the string denoting the resolved_email field in the database.
 	FieldResolvedEmail = "resolved_email"
-	// FieldRegistrationPasswordHash holds the string denoting the registration_password_hash field in the database.
-	FieldRegistrationPasswordHash = "registration_password_hash"
+	// FieldAccountCreationPasswordHash holds the string denoting the account_creation_password_hash field in the database.
+	FieldAccountCreationPasswordHash = "account_creation_password_hash"
 	// FieldUpstreamIdentityClaims holds the string denoting the upstream_identity_claims field in the database.
 	FieldUpstreamIdentityClaims = "upstream_identity_claims"
 	// FieldLocalFlowState holds the string denoting the local_flow_state field in the database.
@@ -91,7 +91,7 @@ var Columns = []string{
 	FieldTargetUserID,
 	FieldRedirectTo,
 	FieldResolvedEmail,
-	FieldRegistrationPasswordHash,
+	FieldAccountCreationPasswordHash,
 	FieldUpstreamIdentityClaims,
 	FieldLocalFlowState,
 	FieldBrowserSessionKey,
@@ -135,8 +135,8 @@ var (
 	DefaultRedirectTo string
 	// DefaultResolvedEmail holds the default value on creation for the "resolved_email" field.
 	DefaultResolvedEmail string
-	// DefaultRegistrationPasswordHash holds the default value on creation for the "registration_password_hash" field.
-	DefaultRegistrationPasswordHash string
+	// DefaultAccountCreationPasswordHash holds the default value on creation for the "account_creation_password_hash" field.
+	DefaultAccountCreationPasswordHash string
 	// DefaultUpstreamIdentityClaims holds the default value on creation for the "upstream_identity_claims" field.
 	DefaultUpstreamIdentityClaims func() map[string]interface{}
 	// DefaultLocalFlowState holds the default value on creation for the "local_flow_state" field.
@@ -205,9 +205,9 @@ func ByResolvedEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResolvedEmail, opts...).ToFunc()
 }
 
-// ByRegistrationPasswordHash orders the results by the registration_password_hash field.
-func ByRegistrationPasswordHash(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRegistrationPasswordHash, opts...).ToFunc()
+// ByAccountCreationPasswordHash orders the results by the account_creation_password_hash field.
+func ByAccountCreationPasswordHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountCreationPasswordHash, opts...).ToFunc()
 }
 
 // ByBrowserSessionKey orders the results by the browser_session_key field.

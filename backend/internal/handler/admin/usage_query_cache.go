@@ -21,7 +21,6 @@ type usageStatsCacheKeyData struct {
 	BillingMode string `json:"billing_mode"`
 	RequestType *int16 `json:"request_type"`
 	Stream      *bool  `json:"stream"`
-	BillingType *int8  `json:"billing_type"`
 }
 
 func usageStatsCacheKey(filters usagestats.UsageLogFilters) string {
@@ -44,7 +43,6 @@ func usageStatsCacheKey(filters usagestats.UsageLogFilters) string {
 		BillingMode: filters.BillingMode,
 		RequestType: filters.RequestType,
 		Stream:      filters.Stream,
-		BillingType: filters.BillingType,
 	})
 }
 
