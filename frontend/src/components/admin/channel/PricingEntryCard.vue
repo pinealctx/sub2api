@@ -12,7 +12,7 @@
         class="flex-shrink-0 text-gray-400 transition-transform duration-200"
       />
 
-      <!-- Summary: model tags + billing badge -->
+      <!-- Summary: model tags + cost mode badge -->
       <div v-if="collapsed" class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <!-- Compact model tags (show first 3) -->
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
@@ -38,7 +38,7 @@
           </span>
         </div>
 
-        <!-- Billing mode badge -->
+        <!-- Cost mode badge -->
         <span
           class="flex-shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
         >
@@ -67,7 +67,7 @@
       :class="{ 'collapsible-content--collapsed': collapsed }"
     >
       <div class="collapsible-inner">
-        <!-- Header: Models + Billing Mode -->
+        <!-- Header: Models + Cost Mode -->
         <div class="mt-3 flex items-start gap-2">
           <div class="flex-1">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -83,7 +83,7 @@
           </div>
           <div class="w-40">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {{ t('admin.channels.form.billingMode', '计费模式') }}
+              {{ t('admin.channels.form.billingMode', '成本模式') }}
             </label>
             <Select
               :modelValue="entry.billing_mode"

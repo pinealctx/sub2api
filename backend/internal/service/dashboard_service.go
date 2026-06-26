@@ -357,10 +357,10 @@ func (s *DashboardService) GetUserUsageTrend(ctx context.Context, startTime, end
 	return trend, nil
 }
 
-func (s *DashboardService) GetUserSpendingRanking(ctx context.Context, startTime, endTime time.Time, limit int) (*usagestats.UserSpendingRankingResponse, error) {
-	ranking, err := s.usageRepo.GetUserSpendingRanking(ctx, startTime, endTime, limit)
+func (s *DashboardService) GetUserCostRanking(ctx context.Context, startTime, endTime time.Time, limit int) (*usagestats.UserCostRankingResponse, error) {
+	ranking, err := s.usageRepo.GetUserCostRanking(ctx, startTime, endTime, limit)
 	if err != nil {
-		return nil, fmt.Errorf("get user spending ranking: %w", err)
+		return nil, fmt.Errorf("get user cost ranking: %w", err)
 	}
 	return ranking, nil
 }

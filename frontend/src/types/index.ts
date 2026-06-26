@@ -606,7 +606,7 @@ export interface Account {
   load_factor?: number | null
   current_concurrency?: number // Real-time concurrency count from Redis
   priority: number
-  rate_multiplier?: number // Account billing multiplier (>=0, 0 means free)
+  rate_multiplier?: number // Account cost multiplier (>=0, 0 means zero attributed cost)
   status: 'active' | 'inactive' | 'error'
   error_message: string | null
   last_used_at: string | null
@@ -797,7 +797,7 @@ export interface CreateAccountRequest {
   concurrency?: number
   load_factor?: number | null
   priority?: number
-  rate_multiplier?: number // Account billing multiplier (>=0, 0 means free)
+  rate_multiplier?: number // Account cost multiplier (>=0, 0 means zero attributed cost)
   group_ids?: number[]
   expires_at?: number | null
   auto_pause_on_expired?: boolean
@@ -814,7 +814,7 @@ export interface UpdateAccountRequest {
   concurrency?: number
   load_factor?: number | null
   priority?: number
-  rate_multiplier?: number // Account billing multiplier (>=0, 0 means free)
+  rate_multiplier?: number // Account cost multiplier (>=0, 0 means zero attributed cost)
   schedulable?: boolean
   status?: 'active' | 'inactive' | 'error'
   group_ids?: number[]
@@ -1114,7 +1114,7 @@ export interface DashboardStats {
   total_cache_read_tokens: number
   total_tokens: number
   total_cost: number // 累计标准计费
-  total_actual_cost: number // 累计实际扣除
+  total_actual_cost: number // 累计实际估算
   total_account_cost: number // 累计账号成本
 
   // 今日 Token 使用统计
@@ -1125,7 +1125,7 @@ export interface DashboardStats {
   today_cache_read_tokens: number
   today_tokens: number
   today_cost: number // 今日标准计费
-  today_actual_cost: number // 今日实际扣除
+  today_actual_cost: number // 今日实际估算
   today_account_cost: number // 今日账号成本
 
   // 系统运行统计
@@ -1147,7 +1147,7 @@ export interface UsageStatsResponse {
   total_cache_creation_tokens: number
   total_tokens: number
   total_cost: number // 标准计费
-  total_actual_cost: number // 实际扣除
+  total_actual_cost: number // 实际估算
   average_duration_ms: number
   models?: Record<string, number>
 }
@@ -1163,7 +1163,7 @@ export interface TrendDataPoint {
   cache_read_tokens: number
   total_tokens: number
   cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  actual_cost: number // 实际估算
 }
 
 export interface ModelStat {
@@ -1175,7 +1175,7 @@ export interface ModelStat {
   cache_read_tokens: number
   total_tokens: number
   cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  actual_cost: number // 实际估算
   account_cost: number // 账号成本
 }
 
@@ -1193,7 +1193,7 @@ export interface GroupStat {
   requests: number
   total_tokens: number
   cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  actual_cost: number // 实际估算
   account_cost: number // 账号成本
 }
 
@@ -1215,10 +1215,10 @@ export interface UserUsageTrendPoint {
   requests: number
   tokens: number
   cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  actual_cost: number // 实际估算
 }
 
-export interface UserSpendingRankingItem {
+export interface UserCostRankingItem {
   user_id: number
   email: string
   actual_cost: number
@@ -1226,8 +1226,8 @@ export interface UserSpendingRankingItem {
   tokens: number
 }
 
-export interface UserSpendingRankingResponse {
-  ranking: UserSpendingRankingItem[]
+export interface UserCostRankingResponse {
+  ranking: UserCostRankingItem[]
   total_actual_cost: number
   total_requests: number
   total_tokens: number
@@ -1321,7 +1321,7 @@ export interface AccountUsageHistory {
   tokens: number
   cost: number
   actual_cost: number // Account cost (account multiplier)
-  user_cost: number // User/API key billed cost (group multiplier)
+  user_cost: number // User/API key attributed cost (group multiplier)
 }
 
 export interface AccountUsageSummary {

@@ -213,7 +213,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 			s.handleAuthError(ctx, account, msg)
 			shouldDisable = true
 		} else if account.Platform == PlatformAnthropic && strings.Contains(strings.ToLower(upstreamMsg), "credit balance") {
-			// Anthropic API key 余额不足（语义等同 402），停止调度
+			// Anthropic API key 上游 credit balance 耗尽（语义等同 402），停止调度
 			msg := "Credit balance exhausted (400): " + upstreamMsg
 			s.handleAuthError(ctx, account, msg)
 			shouldDisable = true
@@ -306,10 +306,10 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 			shouldDisable = true
 			break
 		}
-		// 支付要求：余额不足或计费问题，停止调度
-		msg := "Payment required (402): insufficient balance or billing issue"
+		// 上游账号额度或项目状态异常，停止调度
+		msg := "Upstream HTTP 402: account quota or project status issue"
 		if upstreamMsg != "" {
-			msg = "Payment required (402): " + upstreamMsg
+			msg = "Upstream HTTP 402: " + upstreamMsg
 		}
 		s.handleAuthError(ctx, account, msg)
 		shouldDisable = true

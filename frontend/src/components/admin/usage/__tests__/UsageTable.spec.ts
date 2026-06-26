@@ -21,18 +21,18 @@ const messages: Record<string, string> = {
   'usage.rate': 'Rate',
   'usage.accountMultiplier': 'Account rate',
   'usage.original': 'Original',
-  'usage.userBilled': 'User billed',
-  'usage.accountBilled': 'Account billed',
+  'usage.userBilled': 'User-side cost',
+  'usage.accountBilled': 'Account-side cost',
   'usage.imageUnit': ' images',
   'usage.imageCount': 'Image count',
-  'usage.imageBillingSize': 'Billing size',
+  'usage.imageBillingSize': 'Pricing size',
   'usage.imageInputSize': 'Input size',
   'usage.imageOutputSize': 'Output size',
   'usage.imageSizeSource': 'Size source',
   'usage.imageSizeBreakdown': 'Size breakdown',
   'usage.imageSizeSourceOutput': 'Upstream output',
   'usage.imageSizeSourceInput': 'Request input',
-  'usage.imageSizeSourceDefault': 'Default billing tier',
+  'usage.imageSizeSourceDefault': 'Default pricing tier',
   'usage.imageSizeSourceLegacy': 'Legacy record',
   'usage.imageSizeSourceMissing': 'Not recorded',
   'usage.imageSizeNotRecorded': 'not recorded',
@@ -112,7 +112,7 @@ describe('admin UsageTable tooltip', () => {
     } as DOMRect)
   })
 
-  it('shows service tier and billing breakdown in cost tooltip', async () => {
+  it('shows service tier and cost breakdown in cost tooltip', async () => {
     const row = {
       request_id: 'req-admin-1',
       actual_cost: 0.092883,
@@ -154,8 +154,8 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('Rate')
     expect(text).toContain('1.00x')
     expect(text).toContain('Account rate')
-    expect(text).toContain('User billed')
-    expect(text).toContain('Account billed')
+    expect(text).toContain('User-side cost')
+    expect(text).toContain('Account-side cost')
     expect(text).toContain('$0.092883')
     expect(text).toContain('$5.0000 / 1M tokens')
     expect(text).toContain('$30.0000 / 1M tokens')
@@ -211,7 +211,7 @@ describe('admin UsageTable tooltip', () => {
         image_output_size: null,
         image_size_source: 'default',
       },
-      expected: ['2K', 'Default billing tier', 'auto', 'unknown'],
+      expected: ['2K', 'Default pricing tier', 'auto', 'unknown'],
     },
     {
       name: 'output-sourced row',
@@ -272,7 +272,7 @@ describe('admin UsageTable tooltip', () => {
 
     const text = wrapper.text()
     expect(text).toContain('Image count')
-    expect(text).toContain('Billing size')
+    expect(text).toContain('Pricing size')
     expect(text).toContain('Size source')
     expect(text).toContain('Input size')
     expect(text).toContain('Output size')
@@ -283,7 +283,7 @@ describe('admin UsageTable tooltip', () => {
     }
   })
 
-  it('displays historical image rows with missing billing_mode as image usage without a 2K fallback', async () => {
+  it('displays historical image rows with missing cost mode as image usage without a 2K fallback', async () => {
     const wrapper = mount(UsageTable, {
       props: {
         data: [

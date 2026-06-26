@@ -512,7 +512,7 @@
               <span class="text-gray-400">{{ t('usage.imageOutputCost') }}</span>
               <span class="font-medium text-pink-300">${{ tooltipData.image_output_cost.toFixed(6) }}</span>
             </div>
-            <!-- Token billing: show unit prices per 1M tokens -->
+            <!-- Token cost: show unit prices per 1M tokens -->
             <template v-if="tooltipData && !isImageUsage(tooltipData) && (!tooltipData.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN)">
               <div v-if="tooltipData && tooltipData.input_tokens > 0" class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('usage.inputTokenPrice') }}</span>
@@ -527,7 +527,7 @@
                 <span class="font-medium text-pink-300">{{ formatTokenPricePerMillion(tooltipData.image_output_cost ?? 0, tooltipData.image_output_tokens) }} {{ t('usage.perMillionTokens') }}</span>
               </div>
             </template>
-            <!-- Per-image billing: show image metadata and unit price -->
+            <!-- Per-image cost: show image metadata and unit price -->
             <template v-else-if="tooltipData && isImageUsage(tooltipData)">
               <div class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('usage.imageCount') }}</span>
@@ -982,14 +982,14 @@ const exportToCSV = async () => {
       'Reasoning Effort',
       'Inbound Endpoint',
       'Type',
-      'Billing Mode',
+      'Cost Mode',
       'Input Tokens',
       'Output Tokens',
       'Cache Read Tokens',
       'Cache Creation Tokens',
       'Rate Multiplier',
-      'Billed Cost',
-      'Original Cost',
+      'Actual Estimated Cost',
+      'Baseline Estimated Cost',
       'First Token (ms)',
       'Duration (ms)'
     ]

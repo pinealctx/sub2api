@@ -5,14 +5,14 @@ import ModelDistributionChart from '../ModelDistributionChart.vue'
 
 const messages: Record<string, string> = {
   'admin.dashboard.modelDistribution': 'Model Distribution',
-  'admin.dashboard.spendingRankingTitle': 'User Spending Ranking',
+  'admin.dashboard.costRankingTitle': 'User Cost Ranking',
   'admin.dashboard.viewModelDistribution': 'Model Distribution',
-  'admin.dashboard.viewSpendingRanking': 'User Spending Ranking',
-  'admin.dashboard.spendingRankingUser': 'User',
-  'admin.dashboard.spendingRankingRequests': 'Requests',
-  'admin.dashboard.spendingRankingTokens': 'Tokens',
-  'admin.dashboard.spendingRankingSpend': 'Spend',
-  'admin.dashboard.spendingRankingOther': 'Others',
+  'admin.dashboard.viewCostRanking': 'User Cost Ranking',
+  'admin.dashboard.costRankingUser': 'User',
+  'admin.dashboard.costRankingRequests': 'Requests',
+  'admin.dashboard.costRankingTokens': 'Tokens',
+  'admin.dashboard.costRankingCost': 'Cost',
+  'admin.dashboard.costRankingOther': 'Others',
   'admin.dashboard.model': 'Model',
   'admin.dashboard.requests': 'Requests',
   'admin.dashboard.tokens': 'Tokens',
@@ -126,7 +126,7 @@ describe('ModelDistributionChart', () => {
     expect(label).toBe('model-b: $1.40 (87.5%)')
   })
 
-  it('renders Others in the spending ranking table and uses a dedicated chart color', async () => {
+  it('renders Others in the cost ranking table and uses a dedicated chart color', async () => {
     const wrapper = mount(ModelDistributionChart, {
       props: {
         modelStats: [],
@@ -146,7 +146,7 @@ describe('ModelDistributionChart', () => {
       },
     })
 
-    const rankingButton = wrapper.findAll('button').find((button) => button.text() === 'User Spending Ranking')
+    const rankingButton = wrapper.findAll('button').find((button) => button.text() === 'User Cost Ranking')
     expect(rankingButton).toBeTruthy()
     await rankingButton!.trigger('click')
 

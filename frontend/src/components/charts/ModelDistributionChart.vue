@@ -4,7 +4,7 @@
       <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
         {{ !enableRankingView || activeView === 'model_distribution'
           ? t('admin.dashboard.modelDistribution')
-          : t('admin.dashboard.spendingRankingTitle') }}
+          : t('admin.dashboard.costRankingTitle') }}
       </h3>
       <div class="flex flex-wrap items-center justify-end gap-2">
         <div
@@ -84,13 +84,13 @@
             type="button"
             class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
             :class="
-              activeView === 'spending_ranking'
+              activeView === 'cost_ranking'
                 ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-700 dark:text-white'
                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             "
-            @click="activeView = 'spending_ranking'"
+            @click="activeView = 'cost_ranking'"
           >
-            {{ t('admin.dashboard.viewSpendingRanking') }}
+            {{ t('admin.dashboard.viewCostRanking') }}
           </button>
         </div>
       </div>
@@ -187,10 +187,10 @@
         <table class="w-full text-xs">
           <thead>
             <tr class="text-gray-500 dark:text-gray-400">
-              <th class="pb-2 text-left">{{ t('admin.dashboard.spendingRankingUser') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingRequests') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingTokens') }}</th>
-              <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingSpend') }}</th>
+              <th class="pb-2 text-left">{{ t('admin.dashboard.costRankingUser') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.costRankingRequests') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.costRankingTokens') }}</th>
+              <th class="pb-2 text-right">{{ t('admin.dashboard.costRankingCost') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -246,7 +246,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserBreakdownSubTable from './UserBreakdownSubTable.vue'
-import type { ModelStat, UserSpendingRankingItem, UserBreakdownItem } from '@/types'
+import type { ModelStat, UserCostRankingItem, UserBreakdownItem } from '@/types'
 import { getUserBreakdown } from '@/api/admin/dashboard'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
@@ -255,14 +255,14 @@ const { t } = useI18n()
 
 type DistributionMetric = 'tokens' | 'actual_cost'
 type ModelSource = 'requested' | 'upstream' | 'mapping'
-type RankingDisplayItem = UserSpendingRankingItem & { isOther?: boolean }
+type RankingDisplayItem = UserCostRankingItem & { isOther?: boolean }
 const props = withDefaults(defineProps<{
   modelStats: ModelStat[]
   upstreamModelStats?: ModelStat[]
   mappingModelStats?: ModelStat[]
   source?: ModelSource
   enableRankingView?: boolean
-  rankingItems?: UserSpendingRankingItem[]
+  rankingItems?: UserCostRankingItem[]
   rankingTotalActualCost?: number
   rankingTotalRequests?: number
   rankingTotalTokens?: number
@@ -324,11 +324,11 @@ const toggleBreakdown = async (type: string, id: string) => {
 const emit = defineEmits<{
   'update:metric': [value: DistributionMetric]
   'update:source': [value: ModelSource]
-  'ranking-click': [item: UserSpendingRankingItem]
+  'ranking-click': [item: UserCostRankingItem]
 }>()
 
 const enableRankingView = computed(() => props.enableRankingView)
-const activeView = ref<'model_distribution' | 'spending_ranking'>('model_distribution')
+const activeView = ref<'model_distribution' | 'cost_ranking'>('model_distribution')
 
 const chartColors = [
   '#3b82f6',
@@ -380,7 +380,7 @@ const rankingChartData = computed(() => {
   const backgroundColor = chartColors.slice(0, props.rankingItems.length)
 
   if (otherRankingItem.value) {
-    labels.push(t('admin.dashboard.spendingRankingOther'))
+    labels.push(t('admin.dashboard.costRankingOther'))
     data.push(otherRankingItem.value.actual_cost)
     backgroundColor.push('#94a3b8')
   }
@@ -485,13 +485,13 @@ const formatNumber = (value: number): string => {
   return value.toLocaleString()
 }
 
-const getRankingUserLabel = (item: UserSpendingRankingItem): string => {
+const getRankingUserLabel = (item: UserCostRankingItem): string => {
   if (item.email) return item.email
   return t('admin.users.userPrefix', { id: item.user_id })
 }
 
 const getRankingRowLabel = (item: RankingDisplayItem): string => {
-  if (item.isOther) return t('admin.dashboard.spendingRankingOther')
+  if (item.isOther) return t('admin.dashboard.costRankingOther')
   return getRankingUserLabel(item)
 }
 

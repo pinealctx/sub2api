@@ -29,7 +29,7 @@ type GeminiQuota struct {
 	SharedRPM int64 `json:"shared_rpm,omitempty"`
 
 	// Per-model quotas (AI Studio / API key).
-	// A value of -1 means "unlimited" (pay-as-you-go).
+	// A value of -1 means "unlimited" for upstream paid quota tiers.
 	ProRPD   int64 `json:"pro_rpd,omitempty"`
 	ProRPM   int64 `json:"pro_rpm,omitempty"`
 	FlashRPD int64 `json:"flash_rpd,omitempty"`
@@ -193,7 +193,7 @@ func newGeminiQuotaPolicy() *GeminiQuotaPolicy {
 			//   - gemini_pro:   50 RPD / 2 RPM
 			//   - gemini_flash: 1500 RPD / 15 RPM
 			GeminiTierAIStudioFree: {Quota: GeminiQuota{ProRPD: 50, ProRPM: 2, FlashRPD: 1500, FlashRPM: 15}, Cooldown: 30 * time.Minute},
-			// aistudio_paid: -1 means "unlimited/pay-as-you-go" for RPD.
+			// aistudio_paid: -1 means "unlimited" for RPD in the upstream paid quota tier.
 			GeminiTierAIStudioPaid: {Quota: GeminiQuota{ProRPD: -1, ProRPM: 1000, FlashRPD: -1, FlashRPM: 2000}, Cooldown: 5 * time.Minute},
 
 			// --- Google One (shared pool) ---

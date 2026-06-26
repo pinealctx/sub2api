@@ -49,7 +49,7 @@ func compatCyberUpstreamRecorder() *httpUpstreamRecorder {
 }
 
 // C-1: chat completions 非流式客户端（buffered 路径）cyber 命中——不 failover、标记已设、
-// 以 chat 错误格式回写、丢弃 result（使 handler 落入 tokens=0 免费用量行而非 RecordUsage 扣费）。
+// 以 chat 错误格式回写、丢弃 result（使 handler 落入 tokens=0 占位用量行而非 RecordUsage 成本记录）。
 func TestForwardAsChatCompletions_BufferedCyberPolicyNoFailover(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
@@ -72,7 +72,7 @@ func TestForwardAsChatCompletions_BufferedCyberPolicyNoFailover(t *testing.T) {
 }
 
 // I-1: chat completions 流式客户端 cyber 命中——result 必须被丢弃（返回 nil），
-// 使 handler forwardErrored 分支走 tokens=0 免费行，而非 RecordUsage(CyberBlocked) 扣费。
+// 使 handler forwardErrored 分支走 tokens=0 占位行，而非 RecordUsage(CyberBlocked) 成本记录。
 func TestForwardAsChatCompletions_StreamCyberPolicyDropsResult(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

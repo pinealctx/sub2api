@@ -20,7 +20,7 @@ type dashboardUsageRepoCapture struct {
 	modelRequestType *int16
 	modelStream      *bool
 	rankingLimit     int
-	ranking          []usagestats.UserSpendingRankingItem
+	ranking          []usagestats.UserCostRankingItem
 	rankingTotal     float64
 }
 
@@ -50,13 +50,13 @@ func (s *dashboardUsageRepoCapture) GetModelStatsWithFilters(
 	return []usagestats.ModelStat{}, nil
 }
 
-func (s *dashboardUsageRepoCapture) GetUserSpendingRanking(
+func (s *dashboardUsageRepoCapture) GetUserCostRanking(
 	ctx context.Context,
 	startTime, endTime time.Time,
 	limit int,
-) (*usagestats.UserSpendingRankingResponse, error) {
+) (*usagestats.UserCostRankingResponse, error) {
 	s.rankingLimit = limit
-	return &usagestats.UserSpendingRankingResponse{
+	return &usagestats.UserCostRankingResponse{
 		Ranking:         s.ranking,
 		TotalActualCost: s.rankingTotal,
 		TotalRequests:   44,
@@ -71,7 +71,7 @@ func newDashboardRequestTypeTestRouter(repo *dashboardUsageRepoCapture) *gin.Eng
 	router := gin.New()
 	router.GET("/admin/dashboard/trend", handler.GetUsageTrend)
 	router.GET("/admin/dashboard/models", handler.GetModelStats)
-	router.GET("/admin/dashboard/users-ranking", handler.GetUserSpendingRanking)
+	router.GET("/admin/dashboard/users-ranking", handler.GetUserCostRanking)
 	return router
 }
 
@@ -172,7 +172,7 @@ func TestDashboardModelStatsValidModelSource(t *testing.T) {
 func TestDashboardUsersRankingLimitAndCache(t *testing.T) {
 	dashboardUsersRankingCache = newSnapshotCache(5 * time.Minute)
 	repo := &dashboardUsageRepoCapture{
-		ranking: []usagestats.UserSpendingRankingItem{
+		ranking: []usagestats.UserCostRankingItem{
 			{UserID: 7, Email: "rank@example.com", ActualCost: 10.5, Requests: 3, Tokens: 300},
 		},
 		rankingTotal: 88.8,

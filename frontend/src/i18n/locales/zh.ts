@@ -33,7 +33,7 @@ export default {  // Home Page
   // Key Usage Query Page
   keyUsage: {
     title: 'API Key 用量查询',
-    subtitle: '输入您的 API Key 以查看实时消费金额与使用状态',
+    subtitle: '输入您的 API Key 以查看实时成本估算与使用状态',
     placeholder: 'sk-ant-mirror-xxxxxxxxxxxx',
     query: '查询',
     querying: '查询中...',
@@ -60,7 +60,7 @@ export default {  // Home Page
     cacheReadTokens: '缓存读取',
     cacheWriteTokens: '缓存写入',
     totalTokens: '总 Tokens',
-    cost: '费用',
+    cost: '估算成本',
     // Status
     quotaMode: 'Key 限额模式',
     // Ring card titles
@@ -84,7 +84,7 @@ export default {  // Home Page
     todayTokens: '今日 Tokens',
     todayCacheCreation: '今日缓存创建',
     todayCacheRead: '今日缓存读取',
-    todayCost: '今日费用',
+    todayCost: '今日估算',
     rpmTpm: 'RPM / TPM',
     totalRequests: '累计请求',
     totalInputTokens: '累计输入',
@@ -92,7 +92,7 @@ export default {  // Home Page
     totalTokensLabel: '累计 Tokens',
     totalCacheCreation: '累计缓存创建',
     totalCacheRead: '累计缓存读取',
-    totalCost: '累计费用',
+    totalCost: '累计估算',
     avgDuration: '平均耗时',
     // Messages
     enterApiKey: '请输入 API Key',
@@ -381,7 +381,7 @@ export default {  // Home Page
     welcomeMessage: '欢迎回来！这是您账户的概览。',
     apiKeys: 'API 密钥',
     todayRequests: '今日请求',
-    todayCost: '今日消费',
+    todayCost: '今日估算成本',
     todayTokens: '今日 Token',
     totalTokens: '累计 Token',
     cacheToday: '今日缓存',
@@ -561,9 +561,9 @@ export default {  // Home Page
     },
     // 配额和有效期
     quotaLimit: '额度限制',
-    quotaAmount: '额度金额 (USD)',
+    quotaAmount: '成本额度 (USD)',
     quotaAmountPlaceholder: '输入 USD 额度限制',
-    quotaAmountHint: '设置此密钥可消费的最大金额。0 = 无限制。',
+    quotaAmountHint: '设置此密钥可使用的最大成本额度。0 = 无限制。',
     quotaUsed: '已用额度',
     reset: '重置',
     resetQuotaUsed: '将已用额度重置为 0',
@@ -577,7 +577,7 @@ export default {  // Home Page
     rateLimit5h: '5小时限额 (USD)',
     rateLimit1d: '日限额 (USD)',
     rateLimit7d: '7天限额 (USD)',
-    rateLimitHint: '设置此密钥在指定时间窗口内的最大消费额。0 = 无限制。',
+    rateLimitHint: '设置此密钥在指定时间窗口内的最大成本额度。0 = 无限制。',
     rateLimitUsage: '速率限制用量',
     resetRateLimitUsage: '重置速率限制用量',
     resetRateLimitTitle: '确认重置速率限制',
@@ -610,20 +610,20 @@ export default {  // Home Page
     tokenDetails: 'Token 明细',
     cacheTtlOverriddenHint: '缓存 TTL Override 已启用',
     cacheTtlOverriddenLabel: 'TTL 替换',
-    cacheTtlOverridden5m: '按 5m 计费',
-    cacheTtlOverridden1h: '按 1h 计费',
+    cacheTtlOverridden5m: '按 5m 成本归因',
+    cacheTtlOverridden1h: '按 1h 成本归因',
     totalRequests: '总请求数',
     totalTokens: '总 Token',
     cacheTotal: '缓存',
     cacheBreakdown: '缓存 Token 明细',
     cacheCreationTokensLabel: '缓存创建',
     cacheReadTokensLabel: '缓存读取',
-    totalCost: '总消费',
-    standardCost: '标准',
-    actualCost: '实际',
+    totalCost: '估算成本',
+    standardCost: '基准估算',
+    actualCost: '实际估算',
     accountCost: '成本',
-    userBilled: '用户扣费',
-    accountBilled: '账号计费',
+    userBilled: '用户侧成本',
+    accountBilled: '账号侧成本',
     resetNow: '现在',
     resetPending: '待刷新',
     accountMultiplier: '账号倍率',
@@ -656,7 +656,7 @@ export default {  // Home Page
     upstreamEndpoint: '上游端点',
     type: '类型',
     tokens: 'Token',
-    cost: '费用',
+    cost: '成本',
     firstToken: '首 Token',
     duration: '耗时',
     time: '时间',
@@ -677,7 +677,7 @@ export default {  // Home Page
     imageUnitPrice: '单张价格',
     imageTotalPrice: '图片总价',
     imageCount: '图片张数',
-    imageBillingSize: '计费尺寸',
+    imageBillingSize: '定价尺寸',
     imageInputSize: '输入尺寸',
     imageOutputSize: '输出尺寸',
     imageOutputTokens: '图片输出 Token',
@@ -687,7 +687,7 @@ export default {  // Home Page
     imageSizeBreakdown: '尺寸明细',
     imageSizeSourceOutput: '上游输出',
     imageSizeSourceInput: '请求输入',
-    imageSizeSourceDefault: '默认计费档位',
+    imageSizeSourceDefault: '默认定价档位',
     imageSizeSourceLegacy: '历史记录',
     imageSizeSourceMissing: '未记录',
     imageSizeNotRecorded: '未记录',
@@ -701,7 +701,7 @@ export default {  // Home Page
     serviceTierStandard: 'Standard',
     rate: '倍率',
     original: '原始',
-    billed: '计费',
+    billed: '成本',
     noRecords: '未找到使用记录，请尝试调整筛选条件。',
     failedToLoad: '加载使用记录失败',
     noDataToExport: '没有可导出的数据',
@@ -830,7 +830,7 @@ export default {  // Home Page
       supportedModels: '支持模型'
     },
     pricing: {
-      billingMode: '计费模式',
+      billingMode: '成本模式',
       billingModeToken: '按 Token',
       billingModePerRequest: '按次',
       billingModeImage: '按图片',
@@ -1054,10 +1054,10 @@ export default {  // Home Page
       activeAccounts: '活跃账号',
       todayRequests: '今日请求',
       totalRequests: '总请求数',
-      todayCost: '今日消费',
-      totalCost: '总消费',
-      actual: '实际',
-      standard: '标准',
+      todayCost: '今日估算成本',
+      totalCost: '累计估算成本',
+      actual: '实际估算',
+      standard: '基准估算',
       accountCost: '成本',
       todayTokens: '今日 Token',
       totalTokens: '总 Token',
@@ -1074,7 +1074,7 @@ export default {  // Home Page
       modelDistribution: '模型分布',
       groupDistribution: '分组使用分布',
       metricTokens: '按 Token',
-      metricActualCost: '按实际消费',
+      metricActualCost: '按实际成本',
       tokenUsageTrend: 'Token 使用趋势',
       noDataAvailable: '暂无数据',
       model: '模型',
@@ -1085,15 +1085,15 @@ export default {  // Home Page
       cache: '缓存',
       recentUsage: '最近使用',
       viewModelDistribution: '模型分布',
-      viewSpendingRanking: '用户消费榜',
-      spendingRankingTitle: '用户消费榜',
-      spendingRankingUser: '用户',
-      spendingRankingRequests: '请求',
-      spendingRankingTokens: 'Token',
-      spendingRankingSpend: '消费',
-      spendingRankingOther: '其他',
-      spendingRankingUsage: '用量',
-      spendShort: '消费',
+      viewCostRanking: '用户成本排行',
+      costRankingTitle: '用户成本排行',
+      costRankingUser: '用户',
+      costRankingRequests: '请求',
+      costRankingTokens: 'Token',
+      costRankingCost: '成本',
+      costRankingOther: '其他',
+      costRankingUsage: '用量',
+      spendShort: '成本',
       requestsShort: '请求',
       tokensShort: 'Token',
       last7Days: '近 7 天',
@@ -1757,7 +1757,7 @@ export default {  // Home Page
           '开启后，用户在创建 API Key 时将无法看到此分组。只有管理员手动将用户分配到此分组后，用户才能使用。',
         example: '使用场景：',
         exampleContent:
-          '公开分组费率 0.8，您可以创建一个费率 0.7 的专属分组，手动分配给 VIP 用户，让他们享受更优惠的价格。'
+          '公共分组倍率 1.0，您可以创建一个倍率 0.7 的专属分组，手动分配给测试用户，用于成本归因或灰度调度。'
       },
       rateMultiplierHint: '1.0 = 标准费率，0.5 = 半价，2.0 = 双倍',
       platforms: {
@@ -1828,12 +1828,12 @@ export default {  // Home Page
       revertChanges: '撤销修改',
       userInfo: '用户信息',
       imagePricing: {
-        title: '图片生成计费',
+        title: '图片生成成本',
         description: '配置图片生成能力和图片基础单价，留空则使用默认价格',
         allowImageGeneration: '允许当前分组生图',
         independentMultiplier: '生图倍率独立',
         imageMultiplier: '生图独立倍率',
-        modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
+        modeHint: '默认关闭独立倍率时，图片成本 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片成本 = 图片价格 × 生图独立倍率。',
         finalPricePreview: '最终单张价格预览',
         notConfigured: '未配置'
       },
@@ -1933,7 +1933,7 @@ export default {  // Home Page
       columns: {
         name: '渠道名',
         status: '状态',
-        billingSource: '计费模型来源',
+        billingSource: '成本模型来源',
         groups: '关联分组',
         supportedModels: '支持模型'
       },
@@ -1949,7 +1949,7 @@ export default {  // Home Page
         channel_mapped: '映射后模型'
       },
       pricing: {
-        billingMode: '计费模式',
+        billingMode: '成本模式',
         billingModeToken: '按 Token',
         billingModePerRequest: '按次',
         billingModeImage: '按图片',
@@ -2019,7 +2019,7 @@ export default {  // Home Page
         models: '模型列表',
         modelsPlaceholder: '输入完整模型名后按回车添加',
         modelInputHint: '按回车添加，支持粘贴批量导入',
-        billingMode: '计费模式',
+        billingMode: '成本模式',
         defaultPrices: '默认价格（未命中区间时使用）',
         inputPrice: '输入',
         outputPrice: '输出',
@@ -2030,13 +2030,13 @@ export default {  // Home Page
         pricePlaceholder: '默认',
         intervals: '上下文区间定价（可选）',
         addInterval: '添加区间',
-        requestTiers: '按次计费层级',
-        imageTiers: '图片计费层级（按次）',
+        requestTiers: '按次成本层级',
+        imageTiers: '图片成本层级（按次）',
         addTier: '添加层级',
-        noTiersYet: '暂无层级，点击添加配置按次计费价格',
+        noTiersYet: '暂无层级，点击添加配置按次成本价格',
         noPricingRules: '暂无定价规则，点击"添加"创建',
         perRequestPrice: '单次价格',
-        perRequestPriceRequired: '按次/图片计费模式必须设置默认价格或至少一个计费层级',
+        perRequestPriceRequired: '按次/图片成本模式必须设置默认价格或至少一个成本层级',
         tierLabel: '层级',
         resolution: '分辨率',
         modelMapping: '模型映射',
@@ -2044,10 +2044,10 @@ export default {  // Home Page
         noMappingRules: '暂无映射规则，点击"添加"创建',
         mappingSource: '源模型',
         mappingTarget: '目标模型',
-        billingModelSource: '计费基准',
-        billingModelSourceChannelMapped: '以渠道映射后的模型计费',
-        billingModelSourceRequested: '以请求模型计费',
-        billingModelSourceUpstream: '以最终模型计费',
+        billingModelSource: '成本基准',
+        billingModelSourceChannelMapped: '以渠道映射后的模型计算成本',
+        billingModelSourceRequested: '以请求模型计算成本',
+        billingModelSourceUpstream: '以最终模型计算成本',
         billingModelSourceHint: '控制使用哪个模型名称进行定价查找',
         selectedCount: '已选 {count} 个',
         searchGroups: '搜索分组...',
@@ -2629,9 +2629,9 @@ export default {  // Home Page
       // 容量状态提示
       capacity: {
         windowCost: {
-          blocked: '5h窗口费用超限，账号暂停调度',
-          stickyOnly: '5h窗口费用达阈值，仅允许粘性会话',
-          normal: '5h窗口费用正常'
+          blocked: '5h窗口成本超限，账号暂停调度',
+          stickyOnly: '5h窗口成本达阈值，仅允许粘性会话',
+          normal: '5h窗口成本正常'
         },
         sessions: {
           full: '活跃会话已满，新会话需等待（空闲超时：{idle}分钟）',
@@ -2666,7 +2666,7 @@ export default {  // Home Page
       quotaWeeklyLimit: '周限额',
       quotaWeeklyLimitHint: '从首次使用起每 7 天自动重置。',
       quotaTotalLimit: '总限额',
-      quotaTotalLimitHint: '累计消费上限，不会自动重置 — 使用「重置配额」手动清零。',
+      quotaTotalLimitHint: '累计成本上限，不会自动重置 — 使用「重置配额」手动清零。',
       quotaResetMode: '重置方式',
       quotaResetModeRolling: '滚动窗口',
       quotaResetModeFixed: '固定时间',
@@ -2685,7 +2685,7 @@ export default {  // Home Page
         sunday: '周日',
       },
       quotaLimitAmount: '总限额',
-      quotaLimitAmountHint: '累计消费上限，不会自动重置。',
+      quotaLimitAmountHint: '累计成本上限，不会自动重置。',
       quotaNotify: {
         alert: '提醒阈值',
         enabled: '启用告警',
@@ -2968,7 +2968,7 @@ export default {  // Home Page
         apiKeyHint: '您的 OpenAI API Key',
         oauthPassthrough: '自动透传（仅替换认证）',
         oauthPassthroughDesc:
-          '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留计费/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',
+          '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留成本统计/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',
         responsesWebsocketsV2: 'Responses WebSocket v2',
         responsesWebsocketsV2Desc:
           '默认关闭。开启后可启用 responses_websockets_v2 协议能力（受网关全局开关与账号类型开关约束）。',
@@ -3047,7 +3047,7 @@ export default {  // Home Page
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',
         apiKeyPassthroughDesc:
-          '仅对 Anthropic API Key 生效。开启后，messages/count_tokens 请求将透传上游并仅替换认证，保留计费/并发/审计及必要安全过滤；关闭即可回滚到现有兼容链路。',
+          '仅对 Anthropic API Key 生效。开启后，messages/count_tokens 请求将透传上游并仅替换认证，保留成本统计/并发/审计及必要安全过滤；关闭即可回滚到现有兼容链路。',
         webSearchEmulation: 'Web Search 模拟',
         webSearchEmulationDesc:
           '为该 API Key 账号启用 web search 模拟。客户端发送纯 web_search 请求时，由网关调用第三方搜索 API 并构造响应返回。默认跟随渠道配置。',
@@ -3117,11 +3117,11 @@ export default {  // Home Page
       // Quota control (Anthropic OAuth/SetupToken only)
       quotaControl: {
         title: '配额控制',
-        hint: '配置费用窗口、会话限制、客户端亲和等调度控制。',
+        hint: '配置成本窗口、会话限制、客户端亲和等调度控制。',
         windowCost: {
-          label: '5h窗口费用控制',
-          hint: '限制账号在5小时窗口内的费用使用',
-          limit: '费用阈值',
+          label: '5h窗口成本控制',
+          hint: '限制账号在5小时窗口内的成本使用',
+          limit: '成本阈值',
           limitPlaceholder: '50',
           limitHint: '达到阈值后不参与新请求调度',
           stickyReserve: '粘性预留额度',
@@ -3171,9 +3171,9 @@ export default {  // Home Page
         },
         cacheTTLOverride: {
           label: '缓存 TTL 强制替换',
-          hint: '将所有缓存创建 token 强制按指定的 TTL 类型（5分钟或1小时）计费',
+          hint: '将所有缓存创建 token 强制按指定的 TTL 类型归因成本',
           target: '目标 TTL',
-          targetHint: '选择计费使用的 TTL 类型'
+          targetHint: '选择成本归因使用的 TTL 类型'
         },
         customBaseUrl: {
           label: '自定义转发地址',
@@ -3207,8 +3207,8 @@ export default {  // Home Page
       loadFactorHint: '提高负载因子可以提高对账号的调度频率',
       priority: '优先级',
       priorityHint: '优先级越小的账号优先使用',
-      billingRateMultiplier: '账号计费倍率',
-      billingRateMultiplierHint: '0 表示不计费，仅影响账号计费',
+      billingRateMultiplier: '账号成本倍率',
+      billingRateMultiplierHint: '0 表示成本计为 0，仅影响账号成本统计',
       expiresAt: '过期时间',
       expiresAtHint: '留空表示不过期',
       higherPriorityFirst: '数值越小优先级越高',
@@ -3453,7 +3453,7 @@ export default {  // Home Page
           label: '账号等级',
           hint: '提示：系统会优先尝试自动识别账号等级；若自动识别不可用或失败，则使用你选择的等级作为回退（本地模拟配额）。',
           aiStudioHint:
-            'AI Studio 的配额是按模型分别限流（Pro/Flash 独立）。若已绑卡（按量付费），请选 Pay-as-you-go。',
+            'AI Studio 的配额是按模型分别限流（Pro/Flash 独立）。若上游已启用付费配额，请选付费配额档。',
           googleOne: {
             free: 'Google One Free',
             pro: 'Google One Pro',
@@ -3465,7 +3465,7 @@ export default {  // Home Page
           },
           aiStudio: {
             free: 'Google AI Free',
-            paid: 'Google AI Pay-as-you-go'
+            paid: 'Google AI 付费配额'
           }
         },
         accountType: {
@@ -3613,20 +3613,20 @@ export default {  // Home Page
       usageStatistics: '使用统计',
       last30DaysUsage: '近30天使用统计（日均基于实际使用天数）',
       stats: {
-        totalCost: '30天总费用',
+        totalCost: '30天总成本',
         accumulatedCost: '累计成本',
-        standardCost: '标准计费',
+        standardCost: '基准估算',
         totalRequests: '30天总请求',
         totalCalls: '累计调用次数',
-        avgDailyCost: '日均费用',
+        avgDailyCost: '日均成本',
         basedOnActualDays: '基于 {days} 天实际使用',
         avgDailyRequests: '日均请求',
         avgDailyUsage: '平均每日调用',
         todayOverview: '今日概览',
-        cost: '费用',
+        cost: '成本',
         requests: '请求',
         tokens: 'Token',
-        highestCostDay: '最高费用日',
+        highestCostDay: '最高成本日',
         highestRequestDay: '最高请求日',
         date: '日期',
         accumulatedTokens: '累计 Token',
@@ -3638,8 +3638,8 @@ export default {  // Home Page
         recentActivity: '最近统计',
         todayRequests: '今日请求',
         todayTokens: '今日 Token',
-        todayCost: '今日费用',
-        usageTrend: '30天费用与请求趋势',
+        todayCost: '今日成本',
+        usageTrend: '30天成本与请求趋势',
         noData: '该账号暂无使用数据'
       }
     },
@@ -3911,11 +3911,11 @@ export default {  // Home Page
       cacheCreation1hTokens: '缓存创建',
       cacheReadTokens: '缓存读取 Token',
       failedToLoad: '加载使用记录失败',
-      billingMode: '计费模式',
+      billingMode: '成本模式',
       billingModeToken: '按量',
       billingModePerRequest: '按次',
       billingModeImage: '按次(图片)',
-      allBillingModes: '全部计费模式',
+      allBillingModes: '全部成本模式',
       ipAddress: 'IP',
       userDeletedBadge: '已删除',
       cleanup: {
@@ -4882,7 +4882,7 @@ export default {  // Home Page
         cacheTTL5m: '5 分钟',
         cacheTTL1h: '1 小时',
         anthropicCacheTTL1hInjection: 'Anthropic 缓存 TTL 注入',
-        anthropicCacheTTL1hInjectionHint: '开启后，对 Anthropic OAuth/Setup Token 请求体中已有的 ephemeral 缓存块强制写入 1h；响应 usage 默认按 5m 回写计费，账号级 TTL 计费设置优先。',
+        anthropicCacheTTL1hInjectionHint: '开启后，对 Anthropic OAuth/Setup Token 请求体中已有的 ephemeral 缓存块强制写入 1h；响应 usage 默认按 5m 归因成本，账号级 TTL 成本设置优先。',
         rewriteMessageCacheControl: '改写消息缓存断点',
         rewriteMessageCacheControlHint: '默认关闭，保留客户端在 messages 内容块中的 cache_control。开启后会清除客户端断点并注入代理断点，适合不自行管理缓存策略的客户端。',
         antigravityUserAgentVersion: 'Antigravity UA 版本',
@@ -5547,14 +5547,14 @@ export default {  // Home Page
       welcome: {
         title: '👋 欢迎使用 Sub2API',
         description:
-          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API 是一个强大的 AI 服务中转平台，让您轻松管理和分发 AI 服务。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>分组管理</b> - 创建不同的服务套餐（VIP、免费试用等）</li><li>🔗 <b>账号池</b> - 连接多个上游 AI 服务商账号</li><li>🔑 <b>密钥分发</b> - 为用户生成独立的 API Key</li><li>💰 <b>计费管理</b> - 灵活的费率和配额控制</li></ul><p style="color: #10b981; font-weight: 600;">接下来，我们将用 3 分钟带您完成首次配置 →</p></div>',
+          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API 是内部 AI API 网关，用于集中管理账号池、分组授权、API Key 与用量统计。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>分组授权</b> - 定义团队成员可访问的平台与账号池</li><li>🔗 <b>账号池</b> - 连接多个上游 AI 服务商账号</li><li>🔑 <b>密钥管理</b> - 为成员生成独立的 API Key</li><li>💰 <b>成本统计</b> - 记录 Token、请求量与估算成本，便于内部审计</li></ul><p style="color: #10b981; font-weight: 600;">接下来，我们将用 3 分钟带您完成首次配置 →</p></div>',
         nextBtn: '开始配置 🚀',
         prevBtn: '跳过'
       },
       groupManage: {
         title: '📦 第一步：分组管理',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 Sub2API 的核心概念，它就像一个"服务套餐"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每个分组可以包含多个上游账号</li><li>💰 每个分组有独立的计费倍率</li><li>👥 可以设置为公开或专属分组</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以创建"VIP专线"（高倍率）和"免费试用"（低倍率）两个分组</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 点击左侧的"分组管理"开始</p></div>'
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是内部授权和调度边界：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每个分组可以包含多个上游账号</li><li>💰 每个分组可设置独立的成本统计倍率</li><li>👥 可以设置为公开或专属分组</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以创建"测试环境"和"生产环境"两个分组，分别绑定不同账号池</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 点击左侧的"分组管理"开始</p></div>'
       },
       createGroup: {
         title: '➕ 创建新分组',
@@ -5564,7 +5564,7 @@ export default {  // Home Page
       groupName: {
         title: '✏️ 1. 分组名称',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">为您的分组起一个易于识别的名称。</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 命名建议：</b><ul style="margin: 8px 0 0 16px;"><li>"测试分组" - 用于测试</li><li>"VIP专线" - 高质量服务</li><li>"免费试用" - 体验版</li></ul></div><p style="font-size: 13px; color: #6b7280;">填写完成后点击"下一步"继续</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">为您的分组起一个易于识别的名称。</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 命名建议：</b><ul style="margin: 8px 0 0 16px;"><li>"测试分组" - 用于测试</li><li>"生产分组" - 用于正式业务</li><li>"研发分组" - 用于内部研发</li></ul></div><p style="font-size: 13px; color: #6b7280;">填写完成后点击"下一步"继续</p></div>',
         nextBtn: '下一步'
       },
       groupPlatform: {
@@ -5574,15 +5574,15 @@ export default {  // Home Page
         nextBtn: '下一步'
       },
       groupMultiplier: {
-        title: '💰 3. 费率倍数',
+        title: '💰 3. 成本倍率',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">设置该分组的计费倍率，控制用户的实际扣费。</p><div style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚙️ 计费规则：</b><ul style="margin: 8px 0 0 16px;"><li><b>1.0</b> - 原价计费（成本价）</li><li><b>1.5</b> - 用户消耗 $1，扣除 $1.5</li><li><b>2.0</b> - 用户消耗 $1，扣除 $2</li><li><b>0.8</b> - 补贴模式（亏本运营）</li></ul></div><p style="font-size: 13px; color: #6b7280;">建议测试分组设置为 1.0</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">设置该分组的成本统计倍率，仅用于内部用量分析和成本归因。</p><div style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚙️ 成本规则：</b><ul style="margin: 8px 0 0 16px;"><li><b>1.0</b> - 按模型基准成本统计</li><li><b>1.5</b> - 按 1.5 倍成本归因</li><li><b>2.0</b> - 按 2 倍成本归因</li><li><b>0.8</b> - 按 0.8 倍成本归因</li></ul></div><p style="font-size: 13px; color: #6b7280;">建议测试分组设置为 1.0</p></div>',
         nextBtn: '下一步'
       },
       groupExclusive: {
         title: '🔒 4. 专属分组（可选）',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">控制分组的可见性和访问权限。</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🔐 权限说明：</b><ul style="margin: 8px 0 0 16px;"><li><b>关闭</b> - 公开分组，所有用户可见</li><li><b>开启</b> - 专属分组，仅指定用户可见</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 使用场景：</b>VIP 用户专属、内部测试、特殊客户等</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">控制分组的可见性和访问权限。</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🔐 权限说明：</b><ul style="margin: 8px 0 0 16px;"><li><b>关闭</b> - 所有成员可见</li><li><b>开启</b> - 仅指定成员可见</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 使用场景：</b>内部测试、生产路由、特权工作负载等</p></div>',
         nextBtn: '下一步'
       },
       groupSubmit: {
@@ -5654,7 +5654,7 @@ export default {  // Home Page
       keyGroup: {
         title: '🎯 2. 选择分组',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">选择刚才配置好的分组。</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>📌 分组决定：</b><ul style="margin: 8px 0 0 16px;"><li>该密钥可以使用哪些账号</li><li>计费倍率是多少</li><li>是否为专属密钥</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 提示：</b>选择刚才创建的测试分组</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">选择刚才配置好的分组。</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>📌 分组决定：</b><ul style="margin: 8px 0 0 16px;"><li>该密钥可以使用哪些账号</li><li>成本统计倍率是多少</li><li>是否为专属密钥</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 提示：</b>选择刚才创建的测试分组</p></div>',
         nextBtn: '下一步'
       },
       keySubmit: {
@@ -5691,7 +5691,7 @@ export default {  // Home Page
       keyGroup: {
         title: '🎯 选择分组',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">选择管理员为您分配的服务分组。</p><p style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px;"><b>📌 分组说明：</b><br/>不同分组可能有不同的服务质量和计费标准，请根据需要选择。</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">选择管理员为您分配的服务分组。</p><p style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px;"><b>📌 分组说明：</b><br/>不同分组可能有不同的服务质量和成本倍率，请根据需要选择。</p></div>',
         nextBtn: '下一步'
       },
       keySubmit: {

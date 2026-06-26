@@ -90,7 +90,7 @@ const tierLabel = computed(() => {
 
   // API Key: 显示 AI Studio
   const tier = (creds?.tier_id || '').toString().trim().toLowerCase()
-  if (tier === 'aistudio_paid') return 'AI Studio Pay-as-you-go'
+  if (tier === 'aistudio_paid') return 'AI Studio Paid quota'
   if (tier === 'aistudio_free') return 'AI Studio Free Tier'
   return 'AI Studio'
 })

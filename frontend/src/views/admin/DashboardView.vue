@@ -305,7 +305,7 @@ import type {
   TrendDataPoint,
   ModelStat,
   UserUsageTrendPoint,
-  UserSpendingRankingItem
+  UserCostRankingItem
 } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -351,7 +351,7 @@ const rankingError = ref(false)
 const trendData = ref<TrendDataPoint[]>([])
 const modelStats = ref<ModelStat[]>([])
 const userTrend = ref<UserUsageTrendPoint[]>([])
-const rankingItems = ref<UserSpendingRankingItem[]>([])
+const rankingItems = ref<UserCostRankingItem[]>([])
 const rankingTotalActualCost = ref(0)
 const rankingTotalRequests = ref(0)
 const rankingTotalTokens = ref(0)
@@ -556,7 +556,7 @@ const formatDuration = (ms: number): string => {
   return `${Math.round(ms)}ms`
 }
 
-const goToUserUsage = (item: UserSpendingRankingItem) => {
+const goToUserUsage = (item: UserCostRankingItem) => {
   void router.push({
     path: '/admin/usage',
     query: {
@@ -647,12 +647,12 @@ const loadUsersTrend = async () => {
   }
 }
 
-const loadUserSpendingRanking = async () => {
+const loadUserCostRanking = async () => {
   const currentSeq = ++rankingLoadSeq
   rankingLoading.value = true
   rankingError.value = false
   try {
-    const response = await adminAPI.dashboard.getUserSpendingRanking({
+    const response = await adminAPI.dashboard.getUserCostRanking({
       start_date: startDate.value,
       end_date: endDate.value,
       limit: rankingLimit
@@ -664,7 +664,7 @@ const loadUserSpendingRanking = async () => {
     rankingTotalTokens.value = response.total_tokens || 0
   } catch (error) {
     if (currentSeq !== rankingLoadSeq) return
-    console.error('Error loading user spending ranking:', error)
+    console.error('Error loading user cost ranking:', error)
     rankingItems.value = []
     rankingTotalActualCost.value = 0
     rankingTotalRequests.value = 0
@@ -681,7 +681,7 @@ const loadDashboardStats = async () => {
   await Promise.all([
     loadDashboardSnapshot(true),
     loadUsersTrend(),
-    loadUserSpendingRanking()
+    loadUserCostRanking()
   ])
 }
 
@@ -689,7 +689,7 @@ const loadChartData = async () => {
   await Promise.all([
     loadDashboardSnapshot(false),
     loadUsersTrend(),
-    loadUserSpendingRanking()
+    loadUserCostRanking()
   ])
 }
 

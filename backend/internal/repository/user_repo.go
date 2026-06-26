@@ -411,7 +411,7 @@ func (r *userRepository) List(ctx context.Context, params pagination.PaginationP
 }
 
 func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.PaginationParams, filters service.UserListFilters) ([]service.User, *pagination.PaginationResult, error) {
-	// SkipSoftDelete 仅作用于 User 身份解析（下方 Count/All）；订阅、分组等关联实体沿用原始 ctx，避免穿透到这些同样带软删除的实体而带出已删除行。
+	// SkipSoftDelete 仅作用于 User 身份解析（下方 Count/All）；分组等关联实体沿用原始 ctx，避免穿透到这些同样带软删除的实体而带出已删除行。
 	userCtx := ctx
 	if filters.IncludeDeleted {
 		userCtx = mixins.SkipSoftDelete(ctx)

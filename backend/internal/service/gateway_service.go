@@ -119,7 +119,7 @@ var (
 	// Deprecated: flusher_enabled=true 后不再增长(仅 flag=false 降级直写路径使用);新主路径见 FlusherMetrics。remove after 2026-09。
 	// userPlatformQuotaDBIncrErrorTotal 统计 finalizePostUsageBilling 异步 goroutine
 	// 中 IncrementUsageWithReset 失败次数。Redis 已成功累加 + DB 写失败意味着
-	// Redis cache TTL 过期或被清后该笔 cost 会丢失（与实际消费偏差）。
+	// Redis cache TTL 过期或被清后该笔 cost 会丢失（与实际成本归因偏差）。
 	// oncall 通过 GatewayUserPlatformQuotaIncrStats() 暴露给 ops 面板做阈值告警。
 	userPlatformQuotaDBIncrErrorTotal atomic.Int64
 	// Deprecated: flusher_enabled=true 后不再增长(仅 flag=false 降级直写路径使用);新主路径见 FlusherMetrics。remove after 2026-09。
@@ -8835,7 +8835,7 @@ type usageLogBestEffortWriter interface {
 	CreateBestEffort(ctx context.Context, log *UsageLog) error
 }
 
-// postUsageBillingParams 统一扣费所需的参数
+// postUsageBillingParams 统一用量成本更新所需的参数
 type postUsageBillingParams struct {
 	Cost                  *CostBreakdown
 	User                  *User
@@ -8913,10 +8913,10 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 
 	// Platform quota 累加（legacy 兜底路径）：仅对有 limit 的用户写
 	//   - HasUserPlatformQuotaLimit 守卫:与正常路径对齐，无 limit 公司跳过
-	//   - 新增 Redis 同步写:enforcement 走 Redis，legacy 路径也必须同步写，否则 preflight 看不到消费
+	//   - 新增 Redis 同步写:enforcement 走 Redis，legacy 路径也必须同步写，否则 preflight 看不到已用额度
 	//   - flusher_enabled=false（降级）:保留原有同步直写 DB
 	//   - flusher_enabled=true:跳过直写 DB，由 flusher 异步批量刷（markDirty 在 IncrementUserPlatformQuotaUsage 内部完成）
-	//   - 失败仅记 ALERT log + counter，不阻断主扣费流程
+	//   - 失败仅记 ALERT log + counter，不阻断主成本记录流程
 	if p.Platform != "" && cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil {
 		if deps.billingCacheService.HasUserPlatformQuotaLimit(billingCtx, p.User.ID, p.Platform) {
 			deps.billingCacheService.IncrementUserPlatformQuotaUsage(p.User.ID, p.Platform, cost.ActualCost)
@@ -9079,7 +9079,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 						// 失败计数器:暴露给 GatewayUserPlatformQuotaIncrStats(),由 ops 面板做斜率告警。
 						userPlatformQuotaDBIncrErrorTotal.Add(1)
 						// ALERT 级别:DB 持久化失败意味着 Redis cache 失效后该笔 cost 永久丢失,
-						// 用户配额视图与实际消费会偏差,oncall 需要据此对账或人工补录。
+						// 用户配额视图与实际成本归因会偏差,oncall 需要据此对账或人工补录。
 						logger.LegacyPrintf("service.gateway", "ALERT: incr user platform quota DB failed user=%d platform=%s cost=%f: %v", userID, platform, cost, err)
 					}
 				}()
@@ -9115,7 +9115,7 @@ func detachUpstreamContext(ctx context.Context) (context.Context, context.Cancel
 	return context.WithoutCancel(ctx), func() {}
 }
 
-// billingDeps 扣费逻辑依赖的服务（由各 gateway service 提供）
+// billingDeps 成本归因逻辑依赖的服务（由各 gateway service 提供）
 type billingDeps struct {
 	accountRepo           AccountRepository
 	userRepo              UserRepository
@@ -9207,7 +9207,7 @@ type RecordUsageLongContextInput struct {
 	ChannelUsageFields // 渠道映射信息（由 handler 在 Forward 前解析）
 }
 
-// RecordUsageWithLongContext 记录使用量并扣费，支持长上下文双倍计费（用于 Gemini）
+// RecordUsageWithLongContext 记录使用量和成本，支持长上下文双倍成本估算（用于 Gemini）
 func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *RecordUsageLongContextInput) error {
 	return s.recordUsageCore(ctx, &recordUsageCoreInput{
 		Result:             input.Result,

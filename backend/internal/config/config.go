@@ -333,7 +333,7 @@ type ProxyProbeConfig struct {
 type BillingConfig struct {
 	CircuitBreaker CircuitBreakerConfig `mapstructure:"circuit_breaker"`
 	// UserPlatformQuotaCacheTTLSeconds 用户 × 平台 quota 缓存 TTL（秒），默认 86400=1天，覆盖典型 daily 窗口。
-	// 消费点：
+	// 使用点：
 	//   - billing_cache_service.cacheWriteWorker 异步累加
 	//   - billing_cache_service.checkUserPlatformQuotaEligibility 首次缓存装载
 	// 读写两端必须共用同一 TTL，避免缓存生命周期不一致导致 quota 计数漂移。

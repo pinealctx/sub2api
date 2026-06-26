@@ -101,7 +101,7 @@ func (h *DashboardHandler) GetStats(c *gin.Context) {
 		"total_cache_read_tokens":     stats.TotalCacheReadTokens,
 		"total_tokens":                stats.TotalTokens,
 		"total_cost":                  stats.TotalCost,       // 标准计费
-		"total_actual_cost":           stats.TotalActualCost, // 实际扣除
+		"total_actual_cost":           stats.TotalActualCost, // 实际估算
 
 		// 今日 Token 使用统计
 		"today_requests":              stats.TodayRequests,
@@ -111,7 +111,7 @@ func (h *DashboardHandler) GetStats(c *gin.Context) {
 		"today_cache_read_tokens":     stats.TodayCacheReadTokens,
 		"today_tokens":                stats.TodayTokens,
 		"today_cost":                  stats.TodayCost,       // 今日标准计费
-		"today_actual_cost":           stats.TodayActualCost, // 今日实际扣除
+		"today_actual_cost":           stats.TodayActualCost, // 今日实际估算
 
 		// 系统运行统计
 		"average_duration_ms": stats.AverageDurationMs,
@@ -460,9 +460,9 @@ func parseRankingLimit(raw string) int {
 	return limit
 }
 
-// GetUserSpendingRanking handles getting user spending ranking data.
+// GetUserCostRanking handles getting user cost ranking data.
 // GET /api/v1/admin/dashboard/users-ranking
-func (h *DashboardHandler) GetUserSpendingRanking(c *gin.Context) {
+func (h *DashboardHandler) GetUserCostRanking(c *gin.Context) {
 	startTime, endTime := parseTimeRange(c)
 	limit := parseRankingLimit(c.DefaultQuery("limit", "12"))
 
@@ -482,9 +482,9 @@ func (h *DashboardHandler) GetUserSpendingRanking(c *gin.Context) {
 		return
 	}
 
-	ranking, err := h.dashboardService.GetUserSpendingRanking(c.Request.Context(), startTime, endTime, limit)
+	ranking, err := h.dashboardService.GetUserCostRanking(c.Request.Context(), startTime, endTime, limit)
 	if err != nil {
-		response.Error(c, 500, "Failed to get user spending ranking")
+		response.Error(c, 500, "Failed to get user cost ranking")
 		return
 	}
 

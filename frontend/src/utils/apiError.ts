@@ -63,7 +63,7 @@ function tryTranslate(t: TranslateFn, key: string, fallback: string): string {
 /**
  * Replace raw config field names in metadata (e.g. "certSerial") with their
  * localized UI labels (e.g. "证书序列号"), using the provider-config field i18n namespace.
- * Handles both single `key` and `/`-joined `keys` patterns used by wxpay errors.
+ * Handles both single `key` and `/`-joined `keys` patterns used by config validation errors.
  */
 function localizeMetadata(
   metadata: Record<string, unknown>,

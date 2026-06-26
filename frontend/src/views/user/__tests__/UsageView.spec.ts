@@ -29,7 +29,7 @@ const messages: Record<string, string> = {
   'usage.serviceTierStandard': 'Standard',
   'usage.rate': 'Rate',
   'usage.original': 'Original',
-  'usage.billed': 'Billed',
+  'usage.billed': 'Costed',
   'usage.allApiKeys': 'All API Keys',
   'usage.apiKeyFilter': 'API Key',
   'usage.model': 'Model',
@@ -43,14 +43,14 @@ const messages: Record<string, string> = {
   'usage.userAgent': 'User Agent',
   'usage.imageUnit': ' images',
   'usage.imageCount': 'Image count',
-  'usage.imageBillingSize': 'Billing size',
+  'usage.imageBillingSize': 'Pricing size',
   'usage.imageInputSize': 'Input size',
   'usage.imageOutputSize': 'Output size',
   'usage.imageSizeSource': 'Size source',
   'usage.imageSizeBreakdown': 'Size breakdown',
   'usage.imageSizeSourceOutput': 'Upstream output',
   'usage.imageSizeSourceInput': 'Request input',
-  'usage.imageSizeSourceDefault': 'Default billing tier',
+  'usage.imageSizeSourceDefault': 'Default pricing tier',
   'usage.imageSizeSourceLegacy': 'Legacy record',
   'usage.imageSizeSourceMissing': 'Not recorded',
   'usage.imageSizeNotRecorded': 'not recorded',
@@ -210,7 +210,7 @@ describe('user UsageView tooltip', () => {
     expect(text).toContain('Fast')
     expect(text).toContain('Rate')
     expect(text).toContain('1.00x')
-    expect(text).toContain('Billed')
+    expect(text).toContain('Costed')
     expect(text).toContain('$0.092883')
     expect(text).toContain('$5.0000 / 1M tokens')
     expect(text).toContain('$30.0000 / 1M tokens')
@@ -309,7 +309,7 @@ describe('user UsageView tooltip', () => {
     clickSpy.mockRestore()
   })
 
-  it('exports historical image rows with image billing mode derived from image_count', async () => {
+  it('exports historical image rows with image cost mode derived from image_count', async () => {
     const exportedLogs = [
       {
         request_id: 'req-user-export-legacy-image',
@@ -390,7 +390,7 @@ describe('user UsageView tooltip', () => {
       reader.onerror = () => reject(reader.error)
       reader.readAsText(exportedBlob as Blob)
     })
-    expect(csv).toContain('Billing Mode')
+    expect(csv).toContain('Cost Mode')
     expect(csv).toContain('Image')
     expect(csv).not.toContain(',Token,0,0,0,0,')
 
@@ -467,7 +467,7 @@ describe('user UsageView tooltip', () => {
     expect(text).not.toContain('(2K)')
   })
 
-  it('shows image billing metadata in the user cost tooltip', async () => {
+  it('shows image cost metadata in the user cost tooltip', async () => {
     query.mockResolvedValue({
       items: [],
       total: 0,
@@ -527,7 +527,7 @@ describe('user UsageView tooltip', () => {
 
     const text = wrapper.text()
     expect(text).toContain('Image count')
-    expect(text).toContain('Billing size')
+    expect(text).toContain('Pricing size')
     expect(text).toContain('4K')
     expect(text).toContain('Size source')
     expect(text).toContain('Upstream output')

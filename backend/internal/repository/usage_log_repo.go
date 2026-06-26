@@ -2223,9 +2223,9 @@ type ModelStat = usagestats.ModelStat
 // UserUsageTrendPoint represents user usage trend data point
 type UserUsageTrendPoint = usagestats.UserUsageTrendPoint
 
-// UserSpendingRankingItem represents a user spending ranking row.
-type UserSpendingRankingItem = usagestats.UserSpendingRankingItem
-type UserSpendingRankingResponse = usagestats.UserSpendingRankingResponse
+// UserCostRankingItem represents a user cost ranking row.
+type UserCostRankingItem = usagestats.UserCostRankingItem
+type UserCostRankingResponse = usagestats.UserCostRankingResponse
 
 // APIKeyUsageTrendPoint represents API key usage trend data point
 type APIKeyUsageTrendPoint = usagestats.APIKeyUsageTrendPoint
@@ -2343,14 +2343,14 @@ func (r *usageLogRepository) GetUserUsageTrend(ctx context.Context, startTime, e
 	return results, nil
 }
 
-// GetUserSpendingRanking returns user spending ranking aggregated within the time range.
-func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTime, endTime time.Time, limit int) (result *UserSpendingRankingResponse, err error) {
+// GetUserCostRanking returns user cost ranking aggregated within the time range.
+func (r *usageLogRepository) GetUserCostRanking(ctx context.Context, startTime, endTime time.Time, limit int) (result *UserCostRankingResponse, err error) {
 	if limit <= 0 {
 		limit = 12
 	}
 
 	query := `
-		WITH user_spend AS (
+		WITH user_cost AS (
 			SELECT
 				u.user_id,
 				COALESCE(us.email, '') as email,
@@ -2372,7 +2372,7 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 				COALESCE(SUM(actual_cost) OVER (), 0) as total_actual_cost,
 				COALESCE(SUM(requests) OVER (), 0) as total_requests,
 				COALESCE(SUM(tokens) OVER (), 0) as total_tokens
-			FROM user_spend
+			FROM user_cost
 			ORDER BY actual_cost DESC, tokens DESC, user_id ASC
 			LIMIT $3
 		)
@@ -2400,12 +2400,12 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 		}
 	}()
 
-	ranking := make([]UserSpendingRankingItem, 0)
+	ranking := make([]UserCostRankingItem, 0)
 	totalActualCost := 0.0
 	totalRequests := int64(0)
 	totalTokens := int64(0)
 	for rows.Next() {
-		var row UserSpendingRankingItem
+		var row UserCostRankingItem
 		if err = rows.Scan(&row.UserID, &row.Email, &row.ActualCost, &row.Requests, &row.Tokens, &totalActualCost, &totalRequests, &totalTokens); err != nil {
 			return nil, err
 		}
@@ -2415,7 +2415,7 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 		return nil, err
 	}
 
-	return &UserSpendingRankingResponse{
+	return &UserCostRankingResponse{
 		Ranking:         ranking,
 		TotalActualCost: totalActualCost,
 		TotalRequests:   totalRequests,

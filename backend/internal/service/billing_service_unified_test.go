@@ -168,7 +168,7 @@ func TestCalculateCostUnified_RateMultiplierZeroProducesZero(t *testing.T) {
 }
 
 // TestCalculateCostUnified_NegativeRateMultiplierClampedToZero 锁定新行为：
-// 负数倍率按 0 计费，避免历史的 <=0 → 1.0 把配置异常静默按标准价扣费。
+// 负数倍率按 0 计成本，避免历史的 <=0 → 1.0 把配置异常静默按标准价记录成本。
 func TestCalculateCostUnified_NegativeRateMultiplierClampedToZero(t *testing.T) {
 	bs := newTestBillingService()
 	resolver := NewModelPricingResolver(nil, bs)

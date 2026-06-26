@@ -501,7 +501,7 @@ func TestUsageLogRepositoryGetStatsWithFiltersAlwaysReturnsAccountCost(t *testin
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUsageLogRepositoryGetUserSpendingRanking(t *testing.T) {
+func TestUsageLogRepositoryGetUserCostRanking(t *testing.T) {
 	db, mock := newSQLMock(t)
 	repo := &usageLogRepository{sql: db}
 
@@ -513,14 +513,14 @@ func TestUsageLogRepositoryGetUserSpendingRanking(t *testing.T) {
 		AddRow(int64(1), "alpha@example.com", 12.5, int64(8), int64(800), 40.0, int64(30), int64(2600)).
 		AddRow(int64(3), "gamma@example.com", 4.25, int64(5), int64(300), 40.0, int64(30), int64(2600))
 
-	mock.ExpectQuery("WITH user_spend AS \\(").
+	mock.ExpectQuery("WITH user_cost AS \\(").
 		WithArgs(start, end, 12).
 		WillReturnRows(rows)
 
-	got, err := repo.GetUserSpendingRanking(context.Background(), start, end, 12)
+	got, err := repo.GetUserCostRanking(context.Background(), start, end, 12)
 	require.NoError(t, err)
-	require.Equal(t, &usagestats.UserSpendingRankingResponse{
-		Ranking: []usagestats.UserSpendingRankingItem{
+	require.Equal(t, &usagestats.UserCostRankingResponse{
+		Ranking: []usagestats.UserCostRankingItem{
 			{UserID: 2, Email: "beta@example.com", ActualCost: 12.5, Requests: 9, Tokens: 900},
 			{UserID: 1, Email: "alpha@example.com", ActualCost: 12.5, Requests: 8, Tokens: 800},
 			{UserID: 3, Email: "gamma@example.com", ActualCost: 4.25, Requests: 5, Tokens: 300},

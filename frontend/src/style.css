@@ -114,13 +114,6 @@
     @apply dark:shadow-amber-500/20;
   }
 
-  .btn-wxpay {
-    @apply bg-[#2BB741] text-white shadow-md shadow-[#2BB741]/25;
-    @apply hover:bg-[#24a038] hover:shadow-lg hover:shadow-[#2BB741]/30;
-    @apply active:bg-[#1d8a2f];
-    @apply dark:shadow-[#2BB741]/20;
-  }
-
   .btn-sm {
     @apply rounded-lg px-3 py-1.5 text-xs;
   }

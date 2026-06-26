@@ -1470,7 +1470,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 						return
 					}
 					// cyber 命中时该 turn 的用量已由 recordCyberPolicyIfMarked(forwardErrored=true)
-					// 按真实 token 记录，这里不再走下方 RecordUsage，避免对同一 turn 双写/双扣费。
+					// 按真实 token 记录，这里不再走下方 RecordUsage，避免对同一 turn 双写成本。
 					if service.GetOpsCyberPolicy(c) != nil {
 						return
 					}

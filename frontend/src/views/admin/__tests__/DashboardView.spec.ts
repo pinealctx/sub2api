@@ -4,10 +4,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { DashboardStats } from '@/types'
 import DashboardView from '../DashboardView.vue'
 
-const { getSnapshotV2, getUserUsageTrend, getUserSpendingRanking } = vi.hoisted(() => ({
+const { getSnapshotV2, getUserUsageTrend, getUserCostRanking } = vi.hoisted(() => ({
   getSnapshotV2: vi.fn(),
   getUserUsageTrend: vi.fn(),
-  getUserSpendingRanking: vi.fn()
+  getUserCostRanking: vi.fn()
 }))
 
 vi.mock('@/api/admin', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/api/admin', () => ({
     dashboard: {
       getSnapshotV2,
       getUserUsageTrend,
-      getUserSpendingRanking
+      getUserCostRanking
     }
   }
 }))
@@ -89,7 +89,7 @@ describe('admin DashboardView', () => {
   beforeEach(() => {
     getSnapshotV2.mockReset()
     getUserUsageTrend.mockReset()
-    getUserSpendingRanking.mockReset()
+    getUserCostRanking.mockReset()
 
     getSnapshotV2.mockResolvedValue({
       stats: createDashboardStats(),
@@ -102,7 +102,7 @@ describe('admin DashboardView', () => {
       end_date: '',
       granularity: 'hour'
     })
-    getUserSpendingRanking.mockResolvedValue({
+    getUserCostRanking.mockResolvedValue({
       ranking: [],
       total_actual_cost: 0,
       total_requests: 0,

@@ -64,8 +64,8 @@ func TestRecordCyberPolicyUsageLog_BillsRealUpstreamTokens(t *testing.T) {
 	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, nil)
 	usage := OpenAIUsage{InputTokens: 1200, OutputTokens: 300}
 
-	// 流式 cyber：上游 response.failed 报告了真实 token，须按真实 token 计费并扣费，
-	// 与 WS cyber / 正常请求口径一致（不再是 tokens=0 免费行）。
+	// 流式 cyber：上游 response.failed 报告了真实 token，须按真实 token 记录成本，
+	// 与 WS cyber / 正常请求口径一致（不再是 tokens=0 的占位行）。
 	svc.RecordCyberPolicyUsageLog(context.Background(), CyberPolicyUsageInput{
 		APIKey:       &APIKey{ID: 2, User: &User{ID: 1}},
 		Account:      &Account{ID: 3},
@@ -120,7 +120,7 @@ func TestRecordCyberPolicyUsageLog_SkipsWhenIncomplete(t *testing.T) {
 	svc.RecordCyberPolicyUsageLog(context.Background(), CyberPolicyUsageInput{APIKey: &APIKey{ID: 2}, Account: acct, Model: "gpt-5"})      // User nil
 	svc.RecordCyberPolicyUsageLog(context.Background(), CyberPolicyUsageInput{APIKey: &APIKey{ID: 2, User: &User{ID: 1}}, Model: "gpt-5"}) // Account nil
 	svc.RecordCyberPolicyUsageLog(context.Background(), CyberPolicyUsageInput{APIKey: &APIKey{ID: 2, User: &User{ID: 1}}, Account: acct})  // Model 空
-	require.Equal(t, 0, usageRepo.calls, "APIKey/User/Account 缺失或 Model 空时跳过，不记不扣费")
+	require.Equal(t, 0, usageRepo.calls, "APIKey/User/Account 缺失或 Model 空时跳过，不记录用量/成本")
 }
 
 type openAIRecordUsageUserRepoStub struct {

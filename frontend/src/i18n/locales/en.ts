@@ -33,7 +33,7 @@ export default {  // Home Page
   // Key Usage Query Page
   keyUsage: {
     title: 'API Key Usage',
-    subtitle: 'Enter your API Key to view real-time spending and usage status',
+    subtitle: 'Enter your API Key to view real-time estimated cost and usage status',
     placeholder: 'sk-ant-mirror-xxxxxxxxxxxx',
     query: 'Query',
     querying: 'Querying...',
@@ -92,7 +92,7 @@ export default {  // Home Page
     totalTokensLabel: 'Total Tokens',
     totalCacheCreation: 'Total Cache Creation',
     totalCacheRead: 'Total Cache Read',
-    totalCost: 'Total Cost',
+    totalCost: 'Total Estimated Cost',
     avgDuration: 'Avg Duration',
     // Messages
     enterApiKey: 'Please enter an API Key',
@@ -573,7 +573,7 @@ export default {  // Home Page
     rateLimit5h: '5-Hour Limit (USD)',
     rateLimit1d: 'Daily Limit (USD)',
     rateLimit7d: '7-Day Limit (USD)',
-    rateLimitHint: 'Set the maximum spending for this key within each time window. 0 = unlimited.',
+    rateLimitHint: 'Set the maximum estimated cost for this key within each time window. 0 = unlimited.',
     rateLimitUsage: 'Rate Limit Usage',
     resetRateLimitUsage: 'Reset Rate Limit Usage',
     resetRateLimitTitle: 'Confirm Reset Rate Limit',
@@ -606,20 +606,20 @@ export default {  // Home Page
     tokenDetails: 'Token Breakdown',
     cacheTtlOverriddenHint: 'Cache TTL Override enabled',
     cacheTtlOverriddenLabel: 'TTL Override',
-    cacheTtlOverridden5m: 'Billed as 5m',
-    cacheTtlOverridden1h: 'Billed as 1h',
+    cacheTtlOverridden5m: 'Cost attributed as 5m',
+    cacheTtlOverridden1h: 'Cost attributed as 1h',
     totalRequests: 'Total Requests',
     totalTokens: 'Total Tokens',
     cacheTotal: 'Cache',
     cacheBreakdown: 'Cache Token Breakdown',
     cacheCreationTokensLabel: 'Cache Creation',
     cacheReadTokensLabel: 'Cache Read',
-    totalCost: 'Total Cost',
-    standardCost: 'Standard',
-    actualCost: 'Actual',
+    totalCost: 'Estimated Cost',
+    standardCost: 'Baseline estimate',
+    actualCost: 'Actual estimate',
     accountCost: 'Cost',
-    userBilled: 'User billed',
-    accountBilled: 'Account billed',
+    userBilled: 'User-side cost',
+    accountBilled: 'Account-side cost',
     resetNow: 'Now',
     resetPending: 'Pending refresh',
     accountMultiplier: 'Account rate',
@@ -673,7 +673,7 @@ export default {  // Home Page
     imageUnitPrice: 'Per-image price',
     imageTotalPrice: 'Image total price',
     imageCount: 'Image count',
-    imageBillingSize: 'Billing size',
+    imageBillingSize: 'Pricing size',
     imageInputSize: 'Input size',
     imageOutputSize: 'Output size',
     imageOutputTokens: 'Image Output Tokens',
@@ -683,7 +683,7 @@ export default {  // Home Page
     imageSizeBreakdown: 'Size breakdown',
     imageSizeSourceOutput: 'Upstream output',
     imageSizeSourceInput: 'Request input',
-    imageSizeSourceDefault: 'Default billing tier',
+    imageSizeSourceDefault: 'Default pricing tier',
     imageSizeSourceLegacy: 'Legacy record',
     imageSizeSourceMissing: 'Not recorded',
     imageSizeNotRecorded: 'not recorded',
@@ -697,7 +697,7 @@ export default {  // Home Page
     serviceTierStandard: 'Standard',
     rate: 'Rate',
     original: 'Original',
-    billed: 'Billed',
+    billed: 'Costed',
     noRecords: 'No usage records found. Try adjusting your filters.',
     failedToLoad: 'Failed to load usage logs',
     noDataToExport: 'No data to export',
@@ -826,7 +826,7 @@ export default {  // Home Page
       supportedModels: 'Supported Models'
     },
     pricing: {
-      billingMode: 'Billing Mode',
+      billingMode: 'Cost Mode',
       billingModeToken: 'Per Token',
       billingModePerRequest: 'Per Request',
       billingModeImage: 'Per Image',
@@ -1075,15 +1075,15 @@ export default {  // Home Page
       noDataAvailable: 'No data available',
       recentUsage: 'Recent Usage',
       viewModelDistribution: 'Model Distribution',
-      viewSpendingRanking: 'User Spending Ranking',
-      spendingRankingTitle: 'User Spending Ranking',
-      spendingRankingUser: 'User',
-      spendingRankingRequests: 'Requests',
-      spendingRankingTokens: 'Tokens',
-      spendingRankingSpend: 'Spend',
-      spendingRankingOther: 'Others',
-      spendingRankingUsage: 'Usage',
-      spendShort: 'Spend',
+      viewCostRanking: 'User Cost Ranking',
+      costRankingTitle: 'User Cost Ranking',
+      costRankingUser: 'User',
+      costRankingRequests: 'Requests',
+      costRankingTokens: 'Tokens',
+      costRankingCost: 'Cost',
+      costRankingOther: 'Others',
+      costRankingUsage: 'Usage',
+      spendShort: 'Cost',
       requestsShort: 'Req',
       tokensShort: 'Tok',
       failedToLoad: 'Failed to load dashboard statistics'
@@ -1691,7 +1691,7 @@ export default {  // Home Page
         title: 'What is an exclusive group?',
         description: 'When enabled, users cannot see this group when creating API Keys. Only after an admin manually assigns a user to this group can they use it.',
         example: 'Use case:',
-        exampleContent: 'Public group rate is 0.8. Create an exclusive group with 0.7 rate, manually assign VIP users to give them better pricing.'
+        exampleContent: 'Public group multiplier is 1.0. Create an exclusive group with 0.7 rate for test users, cost attribution, or staged routing.'
       },
       noGroupsYet: 'No groups yet',
       createFirstGroup: 'Create your first group to organize API keys.',
@@ -1749,7 +1749,7 @@ export default {  // Home Page
         allowImageGeneration: 'Allow image generation for this group',
         independentMultiplier: 'Use independent image multiplier',
         imageMultiplier: 'Image multiplier',
-        modeHint: 'By default, image billing uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
+        modeHint: 'By default, image cost uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
         finalPricePreview: 'Final per-image price preview',
         notConfigured: 'Not configured'
       },
@@ -1835,7 +1835,7 @@ export default {  // Home Page
           'When enabled, for Claude models without upstream cache-write usage, the system deterministically maps tokens to a small input plus 1h cache creation while keeping total tokens unchanged.',
         enabled: 'Enabled (simulate 1h cache)',
         disabled: 'Disabled',
-        hint: 'Only token categories in usage billing logs are adjusted. No per-request mapping state is persisted.'
+        hint: 'Only token categories in usage cost logs are adjusted. No per-request mapping state is persisted.'
       },
       supportedScopes: {
         title: 'Supported Model Families',
@@ -1855,7 +1855,7 @@ export default {  // Home Page
       columns: {
         name: 'Channel',
         status: 'Status',
-        billingSource: 'Billing Model Source',
+        billingSource: 'Cost Model Source',
         groups: 'Linked Groups',
         supportedModels: 'Supported Models'
       },
@@ -1871,7 +1871,7 @@ export default {  // Home Page
         channel_mapped: 'Channel-mapped model'
       },
       pricing: {
-        billingMode: 'Billing Mode',
+        billingMode: 'Cost Mode',
         billingModeToken: 'Per Token',
         billingModePerRequest: 'Per Request',
         billingModeImage: 'Per Image',
@@ -1941,7 +1941,7 @@ export default {  // Home Page
         models: 'Models',
         modelsPlaceholder: 'Type full model name and press Enter',
         modelInputHint: 'Press Enter to add, supports paste for batch import.',
-        billingMode: 'Billing Mode',
+        billingMode: 'Cost Mode',
         defaultPrices: 'Default prices (fallback when no interval matches)',
         inputPrice: 'Input',
         outputPrice: 'Output',
@@ -1958,7 +1958,7 @@ export default {  // Home Page
         noTiersYet: 'No tiers yet. Click add to configure per-request pricing.',
         noPricingRules: 'No pricing rules yet. Click "Add" to create one.',
         perRequestPrice: 'Price per Request',
-        perRequestPriceRequired: 'Per-request price or billing tiers required for per-request/image billing mode',
+        perRequestPriceRequired: 'Per-request price or cost tiers required for per-request/image cost mode',
         tierLabel: 'Tier',
         resolution: 'Resolution',
         modelMapping: 'Model Mapping',
@@ -1966,10 +1966,10 @@ export default {  // Home Page
         noMappingRules: 'No mapping rules. Click "Add" to create one.',
         mappingSource: 'Source model',
         mappingTarget: 'Target model',
-        billingModelSource: 'Billing Model',
-        billingModelSourceChannelMapped: 'Bill by channel-mapped model',
-        billingModelSourceRequested: 'Bill by requested model',
-        billingModelSourceUpstream: 'Bill by final upstream model',
+        billingModelSource: 'Cost Basis',
+        billingModelSourceChannelMapped: 'Use channel-mapped model for cost',
+        billingModelSourceRequested: 'Use requested model for cost',
+        billingModelSourceUpstream: 'Use final upstream model for cost',
         billingModelSourceHint: 'Controls which model name is used for pricing lookup',
         selectedCount: '{count} selected',
         searchGroups: 'Search groups...',
@@ -2566,7 +2566,7 @@ export default {  // Home Page
         capacity: 'Capacity',
         notes: 'Notes',
         priority: 'Priority',
-        billingRateMultiplier: 'Billing Rate',
+        billingRateMultiplier: 'Cost Rate',
         weight: 'Weight',
         status: 'Status',
         schedulable: 'Schedulable',
@@ -2665,7 +2665,7 @@ export default {  // Home Page
       resetQuota: 'Reset Quota',
       quotaLimit: 'Quota Limit',
       quotaLimitPlaceholder: '0 means unlimited',
-      quotaLimitHint: 'Set daily/weekly/total spending limits (USD). Anthropic API key accounts can also configure client affinity. Changing limits won\'t reset usage.',
+      quotaLimitHint: 'Set daily/weekly/total estimated cost limits (USD). Anthropic API key accounts can also configure client affinity. Changing limits won\'t reset usage.',
       quotaLimitToggle: 'Enable Quota Limit',
       quotaLimitToggleHint: 'When enabled, account will be paused when usage reaches the set limit',
       quotaDailyLimit: 'Daily Limit',
@@ -2673,7 +2673,7 @@ export default {  // Home Page
       quotaWeeklyLimit: 'Weekly Limit',
       quotaWeeklyLimitHint: 'Automatically resets every 7 days from first usage.',
       quotaTotalLimit: 'Total Limit',
-      quotaTotalLimitHint: 'Cumulative spending limit. Does not auto-reset — use "Reset Quota" to clear.',
+      quotaTotalLimitHint: 'Cumulative estimated cost limit. Does not auto-reset — use "Reset Quota" to clear.',
       quotaResetMode: 'Reset Mode',
       quotaResetModeRolling: 'Rolling Window',
       quotaResetModeFixed: 'Fixed Time',
@@ -2692,7 +2692,7 @@ export default {  // Home Page
         sunday: 'Sunday',
       },
       quotaLimitAmount: 'Total Limit',
-      quotaLimitAmountHint: 'Cumulative spending limit. Does not auto-reset.',
+      quotaLimitAmountHint: 'Cumulative estimated cost limit. Does not auto-reset.',
       quotaNotify: {
         alert: 'Alert',
         enabled: 'Enable Alert',
@@ -2805,7 +2805,7 @@ export default {  // Home Page
         apiKeyHint: 'Your OpenAI API Key',
         oauthPassthrough: 'Auto passthrough (auth only)',
         oauthPassthroughDesc:
-          'When enabled, this OpenAI account uses automatic passthrough: the gateway forwards request/response as-is and only swaps auth, while keeping billing/concurrency/audit and necessary safety filtering.',
+          'When enabled, this OpenAI account uses automatic passthrough: the gateway forwards request/response as-is and only swaps auth, while keeping cost tracking/concurrency/audit and necessary safety filtering.',
         responsesWebsocketsV2: 'Responses WebSocket v2',
         responsesWebsocketsV2Desc:
           'Disabled by default. Enable to allow responses_websockets_v2 capability (still gated by global and account-type switches).',
@@ -2889,7 +2889,7 @@ export default {  // Home Page
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',
         apiKeyPassthroughDesc:
-          'Only applies to Anthropic API Key accounts. When enabled, messages/count_tokens are forwarded in passthrough mode with auth replacement only, while billing/concurrency/audit and safety filtering are preserved. Disable to roll back immediately.',
+          'Only applies to Anthropic API Key accounts. When enabled, messages/count_tokens are forwarded in passthrough mode with auth replacement only, while cost tracking/concurrency/audit and safety filtering are preserved. Disable to roll back immediately.',
         webSearchEmulation: 'Web Search Emulation',
         webSearchEmulationDesc:
           'Enable web search emulation for this API Key account. When a pure web_search request is detected, the gateway calls a third-party search API and constructs the response locally. Default follows channel config.',
@@ -3018,9 +3018,9 @@ export default {  // Home Page
         },
         cacheTTLOverride: {
           label: 'Cache TTL Override',
-          hint: 'Force all cache creation tokens to be billed as the selected TTL tier (5m or 1h)',
+          hint: 'Attribute all cache creation tokens to the selected TTL tier (5m or 1h)',
           target: 'Target TTL',
-          targetHint: 'Select the TTL tier for billing'
+          targetHint: 'Select the TTL tier for cost attribution'
         },
         customBaseUrl: {
           label: 'Custom Relay URL',
@@ -3054,8 +3054,8 @@ export default {  // Home Page
       loadFactorHint: 'Higher load factor increases scheduling frequency',
       priority: 'Priority',
       priorityHint: 'Lower value accounts are used first',
-      billingRateMultiplier: 'Billing Rate Multiplier',
-      billingRateMultiplierHint: '0 = free, affects account billing only',
+      billingRateMultiplier: 'Account Cost Multiplier',
+      billingRateMultiplierHint: '0 = cost is recorded as 0; affects account cost stats only',
       expiresAt: 'Expires At',
       expiresAtHint: 'Leave empty for no expiration',
       higherPriorityFirst: 'Lower value means higher priority',
@@ -3310,7 +3310,7 @@ export default {  // Home Page
           label: 'Account Tier',
           hint: 'Tip: The system will try to auto-detect the tier first; if auto-detection is unavailable or fails, your selected tier is used as a fallback (simulated quota).',
           aiStudioHint:
-            'AI Studio quotas are per-model (Pro/Flash are limited independently). If billing is enabled, choose Pay-as-you-go.',
+            'AI Studio quotas are per-model (Pro/Flash are limited independently). If paid quota is enabled upstream, choose Paid quota.',
           googleOne: {
             free: 'Google One Free',
             pro: 'Google One Pro',
@@ -3322,7 +3322,7 @@ export default {  // Home Page
           },
           aiStudio: {
             free: 'Google AI Free',
-            paid: 'Google AI Pay-as-you-go'
+            paid: 'Google AI Paid quota'
           }
         },
         accountType: {
@@ -3410,15 +3410,15 @@ export default {  // Home Page
             },
             aiStudio: {
               channel: 'AI Studio API Key / OAuth',
-              free: 'No billing (free tier)',
-              paid: 'Billing enabled (pay-as-you-go)',
+              free: 'Free tier quota',
+              paid: 'Paid quota enabled',
               limitsFree: 'RPD 50; RPM 2 (Pro) / 15 (Flash)',
               limitsPaid: 'RPD unlimited; RPM 1000 (Pro) / 2000 (Flash) (per model)'
             },
             customOAuth: {
               channel: 'Custom OAuth Client (GCP)',
-              free: 'Project not billed',
-              paid: 'Project billed',
+              free: 'Free project quota',
+              paid: 'Project quota enabled',
               limitsFree: 'RPD 50; RPM 2 (project quota)',
               limitsPaid: 'RPD unlimited; RPM 1000+ (project quota)'
             }
@@ -3475,7 +3475,7 @@ export default {  // Home Page
       stats: {
         totalCost: '30-Day Total Cost',
         accumulatedCost: 'Accumulated cost',
-        standardCost: 'Standard',
+        standardCost: 'Baseline estimate',
         totalRequests: '30-Day Total Requests',
         totalCalls: 'Total API calls',
         avgDailyCost: 'Daily Avg Cost',
@@ -3788,11 +3788,11 @@ export default {  // Home Page
       cacheCreation1hTokens: 'Cache Write',
       cacheReadTokens: 'Cache Read Tokens',
       failedToLoad: 'Failed to load usage records',
-      billingMode: 'Billing Mode',
+      billingMode: 'Cost Mode',
       billingModeToken: 'Token',
       billingModePerRequest: 'Per Request',
       billingModeImage: 'Image',
-      allBillingModes: 'All Billing Modes',
+      allBillingModes: 'All Cost Modes',
       ipAddress: 'IP',
       userDeletedBadge: 'Deleted',
       cleanup: {
@@ -5417,13 +5417,13 @@ export default {  // Home Page
     admin: {
       welcome: {
         title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is an internal AI API gateway for account pools, group-based access, API keys, and usage observability.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Define internal routing and access boundaries</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Management</b> - Generate independent API Keys for members</li><li>📊 <b>Usage Analytics</b> - Track requests, tokens, and estimated costs</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
         nextBtn: 'Start Setup 🚀',
         prevBtn: 'Skip'
       },
       groupManage: {
         title: '📦 Step 1: Group Management',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Sub2API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core internal boundary for access control and account scheduling:</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>📊 Each group can have its own cost multiplier for usage stats</li><li>👥 Access can be public or assigned to selected users</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> Create "Test", "Production", and "R&D" groups for different internal workloads</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
       },
       createGroup: {
         title: '➕ Create New Group',
@@ -5431,7 +5431,7 @@ export default {  // Home Page
       },
       groupName: {
         title: '✏️ 1. Group Name',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Give your group an easy-to-identify name.</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 Naming Suggestions:</b><ul style="margin: 8px 0 0 16px;"><li>"Test Group" - For testing</li><li>"VIP Premium" - High-quality service</li><li>"Free Trial" - Trial version</li></ul></div><p style="font-size: 13px; color: #6b7280;">Click "Next" when done</p></div>',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Give your group an easy-to-identify name.</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 Naming Suggestions:</b><ul style="margin: 8px 0 0 16px;"><li>"Test Group" - For testing</li><li>"Production Group" - Stable workloads</li><li>"R&D Group" - Internal exploration</li></ul></div><p style="font-size: 13px; color: #6b7280;">Click "Next" when done</p></div>',
         nextBtn: 'Next'
       },
       groupPlatform: {
@@ -5440,13 +5440,13 @@ export default {  // Home Page
         nextBtn: 'Next'
       },
       groupMultiplier: {
-        title: '💰 3. Rate Multiplier',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Set the billing multiplier to control user charges.</p><div style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚙️ Billing Rules:</b><ul style="margin: 8px 0 0 16px;"><li><b>1.0</b> - Original price (cost price)</li><li><b>1.5</b> - User consumes $1, charged $1.5</li><li><b>2.0</b> - User consumes $1, charged $2</li><li><b>0.8</b> - Subsidy mode (loss-making)</li></ul></div><p style="font-size: 13px; color: #6b7280;">Recommend setting test group to 1.0</p></div>',
+        title: '📊 3. Cost Multiplier',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Set the cost multiplier used for usage attribution and internal reports.</p><div style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚙️ Cost Rules:</b><ul style="margin: 8px 0 0 16px;"><li><b>1.0</b> - Use baseline estimated cost</li><li><b>1.5</b> - Attribute $1 baseline usage as $1.5</li><li><b>0</b> - Record usage but attribute cost as 0</li></ul></div><p style="font-size: 13px; color: #6b7280;">Recommend setting test group to 1.0</p></div>',
         nextBtn: 'Next'
       },
       groupExclusive: {
         title: '🔒 4. Exclusive Group (Optional)',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Control group visibility and access permissions.</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🔐 Permission Guide:</b><ul style="margin: 8px 0 0 16px;"><li><b>Off</b> - Public group, visible to all users</li><li><b>On</b> - Exclusive group, only for specified users</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Use Cases:</b> VIP exclusive, internal testing, special customers</p></div>',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Control group visibility and access permissions.</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🔐 Permission Guide:</b><ul style="margin: 8px 0 0 16px;"><li><b>Off</b> - Visible to all members</li><li><b>On</b> - Only for specified members</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Use Cases:</b> internal testing, production routing, privileged workloads</p></div>',
         nextBtn: 'Next'
       },
       groupSubmit: {
@@ -5505,7 +5505,7 @@ export default {  // Home Page
       },
       keyGroup: {
         title: '🎯 2. Select Group',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Select the group you just configured.</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>📌 Group Determines:</b><ul style="margin: 8px 0 0 16px;"><li>Which accounts this key can use</li><li>What billing multiplier applies</li><li>Whether it\'s an exclusive key</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Tip:</b> Select the test group you just created</p></div>',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Select the group you just configured.</p><div style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>📌 Group Determines:</b><ul style="margin: 8px 0 0 16px;"><li>Which accounts this key can use</li><li>Which cost multiplier is used for reporting</li><li>Whether it is restricted to assigned members</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Tip:</b> Select the test group you just created</p></div>',
         nextBtn: 'Next'
       },
       keySubmit: {
@@ -5536,7 +5536,7 @@ export default {  // Home Page
       },
       keyGroup: {
         title: '🎯 Select Group',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Select the service group assigned by the administrator.</p><p style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px;"><b>📌 Group Info:</b><br/>Different groups may have different service quality and billing rates, choose according to your needs.</p></div>',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Select the service group assigned by the administrator.</p><p style="padding: 8px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px;"><b>📌 Group Info:</b><br/>Different groups may have different service quality and cost multipliers, choose according to your needs.</p></div>',
         nextBtn: 'Next'
       },
       keySubmit: {

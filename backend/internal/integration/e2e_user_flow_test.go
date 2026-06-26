@@ -200,12 +200,10 @@ func TestAPIKeyLifecycle(t *testing.T) {
 
 		respBody, _ := io.ReadAll(resp.Body)
 
-		// 可能返回 200（成功）或 402（余额不足）或 403（无可用账户）
+		// 可能返回 200（成功）或 403（无可用账户）；内部版不因余额/订阅状态拦截。
 		switch {
 		case resp.StatusCode == 200:
 			t.Logf("✅ API Key 网关调用成功")
-		case resp.StatusCode == 402:
-			t.Logf("⚠️ 余额不足，但 API Key 认证通过")
 		case resp.StatusCode == 403:
 			t.Logf("⚠️ 无可用账户，但 API Key 认证通过")
 		default:

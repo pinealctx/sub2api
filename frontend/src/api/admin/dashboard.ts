@@ -11,7 +11,7 @@ import type {
   GroupStat,
   ApiKeyUsageTrendPoint,
   UserUsageTrendPoint,
-  UserSpendingRankingResponse,
+  UserCostRankingResponse,
   UserBreakdownItem,
   UsageRequestType
 } from '@/types'
@@ -231,7 +231,7 @@ export interface UserTrendResponse {
   granularity: string
 }
 
-export interface UserSpendingRankingParams
+export interface UserCostRankingParams
   extends Pick<TrendParams, 'start_date' | 'end_date'> {
   limit?: number
 }
@@ -249,14 +249,14 @@ export async function getUserUsageTrend(params?: UserTrendParams): Promise<UserT
 }
 
 /**
- * Get user spending ranking data
+ * Get user cost ranking data
  * @param params - Query parameters for filtering
- * @returns User spending ranking data
+ * @returns User cost ranking data
  */
-export async function getUserSpendingRanking(
-  params?: UserSpendingRankingParams
-): Promise<UserSpendingRankingResponse> {
-  const { data } = await apiClient.get<UserSpendingRankingResponse>('/admin/dashboard/users-ranking', {
+export async function getUserCostRanking(
+  params?: UserCostRankingParams
+): Promise<UserCostRankingResponse> {
+  const { data } = await apiClient.get<UserCostRankingResponse>('/admin/dashboard/users-ranking', {
     params
   })
   return data
@@ -327,7 +327,7 @@ export const dashboardAPI = {
   getSnapshotV2,
   getApiKeyUsageTrend,
   getUserUsageTrend,
-  getUserSpendingRanking,
+  getUserCostRanking,
   getBatchUsersUsage,
   getBatchApiKeysUsage
 }
