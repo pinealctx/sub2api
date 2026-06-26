@@ -838,7 +838,7 @@ CREATE TABLE IF NOT EXISTS ops_system_metrics (
     redis_conn_idle INT,
     goroutine_count INT,
     concurrency_queue_depth INT,
-    switch_count BIGINT NOT NULL DEFAULT 0
+    account_switch_count BIGINT NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_ops_system_metrics_created_at ON ops_system_metrics (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ops_system_metrics_window_time ON ops_system_metrics (window_minutes, created_at DESC);
@@ -1032,25 +1032,38 @@ CREATE INDEX IF NOT EXISTS idempotency_records_status_locked_until ON idempotenc
 CREATE TABLE IF NOT EXISTS error_passthrough_rules (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    platform VARCHAR(50) NOT NULL DEFAULT '',
-    status_code INT,
-    error_type VARCHAR(100) NOT NULL DEFAULT '',
-    message_pattern TEXT NOT NULL DEFAULT '',
-    action VARCHAR(20) NOT NULL DEFAULT 'passthrough',
-    skip_monitoring BOOLEAN NOT NULL DEFAULT FALSE,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INT NOT NULL DEFAULT 0,
+    priority INT NOT NULL DEFAULT 0,
+    error_codes JSONB,
+    keywords JSONB,
+    match_mode VARCHAR(10) NOT NULL DEFAULT 'any',
+    platforms JSONB,
+    passthrough_code BOOLEAN NOT NULL DEFAULT TRUE,
+    response_code INT,
+    passthrough_body BOOLEAN NOT NULL DEFAULT TRUE,
+    custom_message TEXT,
+    skip_monitoring BOOLEAN NOT NULL DEFAULT FALSE,
+    description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS error_passthrough_rules_enabled_sort ON error_passthrough_rules (enabled, sort_order);
+CREATE INDEX IF NOT EXISTS errorpassthroughrule_enabled ON error_passthrough_rules (enabled);
+CREATE INDEX IF NOT EXISTS errorpassthroughrule_priority ON error_passthrough_rules (priority);
 
 CREATE TABLE IF NOT EXISTS tls_fingerprint_profiles (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    fingerprint VARCHAR(100) NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    description TEXT,
+    enable_grease BOOLEAN NOT NULL DEFAULT FALSE,
+    cipher_suites JSONB,
+    curves JSONB,
+    point_formats JSONB,
+    signature_algorithms JSONB,
+    alpn_protocols JSONB,
+    supported_versions JSONB,
+    key_share_groups JSONB,
+    psk_modes JSONB,
+    extensions JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -1058,20 +1071,20 @@ CREATE TABLE IF NOT EXISTS tls_fingerprint_profiles (
 CREATE TABLE IF NOT EXISTS usage_cleanup_tasks (
     id BIGSERIAL PRIMARY KEY,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    cutoff_at TIMESTAMPTZ NOT NULL,
-    batch_size INT NOT NULL DEFAULT 10000,
+    filters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_by BIGINT NOT NULL,
     deleted_rows BIGINT NOT NULL DEFAULT 0,
     error_message TEXT,
+    canceled_by BIGINT,
+    canceled_at TIMESTAMPTZ,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
-    cancel_requested_at TIMESTAMPTZ,
-    cancel_requested_by_user_id BIGINT,
-    created_by_user_id BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS usage_cleanup_tasks_status ON usage_cleanup_tasks (status);
-CREATE INDEX IF NOT EXISTS usage_cleanup_tasks_created_at ON usage_cleanup_tasks (created_at DESC);
+CREATE INDEX IF NOT EXISTS usagecleanuptask_status_created_at ON usage_cleanup_tasks (status, created_at);
+CREATE INDEX IF NOT EXISTS usagecleanuptask_created_at ON usage_cleanup_tasks (created_at);
+CREATE INDEX IF NOT EXISTS usagecleanuptask_canceled_at ON usage_cleanup_tasks (canceled_at);
 
 CREATE TABLE IF NOT EXISTS scheduled_test_plans (
     id BIGSERIAL PRIMARY KEY,
