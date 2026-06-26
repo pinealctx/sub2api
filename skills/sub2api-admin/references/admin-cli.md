@@ -127,57 +127,6 @@ node scripts/sub2api-admin.js groups all
 node scripts/sub2api-admin.js proxies all
 ```
 
-## Redeem Codes
-
-兑换码类型包括 `balance`、`concurrency`、`subscription`、`invitation`。状态常用 `unused`、`used`、`expired`。
-
-### 只读
-
-```bash
-node scripts/sub2api-admin.js redeem-codes list --page-size 20
-node scripts/sub2api-admin.js redeem-codes list --type balance --status unused --search user@example.com
-node scripts/sub2api-admin.js redeem-codes get 123
-node scripts/sub2api-admin.js redeem-codes stats
-node scripts/sub2api-admin.js redeem-codes export --file redeem-codes.csv
-```
-
-### 生成兑换码
-
-```bash
-node scripts/sub2api-admin.js redeem-codes generate \
-  --json '{"count":1,"type":"balance","value":10}' \
-  --idempotency-key "redeem-generate-$(date +%s)"
-```
-
-订阅兑换码需要 `group_id` 和非零 `validity_days`：
-
-```bash
-node scripts/sub2api-admin.js redeem-codes generate \
-  --json '{"count":1,"type":"subscription","value":0,"group_id":2,"validity_days":30}' \
-  --idempotency-key "redeem-subscription-$(date +%s)"
-```
-
-### 创建并兑换
-
-用于支付回调或人工充值，一步完成创建兑换码并兑换到用户。生产流程必须传稳定的 `--idempotency-key`。
-
-```bash
-node scripts/sub2api-admin.js redeem-codes create-and-redeem \
-  --json '{"code":"order_123","type":"balance","value":10,"user_id":123,"notes":"manual recharge"}' \
-  --idempotency-key order-123
-```
-
-### 修改与清理
-
-写入前先 `list` 或 `get` 核对目标 ID。
-
-```bash
-node scripts/sub2api-admin.js redeem-codes batch-update --ids 123,124 --json '{"notes":"campaign A"}'
-node scripts/sub2api-admin.js redeem-codes expire 123
-node scripts/sub2api-admin.js redeem-codes delete 123
-node scripts/sub2api-admin.js redeem-codes batch-delete --ids 123,124
-```
-
 ## Error Rules And TLS Profiles
 
 对应账号页顶部“错误透传规则”和“TLS 指纹模板”。
@@ -244,16 +193,6 @@ node scripts/sub2api-admin.js api POST /admin/accounts/bulk-update \
 - `GET /api/v1/admin/accounts/antigravity/default-model-mapping`
 - `GET /api/v1/admin/groups/all`
 - `GET /api/v1/admin/proxies/all`
-- `GET /api/v1/admin/redeem-codes`
-- `GET /api/v1/admin/redeem-codes/export`
-- `GET /api/v1/admin/redeem-codes/stats`
-- `GET /api/v1/admin/redeem-codes/:id`
-- `POST /api/v1/admin/redeem-codes/generate`
-- `POST /api/v1/admin/redeem-codes/create-and-redeem`
-- `POST /api/v1/admin/redeem-codes/batch-update`
-- `POST /api/v1/admin/redeem-codes/batch-delete`
-- `POST /api/v1/admin/redeem-codes/:id/expire`
-- `DELETE /api/v1/admin/redeem-codes/:id`
 - `GET /api/v1/admin/error-passthrough-rules`
 - `GET /api/v1/admin/error-passthrough-rules/:id`
 - `POST /api/v1/admin/error-passthrough-rules`
