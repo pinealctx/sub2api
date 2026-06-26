@@ -261,7 +261,7 @@ CREATE INDEX IF NOT EXISTS pending_auth_sessions_completion_code_hash ON pending
 CREATE TABLE IF NOT EXISTS identity_adoption_decisions (
     id BIGSERIAL PRIMARY KEY,
     pending_auth_session_id BIGINT NOT NULL UNIQUE REFERENCES pending_auth_sessions(id) ON DELETE CASCADE,
-    identity_id BIGINT NOT NULL REFERENCES auth_identities(id) ON DELETE CASCADE,
+    identity_id BIGINT REFERENCES auth_identities(id) ON DELETE CASCADE,
     adopt_display_name BOOLEAN NOT NULL DEFAULT FALSE,
     adopt_avatar BOOLEAN NOT NULL DEFAULT FALSE,
     decided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -332,14 +332,23 @@ CREATE INDEX IF NOT EXISTS user_attribute_values_value ON user_attribute_values 
 CREATE TABLE IF NOT EXISTS user_platform_quotas (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    platform VARCHAR(50) NOT NULL,
-    used NUMERIC(20,8) NOT NULL DEFAULT 0,
-    limit_value NUMERIC(20,8) NOT NULL DEFAULT 0,
-    window_start TIMESTAMPTZ,
+    platform VARCHAR(32) NOT NULL,
+    daily_limit_usd NUMERIC(20,10),
+    weekly_limit_usd NUMERIC(20,10),
+    monthly_limit_usd NUMERIC(20,10),
+    daily_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    weekly_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    monthly_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    daily_window_start TIMESTAMPTZ,
+    weekly_window_start TIMESTAMPTZ,
+    monthly_window_start TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, platform)
+    deleted_at TIMESTAMPTZ
 );
+CREATE UNIQUE INDEX IF NOT EXISTS user_platform_quotas_user_id_platform_active_key
+    ON user_platform_quotas (user_id, platform) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS user_platform_quotas_user_id ON user_platform_quotas (user_id);
 CREATE INDEX IF NOT EXISTS user_platform_quotas_platform ON user_platform_quotas (platform);
 
 CREATE TABLE IF NOT EXISTS user_group_rate_multipliers (
