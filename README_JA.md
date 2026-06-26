@@ -1,6 +1,6 @@
-# Internal API Gateway
+# Nexus Relay
 
-This is an internal-maintenance fork of Sub2API for self-hosted AI API gateway operations.
+Internal-maintenance AI API gateway for self-hosted model routing, account pools, API keys, and usage observability.
 
 It keeps the core gateway, account pool, groups, proxies, API keys, usage logs, channel monitoring, ops monitoring, and the member Dashboard / Keys / Usage / Profile pages. Public SaaS and commercial self-service flows are not exposed in this fork.
 

@@ -1,9 +1,9 @@
 ---
 name: sub2api-admin
-description: Manage internal Sub2API admin APIs for accounts, groups, proxies, error passthrough rules, TLS fingerprint profiles, imports, exports, batch updates, and raw administrator API calls. Use when the user mentions Sub2API, admin API keys, account management, bulk account import/export, keeping or deleting accounts, refreshing accounts, clearing errors, CRS sync, or managing Sub2API backend settings through the admin API.
+description: Manage internal Nexus Relay admin APIs for accounts, groups, proxies, error passthrough rules, TLS fingerprint profiles, imports, exports, batch updates, and raw administrator API calls. Use when the user mentions Nexus Relay, admin API keys, account management, bulk account import/export, keeping or deleting accounts, refreshing accounts, clearing errors, CRS sync, or managing Nexus Relay backend settings through the admin API.
 ---
 
-# Sub2API Admin
+# Nexus Relay Admin
 
 Use the bundled CLI instead of ad hoc `curl`. Run examples from this skill directory.
 

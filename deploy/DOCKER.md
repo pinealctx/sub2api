@@ -1,6 +1,6 @@
-# Sub2API Docker Image
+# Nexus Relay Docker Image
 
-Sub2API is an AI API Gateway Platform for distributing and managing AI product subscription API quotas.
+Nexus Relay is an internal AI API gateway for account pools, group-based access, API keys, and usage observability.
 
 ## Quick Start
 

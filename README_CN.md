@@ -1,6 +1,6 @@
-# Internal API Gateway
+# Nexus Relay
 
-这是基于 Sub2API 的团队内部维护版 fork，用于自管 AI API 网关、账号池和用量统计。
+团队内部维护版 AI API 网关，用于自管模型路由、账号池、API Key 和用量统计。
 
 本 fork 保留核心网关、账号池、分组、代理、API Key、用量记录、渠道监控、运维监控，以及成员侧 Dashboard / Keys / Usage / Profile。公开 SaaS 和商业自助链路不再作为运行时能力暴露。
 

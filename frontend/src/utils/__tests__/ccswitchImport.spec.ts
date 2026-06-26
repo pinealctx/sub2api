@@ -17,7 +17,7 @@ describe('ccswitchImport utils', () => {
 
   const baseInput = {
     baseUrl: 'https://api.example.com',
-    providerName: 'Sub2API',
+    providerName: 'Nexus Relay',
     apiKey: 'sk-test',
     usageScript: 'return true'
   }

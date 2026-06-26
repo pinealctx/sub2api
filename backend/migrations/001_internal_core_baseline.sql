@@ -1152,7 +1152,7 @@ CREATE INDEX IF NOT EXISTS idx_content_moderation_logs_endpoint_created_at ON co
 
 INSERT INTO settings (key, value)
 VALUES
-    ('site_name', 'Internal API Gateway'),
+    ('site_name', 'Nexus Relay'),
     ('site_description', 'Internal model gateway'),
     ('auth_source_default_email_concurrency', '5'),
     ('auth_source_default_email_grant_on_signup', 'false'),

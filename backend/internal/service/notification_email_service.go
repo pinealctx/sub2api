@@ -41,7 +41,7 @@ const (
 	notificationEmailMaxSubjectLength     = 200
 	notificationEmailMaxHTMLLength        = 30000
 	notificationEmailUnsubscribeTTL       = 365 * 24 * time.Hour
-	defaultSiteName                       = "Sub2API"
+	defaultSiteName                       = "Nexus Relay"
 )
 
 var (

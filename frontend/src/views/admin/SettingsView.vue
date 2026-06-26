@@ -397,7 +397,7 @@ const form = reactive<Required<Pick<
   default_concurrency: 1,
   default_user_rpm_limit: 0,
   default_platform_quotas: normalizePlatformQuotasMap(),
-  site_name: "Internal API Gateway",
+  site_name: "Nexus Relay",
   site_logo: "",
   site_subtitle: "",
   api_base_url: "",

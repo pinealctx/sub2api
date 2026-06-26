@@ -748,7 +748,7 @@ func (s *AuthService) preparePasswordReset(ctx context.Context, email, frontendB
 	}
 
 	// Get site name
-	siteName := "Sub2API"
+	siteName := "Nexus Relay"
 	if s.settingService != nil {
 		siteName = s.settingService.GetSiteName(ctx)
 	}

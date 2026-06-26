@@ -1,4 +1,4 @@
-# Sub2API Admin Reference
+# Nexus Relay Admin Reference
 
 ## Environment
 
