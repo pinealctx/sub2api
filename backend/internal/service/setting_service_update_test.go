@@ -102,7 +102,7 @@ func TestSettingService_UpdateSettings_AccountCreationEmailSuffixWhitelist_Inval
 		AccountCreationEmailSuffixWhitelist: []string{"@invalid_domain"},
 	})
 	require.Error(t, err)
-	require.Equal(t, "INVALID_REGISTRATION_EMAIL_SUFFIX_WHITELIST", infraerrors.Reason(err))
+	require.Equal(t, "INVALID_ACCOUNT_CREATION_EMAIL_SUFFIX_WHITELIST", infraerrors.Reason(err))
 }
 
 func TestSettingService_UpdateSettings_TablePreferences(t *testing.T) {

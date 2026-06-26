@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rsa"
@@ -672,10 +673,7 @@ func (h *AuthHandler) CompleteOIDCOAuthAccountCreation(c *gin.Context) {
 		respondPendingOAuthBindingApplyError(c, err)
 		return
 	}
-	decision, err := h.ensurePendingOAuthAdoptionDecision(c, session.ID, oauthAdoptionDecisionRequest{
-		AdoptDisplayName: req.AdoptDisplayName,
-		AdoptAvatar:      req.AdoptAvatar,
-	})
+	decision, err := h.ensurePendingOAuthAdoptionDecision(c, session.ID, oauthAdoptionDecisionRequest(req))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -1113,13 +1111,21 @@ func (k oidcJWK) publicKey() (any, error) {
 		return &rsa.PublicKey{N: n, E: e}, nil
 	case "EC":
 		var curve elliptic.Curve
+		var ecdhCurve ecdh.Curve
+		var coordinateSize int
 		switch strings.TrimSpace(k.Crv) {
 		case "P-256":
 			curve = elliptic.P256()
+			ecdhCurve = ecdh.P256()
+			coordinateSize = 32
 		case "P-384":
 			curve = elliptic.P384()
+			ecdhCurve = ecdh.P384()
+			coordinateSize = 48
 		case "P-521":
 			curve = elliptic.P521()
+			ecdhCurve = ecdh.P521()
+			coordinateSize = 66
 		default:
 			return nil, fmt.Errorf("unsupported ec curve: %s", k.Crv)
 		}
@@ -1131,8 +1137,12 @@ func (k oidcJWK) publicKey() (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decode ec y: %w", err)
 		}
-		if !curve.IsOnCurve(x, y) {
-			return nil, errors.New("ec point is not on curve")
+		point, err := encodeOIDCECDHPoint(x, y, coordinateSize)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := ecdhCurve.NewPublicKey(point); err != nil {
+			return nil, fmt.Errorf("invalid ec public key: %w", err)
 		}
 		return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, nil
 	default:
@@ -1149,6 +1159,24 @@ func decodeBase64URLBigInt(raw string) (*big.Int, error) {
 		return nil, errors.New("empty value")
 	}
 	return new(big.Int).SetBytes(buf), nil
+}
+
+func encodeOIDCECDHPoint(x, y *big.Int, coordinateSize int) ([]byte, error) {
+	if x == nil || y == nil {
+		return nil, errors.New("missing ec coordinate")
+	}
+	if x.Sign() < 0 || y.Sign() < 0 {
+		return nil, errors.New("negative ec coordinate")
+	}
+	if len(x.Bytes()) > coordinateSize || len(y.Bytes()) > coordinateSize {
+		return nil, errors.New("ec coordinate is too large")
+	}
+
+	point := make([]byte, 1+coordinateSize*2)
+	point[0] = 4
+	x.FillBytes(point[1 : 1+coordinateSize])
+	y.FillBytes(point[1+coordinateSize:])
+	return point, nil
 }
 
 func containsString(values []string, target string) bool {

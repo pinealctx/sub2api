@@ -37,14 +37,6 @@ const nonTransactionalMigrationSuffix = "_notx.sql"
 const schedulerOutboxPendingDedupKeyMigration = "153_scheduler_outbox_pending_dedup_key_index_notx.sql"
 const schedulerOutboxPendingDedupKeyIndex = "idx_scheduler_outbox_pending_dedup_key"
 
-type migrationChecksumCompatibilityRule struct {
-	fileChecksum       string
-	acceptedDBChecksum map[string]struct{}
-	acceptedChecksums  map[string]struct{}
-}
-
-var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibilityRule{}
-
 // ApplyMigrations 将嵌入的 SQL 迁移文件应用到指定的数据库。
 //
 // 该函数可以在每次应用启动时安全调用：
@@ -136,10 +128,6 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 		if rowErr == nil {
 			// 迁移已应用，验证校验和是否匹配
 			if existing != checksum {
-				// 兼容特定历史误改场景（仅白名单规则），其余仍保持严格不可变约束。
-				if isMigrationChecksumCompatible(name, existing, checksum) {
-					continue
-				}
 				// 校验和不匹配意味着迁移文件在应用后被修改，这是危险的。
 				// 正确的做法是创建新的迁移文件来进行变更。
 				return fmt.Errorf(
@@ -255,35 +243,6 @@ func indexIsInvalid(ctx context.Context, db *sql.DB, indexName string) (bool, er
 		)
 	`, indexName).Scan(&invalid)
 	return invalid, err
-}
-
-func checksumSet(values ...string) map[string]struct{} {
-	out := make(map[string]struct{}, len(values))
-	for _, value := range values {
-		out[value] = struct{}{}
-	}
-	return out
-}
-
-func newMigrationChecksumCompatibilityRule(fileChecksum string, acceptedDBChecksums ...string) migrationChecksumCompatibilityRule {
-	return migrationChecksumCompatibilityRule{
-		fileChecksum:       fileChecksum,
-		acceptedDBChecksum: checksumSet(acceptedDBChecksums...),
-		acceptedChecksums:  checksumSet(append([]string{fileChecksum}, acceptedDBChecksums...)...),
-	}
-}
-
-func isMigrationChecksumCompatible(name, dbChecksum, fileChecksum string) bool {
-	rule, ok := migrationChecksumCompatibilityRules[name]
-	if !ok {
-		return false
-	}
-	_, dbOK := rule.acceptedChecksums[dbChecksum]
-	if !dbOK {
-		return false
-	}
-	_, fileOK := rule.acceptedChecksums[fileChecksum]
-	return fileOK
 }
 
 func validateMigrationExecutionMode(name, content string) (bool, error) {

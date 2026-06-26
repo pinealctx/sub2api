@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS groups (
     claude_code_only BOOLEAN NOT NULL DEFAULT FALSE,
     fallback_group_id BIGINT,
     fallback_group_id_on_invalid_request BIGINT,
-    model_routing JSONB NOT NULL DEFAULT '{}'::jsonb,
+    model_routing JSONB DEFAULT '{}'::jsonb,
     model_routing_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     mcp_xml_inject BOOLEAN NOT NULL DEFAULT TRUE,
     supported_model_scopes JSONB NOT NULL DEFAULT '["claude","gemini_text","gemini_image"]'::jsonb,
@@ -77,6 +77,21 @@ CREATE INDEX IF NOT EXISTS groups_platform ON groups (platform);
 CREATE INDEX IF NOT EXISTS groups_is_exclusive ON groups (is_exclusive);
 CREATE INDEX IF NOT EXISTS groups_sort_order ON groups (sort_order);
 CREATE INDEX IF NOT EXISTS groups_deleted_at ON groups (deleted_at);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'anthropic-default', 'Auto-created default group', 'anthropic', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'anthropic-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'openai-default', 'Auto-created default group', 'openai', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'openai-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'gemini-default', 'Auto-created default group', 'gemini', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'gemini-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'antigravity-default-1', 'Auto-created default group', 'antigravity', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'antigravity-default-1' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'antigravity-default-2', 'Auto-created default group', 'antigravity', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'antigravity-default-2' AND deleted_at IS NULL);
 
 CREATE TABLE IF NOT EXISTS proxies (
     id BIGSERIAL PRIMARY KEY,
@@ -170,8 +185,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     group_id BIGINT REFERENCES groups(id) ON DELETE SET NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     last_used_at TIMESTAMPTZ,
-    ip_whitelist JSONB NOT NULL DEFAULT '[]'::jsonb,
-    ip_blacklist JSONB NOT NULL DEFAULT '[]'::jsonb,
+    ip_whitelist JSONB DEFAULT '[]'::jsonb,
+    ip_blacklist JSONB DEFAULT '[]'::jsonb,
     quota NUMERIC(20,8) NOT NULL DEFAULT 0,
     quota_used NUMERIC(20,8) NOT NULL DEFAULT 0,
     expires_at TIMESTAMPTZ,
@@ -261,7 +276,7 @@ CREATE INDEX IF NOT EXISTS pending_auth_sessions_completion_code_hash ON pending
 CREATE TABLE IF NOT EXISTS identity_adoption_decisions (
     id BIGSERIAL PRIMARY KEY,
     pending_auth_session_id BIGINT NOT NULL UNIQUE REFERENCES pending_auth_sessions(id) ON DELETE CASCADE,
-    identity_id BIGINT NOT NULL REFERENCES auth_identities(id) ON DELETE CASCADE,
+    identity_id BIGINT REFERENCES auth_identities(id) ON DELETE CASCADE,
     adopt_display_name BOOLEAN NOT NULL DEFAULT FALSE,
     adopt_avatar BOOLEAN NOT NULL DEFAULT FALSE,
     decided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -332,14 +347,23 @@ CREATE INDEX IF NOT EXISTS user_attribute_values_value ON user_attribute_values 
 CREATE TABLE IF NOT EXISTS user_platform_quotas (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    platform VARCHAR(50) NOT NULL,
-    used NUMERIC(20,8) NOT NULL DEFAULT 0,
-    limit_value NUMERIC(20,8) NOT NULL DEFAULT 0,
-    window_start TIMESTAMPTZ,
+    platform VARCHAR(32) NOT NULL,
+    daily_limit_usd NUMERIC(20,10),
+    weekly_limit_usd NUMERIC(20,10),
+    monthly_limit_usd NUMERIC(20,10),
+    daily_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    weekly_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    monthly_usage_usd NUMERIC(20,10) NOT NULL DEFAULT 0,
+    daily_window_start TIMESTAMPTZ,
+    weekly_window_start TIMESTAMPTZ,
+    monthly_window_start TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, platform)
+    deleted_at TIMESTAMPTZ
 );
+CREATE UNIQUE INDEX IF NOT EXISTS user_platform_quotas_user_id_platform_active_key
+    ON user_platform_quotas (user_id, platform) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS user_platform_quotas_user_id ON user_platform_quotas (user_id);
 CREATE INDEX IF NOT EXISTS user_platform_quotas_platform ON user_platform_quotas (platform);
 
 CREATE TABLE IF NOT EXISTS user_group_rate_multipliers (
@@ -358,7 +382,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     api_key_id BIGINT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
     account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    request_id VARCHAR(255) NOT NULL,
+    request_id VARCHAR(255),
     model VARCHAR(100) NOT NULL,
     requested_model VARCHAR(100),
     upstream_model VARCHAR(100),
@@ -396,7 +420,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     image_input_size VARCHAR(32),
     image_output_size VARCHAR(32),
     image_size_source VARCHAR(16),
-    image_size_breakdown JSONB NOT NULL DEFAULT '{}'::jsonb,
+    image_size_breakdown JSONB DEFAULT '{}'::jsonb,
     service_tier TEXT,
     reasoning_effort TEXT,
     inbound_endpoint TEXT,
@@ -415,7 +439,7 @@ CREATE INDEX IF NOT EXISTS usage_logs_request_id ON usage_logs (request_id);
 CREATE INDEX IF NOT EXISTS usage_logs_user_created_at ON usage_logs (user_id, created_at);
 CREATE INDEX IF NOT EXISTS usage_logs_api_key_created_at ON usage_logs (api_key_id, created_at);
 CREATE INDEX IF NOT EXISTS usage_logs_group_created_at ON usage_logs (group_id, created_at) WHERE group_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_usage_logs_request_api_key ON usage_logs (request_id, api_key_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_logs_request_api_key ON usage_logs (request_id, api_key_id);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_upstream_model ON usage_logs (upstream_model);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_requested_model ON usage_logs (requested_model);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_inbound_endpoint ON usage_logs (inbound_endpoint);
@@ -453,7 +477,7 @@ CREATE TABLE IF NOT EXISTS scheduler_outbox (
 CREATE INDEX IF NOT EXISTS idx_scheduler_outbox_created_at ON scheduler_outbox (created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduler_outbox_pending_dedup_key
     ON scheduler_outbox (dedup_key)
-    WHERE dedup_key IS NOT NULL AND delivered_at IS NULL;
+    WHERE dedup_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS channels (
     id BIGSERIAL PRIMARY KEY,
@@ -713,10 +737,12 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     client_ip INET,
     platform VARCHAR(32),
     model VARCHAR(100),
+    requested_model VARCHAR(100),
+    upstream_model VARCHAR(100),
     request_path VARCHAR(256),
     inbound_endpoint TEXT,
     upstream_endpoint TEXT,
-    request_type SMALLINT NOT NULL DEFAULT 0,
+    request_type SMALLINT,
     stream BOOLEAN NOT NULL DEFAULT FALSE,
     openai_ws_mode BOOLEAN NOT NULL DEFAULT FALSE,
     user_agent TEXT,
@@ -734,6 +760,7 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     upstream_status_code INT,
     upstream_error_message TEXT,
     upstream_error_detail TEXT,
+    upstream_errors JSONB,
     provider_error_code VARCHAR(64),
     provider_error_type VARCHAR(64),
     network_error_type VARCHAR(50),
@@ -753,6 +780,10 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     attempted_key_prefix VARCHAR(32),
     deleted_key_owner_user_id BIGINT,
     deleted_key_name VARCHAR(100),
+    api_key_prefix VARCHAR(32),
+    resolved BOOLEAN NOT NULL DEFAULT FALSE,
+    resolved_at TIMESTAMPTZ,
+    resolved_by_user_id BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_created_at ON ops_error_logs (created_at DESC);
@@ -764,6 +795,7 @@ CREATE INDEX IF NOT EXISTS idx_ops_error_logs_phase_time ON ops_error_logs (erro
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_type_time ON ops_error_logs (error_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_request_id ON ops_error_logs (request_id);
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_client_request_id ON ops_error_logs (client_request_id);
+CREATE INDEX IF NOT EXISTS idx_ops_error_logs_resolved_time ON ops_error_logs (resolved, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS ops_system_metrics (
     id BIGSERIAL PRIMARY KEY,
@@ -981,19 +1013,21 @@ CREATE INDEX IF NOT EXISTS deletedapikeyaudit_user_id ON deleted_api_key_audits 
 
 CREATE TABLE IF NOT EXISTS idempotency_records (
     id BIGSERIAL PRIMARY KEY,
-    scope VARCHAR(64) NOT NULL,
-    key VARCHAR(255) NOT NULL,
-    request_hash VARCHAR(64) NOT NULL,
-    status VARCHAR(20) NOT NULL,
+    scope VARCHAR(128) NOT NULL,
+    idempotency_key_hash VARCHAR(64) NOT NULL,
+    request_fingerprint VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
     response_status INT,
     response_body TEXT,
+    error_reason VARCHAR(128),
     locked_until TIMESTAMPTZ,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (scope, key)
+    UNIQUE (scope, idempotency_key_hash)
 );
 CREATE INDEX IF NOT EXISTS idempotency_records_expires_at ON idempotency_records (expires_at);
+CREATE INDEX IF NOT EXISTS idempotency_records_status_locked_until ON idempotency_records (status, locked_until);
 
 CREATE TABLE IF NOT EXISTS error_passthrough_rules (
     id BIGSERIAL PRIMARY KEY,
@@ -1041,18 +1075,29 @@ CREATE INDEX IF NOT EXISTS usage_cleanup_tasks_created_at ON usage_cleanup_tasks
 
 CREATE TABLE IF NOT EXISTS scheduled_test_plans (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    model_id VARCHAR(200) NOT NULL,
+    cron_expression VARCHAR(100) NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    max_results INT NOT NULL DEFAULT 50,
+    auto_recover BOOLEAN NOT NULL DEFAULT FALSE,
+    last_run_at TIMESTAMPTZ,
+    next_run_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS scheduled_test_plans_account_id ON scheduled_test_plans (account_id);
+CREATE INDEX IF NOT EXISTS scheduled_test_plans_due ON scheduled_test_plans (enabled, next_run_at);
 
 CREATE TABLE IF NOT EXISTS scheduled_test_results (
     id BIGSERIAL PRIMARY KEY,
     plan_id BIGINT REFERENCES scheduled_test_plans(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL,
-    result JSONB NOT NULL DEFAULT '{}'::jsonb,
+    response_text TEXT NOT NULL DEFAULT '',
+    error_message TEXT NOT NULL DEFAULT '',
+    latency_ms BIGINT NOT NULL DEFAULT 0,
+    started_at TIMESTAMPTZ NOT NULL,
+    finished_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS scheduled_test_results_plan_created ON scheduled_test_results (plan_id, created_at DESC);

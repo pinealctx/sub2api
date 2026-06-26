@@ -427,14 +427,6 @@ func cloneOAuthMetadata(values map[string]any) map[string]any {
 	return cloned
 }
 
-func mergeOAuthMetadata(base map[string]any, overlay map[string]any) map[string]any {
-	merged := cloneOAuthMetadata(base)
-	for key, value := range overlay {
-		merged[key] = value
-	}
-	return merged
-}
-
 func normalizeAdoptedOAuthDisplayName(value string) string {
 	value = strings.TrimSpace(value)
 	if len([]rune(value)) > 100 {

@@ -18,11 +18,12 @@ func (s *UserRepoSuite) mustInsertUsageLog(userID int64, createdAt time.Time) {
 
 	_, err := integrationDB.ExecContext(
 		s.ctx,
-		`INSERT INTO usage_logs (user_id, api_key_id, account_id, model, input_tokens, output_tokens, total_cost, actual_cost, created_at)
-		 VALUES ($1, $2, $3, 'gpt-test', 1, 1, 0.01, 0.01, $4)`,
+		`INSERT INTO usage_logs (user_id, api_key_id, account_id, request_id, model, input_tokens, output_tokens, total_cost, actual_cost, created_at)
+		 VALUES ($1, $2, $3, $4, 'gpt-test', 1, 1, 0.01, 0.01, $5)`,
 		userID,
 		apiKey.ID,
 		account.ID,
+		"user-sort-"+createdAt.UTC().Format(time.RFC3339Nano),
 		createdAt.UTC(),
 	)
 	s.Require().NoError(err)

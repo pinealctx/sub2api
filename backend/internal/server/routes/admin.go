@@ -68,6 +68,9 @@ func RegisterAdminRoutes(
 		// 错误透传规则管理
 		registerErrorPassthroughRoutes(admin, h)
 
+		// 风控管理
+		registerContentModerationRoutes(admin, h)
+
 		// TLS 指纹模板管理
 		registerTLSFingerprintProfileRoutes(admin, h)
 

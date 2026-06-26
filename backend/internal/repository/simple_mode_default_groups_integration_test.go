@@ -43,18 +43,25 @@ func TestEnsureSimpleModeDefaultGroups_IgnoresSoftDeletedGroups(t *testing.T) {
 	seedCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Create and then soft-delete an anthropic default group.
-	g, err := client.Group.Create().
-		SetName(service.PlatformAnthropic + "-default").
-		SetPlatform(service.PlatformAnthropic).
-		SetStatus(service.StatusActive).
-		SetRateMultiplier(1.0).
-		SetIsExclusive(false).
-		Save(seedCtx)
+	// Seed baseline may already provide this default group. Soft-delete the
+	// active default first, or create one if the test database starts empty.
+	deleted, err := client.Group.Delete().
+		Where(group.NameEQ(service.PlatformAnthropic+"-default"), group.DeletedAtIsNil()).
+		Exec(seedCtx)
 	require.NoError(t, err)
+	if deleted == 0 {
+		g, err := client.Group.Create().
+			SetName(service.PlatformAnthropic + "-default").
+			SetPlatform(service.PlatformAnthropic).
+			SetStatus(service.StatusActive).
+			SetRateMultiplier(1.0).
+			SetIsExclusive(false).
+			Save(seedCtx)
+		require.NoError(t, err)
 
-	_, err = client.Group.Delete().Where(group.IDEQ(g.ID)).Exec(seedCtx)
-	require.NoError(t, err)
+		_, err = client.Group.Delete().Where(group.IDEQ(g.ID)).Exec(seedCtx)
+		require.NoError(t, err)
+	}
 
 	require.NoError(t, ensureSimpleModeDefaultGroups(seedCtx, client))
 

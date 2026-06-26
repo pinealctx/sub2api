@@ -56,7 +56,7 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			MaxLen(100).
 			Default(""),
-			field.String("notes").
+		field.String("notes").
 			SchemaType(map[string]string{dialect.Postgres: "text"}).
 			Default(""),
 
