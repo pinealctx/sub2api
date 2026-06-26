@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS groups (
     claude_code_only BOOLEAN NOT NULL DEFAULT FALSE,
     fallback_group_id BIGINT,
     fallback_group_id_on_invalid_request BIGINT,
-    model_routing JSONB NOT NULL DEFAULT '{}'::jsonb,
+    model_routing JSONB DEFAULT '{}'::jsonb,
     model_routing_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     mcp_xml_inject BOOLEAN NOT NULL DEFAULT TRUE,
     supported_model_scopes JSONB NOT NULL DEFAULT '["claude","gemini_text","gemini_image"]'::jsonb,
@@ -77,6 +77,21 @@ CREATE INDEX IF NOT EXISTS groups_platform ON groups (platform);
 CREATE INDEX IF NOT EXISTS groups_is_exclusive ON groups (is_exclusive);
 CREATE INDEX IF NOT EXISTS groups_sort_order ON groups (sort_order);
 CREATE INDEX IF NOT EXISTS groups_deleted_at ON groups (deleted_at);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'anthropic-default', 'Auto-created default group', 'anthropic', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'anthropic-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'openai-default', 'Auto-created default group', 'openai', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'openai-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'gemini-default', 'Auto-created default group', 'gemini', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'gemini-default' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'antigravity-default-1', 'Auto-created default group', 'antigravity', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'antigravity-default-1' AND deleted_at IS NULL);
+INSERT INTO groups (name, description, platform, rate_multiplier, is_exclusive, status)
+SELECT 'antigravity-default-2', 'Auto-created default group', 'antigravity', 1, FALSE, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'antigravity-default-2' AND deleted_at IS NULL);
 
 CREATE TABLE IF NOT EXISTS proxies (
     id BIGSERIAL PRIMARY KEY,
@@ -722,6 +737,8 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     client_ip INET,
     platform VARCHAR(32),
     model VARCHAR(100),
+    requested_model VARCHAR(100),
+    upstream_model VARCHAR(100),
     request_path VARCHAR(256),
     inbound_endpoint TEXT,
     upstream_endpoint TEXT,
@@ -743,6 +760,7 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     upstream_status_code INT,
     upstream_error_message TEXT,
     upstream_error_detail TEXT,
+    upstream_errors JSONB,
     provider_error_code VARCHAR(64),
     provider_error_type VARCHAR(64),
     network_error_type VARCHAR(50),
@@ -762,6 +780,10 @@ CREATE TABLE IF NOT EXISTS ops_error_logs (
     attempted_key_prefix VARCHAR(32),
     deleted_key_owner_user_id BIGINT,
     deleted_key_name VARCHAR(100),
+    api_key_prefix VARCHAR(32),
+    resolved BOOLEAN NOT NULL DEFAULT FALSE,
+    resolved_at TIMESTAMPTZ,
+    resolved_by_user_id BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_created_at ON ops_error_logs (created_at DESC);
@@ -773,6 +795,7 @@ CREATE INDEX IF NOT EXISTS idx_ops_error_logs_phase_time ON ops_error_logs (erro
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_type_time ON ops_error_logs (error_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_request_id ON ops_error_logs (request_id);
 CREATE INDEX IF NOT EXISTS idx_ops_error_logs_client_request_id ON ops_error_logs (client_request_id);
+CREATE INDEX IF NOT EXISTS idx_ops_error_logs_resolved_time ON ops_error_logs (resolved, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS ops_system_metrics (
     id BIGSERIAL PRIMARY KEY,
@@ -990,19 +1013,21 @@ CREATE INDEX IF NOT EXISTS deletedapikeyaudit_user_id ON deleted_api_key_audits 
 
 CREATE TABLE IF NOT EXISTS idempotency_records (
     id BIGSERIAL PRIMARY KEY,
-    scope VARCHAR(64) NOT NULL,
-    key VARCHAR(255) NOT NULL,
-    request_hash VARCHAR(64) NOT NULL,
-    status VARCHAR(20) NOT NULL,
+    scope VARCHAR(128) NOT NULL,
+    idempotency_key_hash VARCHAR(64) NOT NULL,
+    request_fingerprint VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
     response_status INT,
     response_body TEXT,
+    error_reason VARCHAR(128),
     locked_until TIMESTAMPTZ,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (scope, key)
+    UNIQUE (scope, idempotency_key_hash)
 );
 CREATE INDEX IF NOT EXISTS idempotency_records_expires_at ON idempotency_records (expires_at);
+CREATE INDEX IF NOT EXISTS idempotency_records_status_locked_until ON idempotency_records (status, locked_until);
 
 CREATE TABLE IF NOT EXISTS error_passthrough_rules (
     id BIGSERIAL PRIMARY KEY,
