@@ -27,9 +27,9 @@ async function bootstrap() {
   const appStore = useAppStore()
   appStore.initFromInjectedConfig()
 
-  // Set document title immediately after config is loaded
+  // Set document title immediately after config is loaded.
   if (appStore.siteName && appStore.siteName !== 'Nexus Relay') {
-    document.title = `${appStore.siteName} - AI API Gateway`
+    document.title = appStore.siteName
   }
 
   await initI18n()

@@ -1,6 +1,16 @@
-# Nexus Relay Docker Image
+# Nexus Relay Container Image
 
 Nexus Relay is an internal AI API gateway for account pools, group-based access, API keys, and usage observability.
+
+## Image
+
+Default internal image:
+
+```text
+ghcr.io/pinealctx/sub2api:latest
+```
+
+Use `NEXUS_RELAY_IMAGE` in compose deployments to point at another internal registry.
 
 ## Quick Start
 
@@ -8,69 +18,29 @@ Nexus Relay is an internal AI API gateway for account pools, group-based access,
 docker run -d \
   --name sub2api \
   -p 8080:8080 \
-  -e DATABASE_URL="postgres://user:pass@host:5432/sub2api" \
-  -e REDIS_URL="redis://host:6379" \
-  weishaw/sub2api:latest
+  -e AUTO_SETUP=true \
+  -e RUN_MODE=simple \
+  -e DATABASE_HOST=postgres.example.internal \
+  -e DATABASE_USER=sub2api \
+  -e DATABASE_PASSWORD=change_this_secure_password \
+  -e DATABASE_DBNAME=sub2api \
+  -e REDIS_HOST=redis.example.internal \
+  -e JWT_SECRET=change_this_64_hex_secret \
+  -e TOTP_ENCRYPTION_KEY=change_this_64_hex_secret \
+  ghcr.io/pinealctx/sub2api:latest
 ```
 
-## Docker Compose
+For normal deployments, prefer `docker-compose.local.yml` from this directory.
 
-```yaml
-version: '3.8'
+## Runtime Requirements
 
-services:
-  sub2api:
-    image: weishaw/sub2api:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/sub2api?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=sub2api
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-
-volumes:
-  postgres_data:
-  redis_data:
-```
-
-## Environment Variables
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes | - |
-| `REDIS_URL` | Redis connection string | Yes | - |
-| `PORT` | Server port | No | `8080` |
-| `GIN_MODE` | Gin framework mode (`debug`/`release`) | No | `release` |
+- PostgreSQL
+- Redis
+- Fixed `JWT_SECRET`
+- Fixed `TOTP_ENCRYPTION_KEY`
+- Fresh internal schema database for new deployments
 
 ## Supported Architectures
 
 - `linux/amd64`
 - `linux/arm64`
-
-## Tags
-
-- `latest` - Latest stable release
-- `x.y.z` - Specific version
-- `x.y` - Latest patch of minor version
-- `x` - Latest minor of major version
-
-## Links
-
-- [GitHub Repository](https://github.com/weishaw/sub2api)
-- [Documentation](https://github.com/weishaw/sub2api#readme)

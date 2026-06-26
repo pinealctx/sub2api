@@ -1,51 +1,58 @@
 # Nexus Relay
 
-Internal-maintenance AI API gateway for team-owned model routing, account pools, API keys, and usage observability.
+Nexus Relay is an internal AI API gateway for team-owned routing, account pools, API keys, and usage observability.
 
-This fork keeps the gateway, account pool, groups, proxies, API keys, usage records, channel monitoring, ops monitoring, and the member Dashboard / Keys / Usage / Profile pages. It removes public SaaS and commercial self-service flows from the exposed runtime surface.
+It is maintained as a breaking internal fork. The runtime focuses on authentication, account scheduling, group isolation, proxy routing, rate controls, and usage records. Public self-service acquisition flows are outside this product line.
 
-## What This Fork Keeps
+## Core Capabilities
 
-- Claude, OpenAI-compatible, Gemini, Antigravity, Codex/OpenAI-compatible gateway entrypoints.
-- API Key authentication, account scheduling, sticky sessions, usage logging, and model listing.
-- Admin management for users, groups, upstream accounts/channels, proxies, usage, channel monitor, ops, settings, backup, and system tools.
-- Member self-service for Dashboard, API Keys, Usage, and Profile.
+- Claude, OpenAI-compatible, Gemini, Antigravity, and Codex/OpenAI-compatible gateway entrypoints.
+- Upstream account pools with group assignment, sticky sessions, failover, proxy selection, and model listing.
+- Member pages for Dashboard, API Keys, Usage, and Profile.
+- Admin pages for users, groups, accounts/channels, proxies, usage, channel monitoring, ops, settings, backups, and system tools.
 - Email/password login and generic OIDC login for internal identity providers such as Microsoft Entra ID.
+- PostgreSQL and Redis backed usage logging, monitor history, and operational metrics.
 
-## What This Fork Removes
+## Runtime Semantics
 
-- Public registration and non-target OAuth login providers.
-- Payment, orders, plans, public subscription purchase, redeem codes, promo codes, invitation rebates, affiliate workflows, and public promotion pages.
-- Runtime blocking based on user balance, recharge state, subscription purchase state, or commercial quota purchase state.
-- Sponsor, ecosystem, public payment, and public SaaS documentation from this internal README.
+Gateway requests are allowed or denied by API key status, user status, group membership, IP ACLs, rate limits, concurrency limits, account availability, and platform-specific routing rules.
 
-Old commercial API paths are intentionally not registered and should return 404.
+Usage cost is retained as an observability field. It is not a member-facing wallet or purchase condition.
 
-## Runtime Model
+## Local Development
 
-The gateway performs authentication, group validation, IP ACL checks, scheduling, and usage recording. It does not reject model calls because a user has zero balance, no active subscription, or an exhausted purchased quota.
-
-Disabled API Keys, inactive users, unavailable groups, and IP ACL violations still block requests.
-
-## Deployment Notes
-
-Use the normal backend, frontend, PostgreSQL, and Redis deployment flow for this repository. Before moving an existing production database to this internal fork, take a full database backup. This fork is allowed to make breaking changes and should be maintained as a long-lived internal branch.
-
-## Verification
-
-Backend:
+Use the versions pinned by this repository:
 
 ```bash
-cd backend
-go test ./...
+nvm use
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
 ```
 
-Frontend:
+Install and verify:
 
 ```bash
 pnpm --dir frontend install
 pnpm --dir frontend run typecheck
 pnpm --dir frontend run test:run
+
+cd backend
+go test ./...
 ```
 
-If your local `pnpm` is older than the lockfile format, use a pnpm version compatible with lockfile v9 rather than rewriting the lockfile accidentally.
+For a local all-in-one environment, use the development compose file:
+
+```bash
+cp deploy/.env.example deploy/.env
+docker compose -f deploy/docker-compose.dev.yml --env-file deploy/.env up --build
+```
+
+## Deployment
+
+Deployment assets live in `deploy/`. New installations should use a fresh database or an explicitly rebuilt database from the internal baseline schema. Automatic migration from the old public schema is not supported.
+
+The default container image reference is `ghcr.io/pinealctx/sub2api:latest`. Override it with `NEXUS_RELAY_IMAGE` when using a different internal registry or a locally built image.
+
+## Upstream Maintenance
+
+Keep `upstream` pointed at the original project so gateway improvements can still be reviewed and merged selectively. Product, docs, public acquisition flows, and non-target identity-provider changes should remain internal-fork decisions.

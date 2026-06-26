@@ -357,9 +357,9 @@ describe('useAuthStore', () => {
       expect(store.isSimpleMode).toBe(true)
     })
 
-    it('默认为 standard 模式', () => {
+    it('默认使用 simple 内部模式', () => {
       const store = useAuthStore()
-      expect(store.isSimpleMode).toBe(false)
+      expect(store.isSimpleMode).toBe(true)
     })
   })
 })

@@ -4818,7 +4818,7 @@ export default {  // Home Page
         siteName: 'Site Name',
         siteNamePlaceholder: 'Nexus Relay',
         siteNameHint: 'Displayed in emails and page titles',
-        siteSubtitle: 'Site Subtitle',        siteSubtitlePlaceholder: 'Internal API Gateway',
+        siteSubtitle: 'Site Subtitle',        siteSubtitlePlaceholder: 'Internal Gateway',
 
         siteSubtitleHint: 'Displayed on the login page',
         apiBaseUrl: 'API Base URL',

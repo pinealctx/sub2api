@@ -71,7 +71,7 @@ const appStore = useAppStore()
 
 const siteName = computed(() => appStore.siteName || 'Nexus Relay')
 const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Internal API Gateway')
+const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Internal Gateway')
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 
 const currentYear = computed(() => new Date().getFullYear())

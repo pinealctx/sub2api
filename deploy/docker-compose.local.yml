@@ -24,7 +24,7 @@ services:
   # Nexus Relay Application
   # ===========================================================================
   sub2api:
-    image: weishaw/sub2api:latest
+    image: ${NEXUS_RELAY_IMAGE:-ghcr.io/pinealctx/sub2api:latest}
     container_name: sub2api
     restart: unless-stopped
     ulimits:
@@ -51,7 +51,7 @@ services:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - SERVER_MODE=${SERVER_MODE:-release}
-      - RUN_MODE=${RUN_MODE:-standard}
+      - RUN_MODE=${RUN_MODE:-simple}
 
       # =======================================================================
       # Database Configuration (PostgreSQL)
@@ -109,7 +109,6 @@ services:
       # This affects ALL time operations in the application:
       # - Database timestamps
       # - Usage statistics "today" boundary
-      # - Subscription expiry times
       # - Log timestamps
       # Common values: Asia/Shanghai, America/New_York, Europe/London, UTC
       # =======================================================================

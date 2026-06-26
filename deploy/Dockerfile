@@ -78,9 +78,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 FROM ${ALPINE_IMAGE}
 
 # Labels
-LABEL maintainer="Wei-Shaw <github.com/Wei-Shaw>"
-LABEL description="Nexus Relay - AI API Gateway Platform"
-LABEL org.opencontainers.image.source="https://github.com/Wei-Shaw/sub2api"
+LABEL description="Nexus Relay internal AI API gateway"
+LABEL org.opencontainers.image.source="https://github.com/pinealctx/sub2api"
 
 # Install runtime dependencies
 RUN apk add --no-cache \

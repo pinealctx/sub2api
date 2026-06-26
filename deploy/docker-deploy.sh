@@ -3,7 +3,7 @@
 # Nexus Relay Docker Deployment Preparation Script
 # =============================================================================
 # This script prepares deployment files for Nexus Relay:
-#   - Downloads docker-compose.local.yml and .env.example
+#   - Copies docker-compose.local.yml and .env.example from this checkout
 #   - Generates secure secrets (JWT_SECRET, TOTP_ENCRYPTION_KEY, POSTGRES_PASSWORD)
 #   - Creates necessary data directories
 #
@@ -20,8 +20,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# GitHub raw content base URL
-GITHUB_RAW_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Print colored message
 print_info() {
@@ -75,26 +74,23 @@ main() {
         fi
     fi
 
-    # Download docker-compose.local.yml and save as docker-compose.yml
-    print_info "Downloading docker-compose.yml..."
-    if command_exists curl; then
-        curl -sSL "${GITHUB_RAW_URL}/docker-compose.local.yml" -o docker-compose.yml
-    elif command_exists wget; then
-        wget -q "${GITHUB_RAW_URL}/docker-compose.local.yml" -O docker-compose.yml
-    else
-        print_error "Neither curl nor wget is installed. Please install one of them."
+    # Copy docker-compose.local.yml and save as docker-compose.yml
+    print_info "Copying docker-compose.yml..."
+    if [ ! -f "${SCRIPT_DIR}/docker-compose.local.yml" ]; then
+        print_error "docker-compose.local.yml not found next to this script. Run it from a checked-out Nexus Relay repository."
         exit 1
     fi
-    print_success "Downloaded docker-compose.yml"
+    cp "${SCRIPT_DIR}/docker-compose.local.yml" docker-compose.yml
+    print_success "Copied docker-compose.yml"
 
-    # Download .env.example
-    print_info "Downloading .env.example..."
-    if command_exists curl; then
-        curl -sSL "${GITHUB_RAW_URL}/.env.example" -o .env.example
-    else
-        wget -q "${GITHUB_RAW_URL}/.env.example" -O .env.example
+    # Copy .env.example
+    print_info "Copying .env.example..."
+    if [ ! -f "${SCRIPT_DIR}/.env.example" ]; then
+        print_error ".env.example not found next to this script. Run it from a checked-out Nexus Relay repository."
+        exit 1
     fi
-    print_success "Downloaded .env.example"
+    cp "${SCRIPT_DIR}/.env.example" .env.example
+    print_success "Copied .env.example"
 
     # Generate .env file with auto-generated secrets
     print_info "Generating secure secrets..."

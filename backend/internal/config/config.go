@@ -1027,7 +1027,7 @@ func NormalizeRunMode(value string) string {
 	case RunModeStandard, RunModeSimple:
 		return normalized
 	default:
-		return RunModeStandard
+		return RunModeSimple
 	}
 }
 
@@ -1199,7 +1199,7 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 }
 
 func setDefaults() {
-	viper.SetDefault("run_mode", RunModeStandard)
+	viper.SetDefault("run_mode", RunModeSimple)
 
 	// Server
 	viper.SetDefault("server.host", "0.0.0.0")

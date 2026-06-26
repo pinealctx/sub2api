@@ -2,7 +2,7 @@
 #
 # Nexus Relay Installation Script
 # Nexus Relay 安装脚本
-# Usage: curl -sSL https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/install.sh | bash
+# Usage: run from a checked-out internal repository or an authenticated internal release asset.
 #
 
 set -e
@@ -31,7 +31,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-GITHUB_REPO="Wei-Shaw/sub2api"
+GITHUB_REPO="${GITHUB_REPO:-pinealctx/sub2api}"
 INSTALL_DIR="/opt/sub2api"
 SERVICE_NAME="sub2api"
 SERVICE_USER="sub2api"
@@ -669,8 +669,8 @@ install_service() {
     # Create service file with configured host and port
     cat > /etc/systemd/system/sub2api.service << EOF
 [Unit]
-Description=Nexus Relay - AI API Gateway Platform
-Documentation=https://github.com/Wei-Shaw/sub2api
+Description=Nexus Relay internal AI API gateway
+Documentation=https://github.com/pinealctx/sub2api
 After=network.target postgresql.service redis.service
 Wants=postgresql.service redis.service
 

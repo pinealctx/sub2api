@@ -4947,7 +4947,7 @@ export default {  // Home Page
         siteNameHint: '显示在邮件和页面标题中',
         siteNamePlaceholder: 'Nexus Relay',
         siteSubtitle: '站点副标题',
-        siteSubtitleHint: '显示在登录和账号创建页面',        siteSubtitlePlaceholder: '内部 API 网关',
+        siteSubtitleHint: '显示在登录和账号创建页面',        siteSubtitlePlaceholder: '内部网关',
 
         apiBaseUrl: 'API 端点地址',
         apiBaseUrlHint: '用于"使用密钥"和"导入到 CC Switch"功能，留空则使用当前站点地址',
