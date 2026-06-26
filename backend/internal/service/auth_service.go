@@ -538,16 +538,6 @@ func (s *AuthService) ensureEmailAuthIdentity(ctx context.Context, user *User, s
 	return identity, !existed
 }
 
-func inferLegacySignupSource(email string) string {
-	normalized := strings.ToLower(strings.TrimSpace(email))
-	switch {
-	case strings.HasSuffix(normalized, OIDCConnectSyntheticEmailDomain):
-		return "oidc"
-	default:
-		return "email"
-	}
-}
-
 func (s *AuthService) validateAccountCreationEmailPolicy(ctx context.Context, email string) error {
 	if s.settingService == nil {
 		return nil

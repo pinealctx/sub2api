@@ -331,8 +331,7 @@ func TestEnhanceCSPPolicy(t *testing.T) {
 		assert.Contains(t, enhanced, "'nonce-existing'")
 	})
 
-	}
-
+}
 
 func TestAddToDirective(t *testing.T) {
 	t.Run("adds_to_existing_directive", func(t *testing.T) {

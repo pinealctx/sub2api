@@ -118,7 +118,7 @@ func TestSnapshotPlatformQuotaDefaults_NilRepoIsNoop(t *testing.T) {
 func TestResolveSignupGrantPlan_GlobalQuotaLoadedBeforeAuthSource(t *testing.T) {
 	// 全局 quota JSON key（新格式）
 	settings := map[string]string{
-		SettingKey		SettingKeyDefaultPlatformQuotas: `{
+		SettingKeyDefaultPlatformQuotas: `{
 			"anthropic":   {"daily": 10, "weekly": 50, "monthly": 200},
 			"openai":      {"daily": 5,  "weekly": 25, "monthly": 100},
 			"gemini":      {"daily": 5,  "weekly": 25, "monthly": 100},
@@ -143,7 +143,6 @@ func TestResolveSignupGrantPlan_GlobalQuotaLoadedBeforeAuthSource(t *testing.T) 
 // !enabled 早退路径仍携带全局 quota（GetDefaultPlatformQuotas 在 ResolveAuthSourceGrantSettings 之前）。
 func TestResolveSignupGrantPlan_DisabledAuthSourceStillCarriesGlobalQuota(t *testing.T) {
 	settings := map[string]string{
-		SettingKey		// auth source 不配置（=> !enabled 路径）
 		SettingKeyDefaultPlatformQuotas: `{"anthropic": {"daily": 10, "weekly": 50, "monthly": 200}}`,
 	}
 	svc := newAuthService(nil, settings, nil, nil)

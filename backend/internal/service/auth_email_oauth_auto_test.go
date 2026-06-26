@@ -49,7 +49,7 @@ func TestEmailOAuthAuto_SnapshotsPlatformQuotaDefaults(t *testing.T) {
 	svc := newEmailOAuthAutoAuthService(
 		userRepo,
 		map[string]string{
-			SettingKey			SettingKeyDefaultPlatformQuotas: `{"gemini": {"monthly": 100.0}}`,
+			SettingKeyDefaultPlatformQuotas: `{"gemini": {"monthly": 100.0}}`,
 		},
 		quotaRepo,
 	)
