@@ -449,6 +449,8 @@ export default {  // Home Page
     },
     allGroups: 'All Groups',
     allStatus: 'All Status',
+    columnSettings: 'Column Settings',
+    columnAlwaysVisible: 'This column is always visible',
     createKey: 'Create API Key',
     editKey: 'Edit API Key',
     deleteKey: 'Delete API Key',
