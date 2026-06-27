@@ -66,6 +66,10 @@ func TestMigrationsRunner_InternalCoreBaselineSchema(t *testing.T) {
 	requireColumn(t, tx, "usage_logs", "account_stats_cost", "numeric", 0, true)
 	requireColumn(t, tx, "scheduler_outbox", "dedup_key", "text", 0, true)
 	requireIndex(t, tx, "scheduler_outbox", "idx_scheduler_outbox_pending_dedup_key")
+
+	// ops_system_logs: API key id index for operational log triage
+	requireColumn(t, tx, "ops_system_logs", "api_key_id", "bigint", 0, true)
+	requireIndex(t, tx, "ops_system_logs", "idx_ops_system_logs_api_key_id_created_at")
 }
 
 func requireTable(t *testing.T, tx *sql.Tx, table string) {
