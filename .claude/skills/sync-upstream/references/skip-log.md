@@ -42,10 +42,19 @@ member-subscriptions" path, or if the subscription system is deliberately reintr
 
 | SHA(s) | Message | Why deferred |
 |--------|---------|--------------|
-| 39be1ec9 + 11 follow-ups | feat: add grok subscription support (xAI provider) | 92-file squashed feature; introduces `PlatformGrok` + `isOpenAIGatewayPlatform`/`isOpenAIResponsesCompatibleGatewayPlatform` helpers; conflicts with our removed UI (EmailVerifyView, subscription tabs) and diverged SettingsView/DashboardView |
+| 39be1ec9 + 11 follow-ups | feat: add grok subscription support (xAI provider) | 92-file squashed feature; introduces `PlatformGrok` + `isOpenAIGatewayPlatform`/`isOpenAIResponsesCompatibleGatewayPlatform` helpers; conflicts with our removed UI (EmailVerifyView, subscription tabs) and diverged SettingsView/DashboardView; **also wired into the removed member-subscription system (see decision above)** |
 | 7a38c662 | Bridge OpenAI count_tokens to responses input_tokens | depends on Grok platform helpers + `PlatformGrok`; will not compile without Grok |
-| 819fda34 | feat(codex-detect): codex_cli_only 检测加固 + 引擎指纹 + 账号级 app-server | 41-file feature; setting_service conflict bundles removed payment settings; 6 conflicts in diverged SettingsView |
-| bad87ff5 | feat(ops): add api key filter to system logs | carries schema migration (ops_system_logs.api_key_id, migrations 154/155) that must be reconciled with the internal baseline schema |
+
+**Resolved 2026-06-30 (merged via dedicated focused branches):**
+
+- `819fda34` codex-detect — merged as `5d46aa6a`. Resolution: kept codex_cli_only settings,
+  dropped bundled payment settings; kept our slimmed SettingsView/contract-test (codex_cli_only
+  has no admin UI here, backend works on defaults); aligned with upstream's deprecation of the old
+  `OpenAIAllowClaudeCodeCodexPlugin` global switch (field removed, folded into migration).
+- `bad87ff5` ops api-key filter — merged as `af1bd43d`. Resolution: migrations 154/155 apply
+  cleanly on top of the internal baseline; kept only the `ops_system_logs.api_key_id` schema test
+  assertion, dropped upstream baseline assertions for tables we don't have (`user_subscriptions`,
+  `orphan_allowed_groups_audit`).
 
 ## Merge History
 
@@ -53,3 +62,5 @@ member-subscriptions" path, or if the subscription system is deliberately reintr
 |------|----|---------------|---------------|--------------------|
 | 2026-06-26 | #1 `codex/merge-upstream-core-fixes` | initial baseline | multiple gateway fixes | commercial features, branding |
 | 2026-06-30 | `merge/upstream-20260630` | `ce6af413`..`upstream/main` (39 non-merge) | 12 gateway/observability/keys/scheduler fixes | 10 commercial skipped; 15 deferred (Grok cluster + 3 dependents); 2 already applied |
+| 2026-06-30 | `merge/codex-detect-20260630` | `819fda34` | codex_cli_only detection hardening (5d46aa6a) | payment settings & codex UI dropped |
+| 2026-06-30 | `merge/ops-keyfilter-20260630` | `bad87ff5` | ops api-key filter + migrations 154/155 (af1bd43d) | non-baseline schema assertions dropped |
