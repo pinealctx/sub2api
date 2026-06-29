@@ -27,8 +27,18 @@ Classification categories are defined in [divergence-rules.md](divergence-rules.
 
 These are gateway/feature commits we DO want, but they cannot be cleanly cherry-picked onto the
 current tree because they are entangled with the Grok platform refactor and/or our internal
-baseline schema. They were skipped in the 2026-06-30 sync and should be merged together in a
-dedicated pass (start with the Grok foundation, then its dependents).
+baseline schema.
+
+**2026-06-30 decision — Grok deferred (architectural blocker).** A dedicated Grok merge was
+attempted and aborted. Root cause: upstream Grok (`feat: add grok subscription support`) is wired
+into the **member-subscription commercial system that this fork removed**. Grok threads
+`subscription` through the billing path (`GetSubscriptionFromContext`, `CheckBillingEligibility(...,
+subscription, ...)`), adds `SubscriptionType: standard|subscription` to groups, and branches account
+scheduling on subscription type. None of `GetSubscriptionFromContext`, the subscription billing
+param, or subscription services exist in our tree. Taking Grok as-is would either reintroduce the
+commercial subscription surface (violates the fork's core boundary) or require substantial
+decoupling surgery. Owner chose to keep Grok deferred. Revisit only via the "decouple Grok from
+member-subscriptions" path, or if the subscription system is deliberately reintroduced.
 
 | SHA(s) | Message | Why deferred |
 |--------|---------|--------------|
