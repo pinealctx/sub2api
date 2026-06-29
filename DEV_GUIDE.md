@@ -77,6 +77,10 @@ Commit generated Ent files together with schema changes.
 
 ## Internal Fork Rules
 
+The authoritative, machine-readable divergence rules used when merging upstream live in
+[.claude/skills/sync-upstream/references/divergence-rules.md](.claude/skills/sync-upstream/references/divergence-rules.md).
+Run the `/sync-upstream` skill to evaluate and selectively merge upstream commits.
+
 - Keep the runtime focused on gateway access, scheduling, accounting records, and operations.
 - Do not reintroduce public acquisition flows, external promotional assets, or non-target login providers.
 - Keep usage cost as an observability field, not a purchase or wallet boundary.
